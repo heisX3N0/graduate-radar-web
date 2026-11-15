@@ -8,27 +8,6 @@ Owner decisions that apply to every item (15 Nov 2026): `*.pages.dev` address fo
 
 ---
 
-- [ ] **GR-002 Apps Script feed** (M)
-  - **Why:** The website must only see public listing fields. The spec's feed (section 5.4) is the only path from the sheet to the site, and the first draft had three gaps: any link scheme passed through, real date cells could be misread, and nothing proved private fields stay out.
-  - **Do:** Write `apps-script/Feed.gs` from spec 5.4 (field allowlist, header lookup by name, `day_` date normaliser, link scheme allowlist, 60 day rule for closed rows, 10 minute cache, `triggerRebuild`, `installRebuildTrigger`). Keep the row logic in pure functions so it can be tested in Node. The owner pastes it into the sheet's bound script, sets the script time zone to Africa/Lagos, and deploys it as a web app (Execute as Me, Anyone); I guide each step. The owner puts the `/exec` URL in a local `.env` (never committed) for GR-003.
-  - **Tests:** Negative first, in Node against `Feed.gs` loaded into a stub of `SpreadsheetApp`, `CacheService` and `Utilities`:
-    1. A `Found via` column, and any column not in the allowlist, never appears in the output, even when added between allowed columns.
-    2. Private tabs (`Postgrad Scholarships`, `Calendar`, `Review`, `Sources`, `Settings`, `Log`) are never opened.
-    3. A row with a `javascript:`, `data:` or blank Apply link is dropped.
-    4. A row with no `Key` is dropped.
-    5. A row whose `Status` is anything other than Open, Closing soon or Closed is dropped.
-    6. A Closed row verified 61 days ago is dropped; one verified 59 days ago is kept.
-    7. A Closed row with an unparseable `Verified on` is dropped.
-    8. A missing required header (`Key`, `Apply link` or `Status`) returns no rows for that tab and logs an error; the other tab still returns.
-    9. A real date cell displayed as `14/11/2026` comes out as `2026-11-14`; a text date `14/11/2026` comes out as `''`.
-    10. Moving columns gives identical output.
-    Happy path: Open, Closing soon and `mailto:` rows come out with the right field names and `remote` as a boolean. Manual: the deployed `/exec` URL returns valid JSON; owner checks it shows no `Found via` links.
-  - **Docs:** `docs/public-routes.md` (feed URL and what it returns), README "Data feed" section with the deploy steps.
-  - **Cost:** per build: 1 to 2 Apps Script executions; per direct hit on `/exec`: 1 execution (cached for 10 minutes). URL fetches: 0 until GR-008 adds the daily hook call (1 a day). Users supported: unchanged (visitors never call the feed).
-  - **Depends on:** GR-001.
-  - **Open questions for the owner:** none.
-  - **Owner decisions (2026-11-15):** The sheet is on a gmail.com account, so no Workspace admin can block "Anyone" access; consumer quotas apply (20,000 URL fetches and 90 minutes of trigger runtime a day). The owner does the Apps Script deploy clicks; Claude guides each step. The feed runs against the original sheet, not the owner's public copy (the copy pulls the public tabs and stays as the "Publish to web" fallback): a live copy can be stale or half-loaded when a script reads it, and the Phase 2 scraper needs the original. The script is not locked to its own file with `@OnlyCurrentDoc`; it keeps Google's default access.
-
 - [ ] **GR-003 Data layer: feed, snapshot, dates and slugs** (M)
   - **Why:** Every page reads listings through one module, so validation, the snapshot fallback, Lagos dates and stable slugs must be right once. The first-draft slug rule (`-2` on collision) could move a listing to another URL when rows were reordered.
   - **Do:** `src/data/feed.ts` (fetch `FEED_URL`, Zod schema, normalise, re-check link schemes, fall back to `snapshot.json` when the fetch fails, the response is invalid, or either list has under half the snapshot's count); `scripts/snapshot.ts` (`npm run snapshot`); first `src/data/snapshot.json` from the live feed; `src/lib/dates.ts` (Lagos today, deadline status, days left, "new this week"); `src/lib/slug.ts` (hash suffix on collision, spec 6.1); `src/lib/filters.ts` (filter and search logic shared by build and browser, used from GR-006).
