@@ -1,0 +1,48 @@
+---
+// Who can apply, as a plain labelled list. No ticks: a tick beside "2:1 or above"
+// would read as "you meet this" (owner decision, 15 Nov 2026).
+interface Props {
+  items: { label: string; value: string }[];
+}
+const { items } = Astro.props;
+---
+
+{items.length === 0 ? (
+  <p class="none">Requirements not stated. Check the organisation's page before you apply.</p>
+) : (
+  <dl class="elig">
+    {items.map((i) => (
+      <div class="elig__row">
+        <dt>{i.label}</dt>
+        <dd>{i.value}</dd>
+      </div>
+    ))}
+  </dl>
+)}
+
+<style>
+  .elig {
+    margin: 0;
+    border-top: var(--border-thin) solid var(--color-rule);
+  }
+  .elig__row {
+    display: grid;
+    grid-template-columns: minmax(0, var(--label-width)) minmax(0, 1fr);
+    gap: var(--space-3);
+    padding: var(--space-2) 0;
+    border-bottom: var(--border-thin) solid var(--color-rule);
+  }
+  dt {
+    color: var(--color-ink-muted);
+    font-size: var(--font-size-sm);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-caps);
+    padding-top: var(--space-1);
+  }
+  dd {
+    margin: 0;
+  }
+  .none {
+    color: var(--color-ink-muted);
+  }
+</style>

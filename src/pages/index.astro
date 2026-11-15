@@ -1,7 +1,11 @@
 ---
-// Placeholder until the list page (GR-006). No styling on purpose: the brand is chosen in GR-004.
-// It shows live counts only to prove the build reads the feed (GR-003).
+// Placeholder until the list page (GR-006), now in the chosen design (GR-005). Shows live
+// counts to prove the build reads the feed, and the data's own date so a site stuck on
+// the snapshot shows an old date.
+import Hero from '../components/Hero.astro';
+import SafetyNote from '../components/SafetyNote.astro';
 import { getListings } from '../data/feed.ts';
+import Base from '../layouts/Base.astro';
 import { effectiveStatus, lagosToday } from '../lib/dates.ts';
 
 const listings = await getListings();
@@ -10,33 +14,30 @@ const open = (items: { status: string; deadline: string }[]) =>
   items.filter((i) => effectiveStatus(i, today) !== 'Closed').length;
 const openJobs = open(listings.jobs);
 const openTrainings = open(listings.trainings);
-// The day the data was produced, in Lagos. On snapshot fallback this is the snapshot's
-// date, so a stuck site shows an old date instead of hiding it.
 const parsed = new Date(listings.generatedAt);
-const dataDay = Number.isNaN(parsed.getTime()) ? 'unknown' : lagosToday(parsed);
+const dataDay = Number.isNaN(parsed.getTime()) ? '' : lagosToday(parsed);
 ---
 
-<html lang="en-GB">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Graduate Radar</title>
-    <meta
-      name="description"
-      content="A free, checked list of graduate trainee programmes, entry-level jobs and free tech trainings for Nigerian graduates."
-    />
-  </head>
-  <body>
-    <h1>Graduate Radar</h1>
+<Base
+  title="Graduate Radar"
+  description="A free, checked list of graduate trainee programmes, entry-level jobs and free tech trainings for Nigerian graduates."
+  current="jobs"
+>
+  <Hero updated={dataDay} />
+  <div class="soon">
     <p>
-      A free, checked list of graduate trainee programmes, entry-level jobs and free tech trainings
-      for Nigerian graduates. The website is on its way.
+      Open now: {openJobs} jobs and {openTrainings} trainings. The full list with search and filters
+      is on its way.
     </p>
-    <p>
-      Open now: {openJobs} jobs and {openTrainings} trainings. Data from {dataDay}.
-    </p>
-    <p>
-      <strong>Never pay to apply.</strong>
-    </p>
-  </body>
-</html>
+    <SafetyNote />
+  </div>
+</Base>
+
+<style>
+  .soon {
+    display: grid;
+    gap: var(--space-4);
+    max-width: var(--measure);
+    margin-inline: auto;
+  }
+</style>

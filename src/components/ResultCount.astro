@@ -1,0 +1,20 @@
+---
+// How many openings match. Announced politely when filters change (GR-006).
+interface Props {
+  count: number;
+  noun?: string;
+}
+const { count, noun = 'opening' } = Astro.props;
+const text = count === 0 ? 'No openings match' : `${count} ${count === 1 ? noun : `${noun}s`}`;
+---
+
+<p class="count" aria-live="polite">
+  {text}
+</p>
+
+<style>
+  .count {
+    font-weight: var(--weight-semibold);
+    font-variant-numeric: tabular-nums;
+  }
+</style>

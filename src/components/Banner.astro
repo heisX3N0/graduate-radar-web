@@ -1,0 +1,49 @@
+---
+// A page-level notice. "closed" is used on detail pages of closed listings
+// ("This opening has closed"), "warning" for scam warnings, "info" for anything else.
+interface Props {
+  kind: 'info' | 'warning' | 'closed';
+  title: string;
+}
+const { kind, title } = Astro.props;
+---
+
+<section class={`banner banner--${kind}`} aria-label={title}>
+  <p class="banner__title">{title}</p>
+  <div class="banner__body">
+    <slot />
+  </div>
+</section>
+
+<style>
+  .banner {
+    display: grid;
+    gap: var(--space-1);
+    padding: var(--space-3) var(--space-4);
+    color: var(--color-ink);
+  }
+  .banner__title {
+    font-family: var(--font-display);
+    font-weight: var(--weight-bold);
+    font-size: var(--font-size-md);
+  }
+  .banner__body:empty {
+    display: none;
+  }
+  .banner--info {
+    background: var(--color-neutral-bg);
+  }
+  .banner--warning {
+    background: var(--color-soon-bg);
+    border-left: var(--border-accent) solid var(--color-soon);
+  }
+  .banner--closed {
+    background: var(--color-surface);
+    border: var(--border-strong) solid var(--color-ink);
+  }
+  .banner--closed .banner__title {
+    color: var(--color-soon);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-caps);
+  }
+</style>

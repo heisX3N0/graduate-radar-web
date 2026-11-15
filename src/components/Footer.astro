@@ -1,0 +1,50 @@
+---
+// Every page ends with the trust basics and a link to Stay safe (acceptance criterion 7).
+---
+
+<footer class="footer">
+  <div class="container footer__inner">
+    <p>
+      <strong>Never pay to apply.</strong> We don't hire or process applications. We gather openings
+      in one place.
+    </p>
+    <p>New openings are added every Tuesday and Friday, and closed ones are marked.</p>
+    <ul>
+      <li>
+        <a href="/stay-safe">Stay safe</a>
+      </li>
+      <li>
+        <a href="/about">About Graduate Radar</a>
+      </li>
+    </ul>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    margin-top: var(--space-12);
+    background: var(--color-neutral-bg);
+    border-top: var(--border-strong) solid var(--color-ink);
+  }
+  .footer__inner {
+    display: grid;
+    gap: var(--space-2);
+    padding-block: var(--space-6);
+    font-size: var(--font-size-sm);
+    color: var(--color-ink);
+  }
+  ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--space-4);
+  }
+  a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-min);
+    color: var(--color-ink);
+    font-weight: var(--weight-semibold);
+  }
+</style>

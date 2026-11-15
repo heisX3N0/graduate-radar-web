@@ -117,7 +117,7 @@ npm test
 npm run build
 ```
 
-`npm run lint` runs ESLint, Prettier (check only) and the dash check (`scripts/check-dashes.ts`), which fails on any em or en dash in source, docs or root markdown files.
+`npm run lint` runs ESLint, Prettier (check only) and the dash check (`scripts/check-dashes.ts`), which fails on any em or en dash in source, docs or root files, and the style check (`scripts/check-styles.ts`), which fails on any hard-coded colour, size or spacing in a component or layout style (use `src/styles/tokens.css`).
 
 ## Environment variables
 

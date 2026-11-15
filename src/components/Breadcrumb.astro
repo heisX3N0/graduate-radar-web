@@ -1,0 +1,51 @@
+---
+// Where you are: "Jobs / Deloitte Academy". The last item is the current page.
+interface Props {
+  items: { label: string; href?: string }[];
+}
+const { items } = Astro.props;
+const last = items.length - 1;
+---
+
+<nav class="crumbs" aria-label="Breadcrumb">
+  <ol>
+    {items.map((item, i) => (
+      <li>
+        {item.href && i < last ? (
+          <a href={item.href}>{item.label}</a>
+        ) : (
+          <span aria-current="page">{item.label}</span>
+        )}
+      </li>
+    ))}
+  </ol>
+</nav>
+
+<style>
+  ol {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-2);
+    font-size: var(--font-size-sm);
+    color: var(--color-ink-muted);
+  }
+  li + li::before {
+    content: '/';
+    margin-right: var(--space-2);
+  }
+  a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-min);
+    color: var(--color-primary);
+  }
+  [aria-current='page'] {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-min);
+    overflow-wrap: anywhere;
+  }
+</style>

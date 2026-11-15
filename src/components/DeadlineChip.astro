@@ -1,0 +1,49 @@
+---
+// The closing date as a boxed stamp: red when 7 days or fewer are left, muted when
+// closed, ink otherwise. Wording from deadlineDisplay (src/lib/listing-text.ts).
+import { deadlineDisplay } from '../lib/listing-text.ts';
+
+interface Props {
+  listing: { status: string; deadline: string };
+  today: string;
+}
+const { listing, today } = Astro.props;
+const d = deadlineDisplay(listing, today);
+const variant = d.kind === 'closed' ? 'closed' : d.urgent ? 'urgent' : 'calm';
+---
+
+<p class={`deadline deadline--${variant}`}>
+  <strong class="deadline__text">{d.text}</strong>
+  {d.sub && <span class="deadline__sub">{d.sub}</span>}
+</p>
+
+<style>
+  .deadline {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    border: var(--border-strong) solid currentColor;
+    font-size: var(--font-size-sm);
+    line-height: var(--line-snug);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-caps);
+    font-variant-numeric: tabular-nums;
+  }
+  .deadline--calm {
+    color: var(--color-ink);
+  }
+  .deadline--urgent {
+    color: var(--color-soon);
+  }
+  .deadline--closed {
+    color: var(--color-ink-muted);
+  }
+  .deadline__text {
+    font-weight: var(--weight-bold);
+  }
+  .deadline__sub {
+    font-weight: var(--weight-regular);
+  }
+</style>

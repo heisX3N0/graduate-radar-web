@@ -1,0 +1,80 @@
+---
+// The masthead: the name set like a newspaper title, with a double rule under it,
+// and the main sections.
+interface Props {
+  current?: 'jobs' | 'trainings' | 'stay-safe' | 'about' | undefined;
+}
+const { current } = Astro.props;
+const links = [
+  { key: 'jobs', href: '/', label: 'Jobs' },
+  { key: 'trainings', href: '/trainings', label: 'Trainings' },
+  { key: 'stay-safe', href: '/stay-safe', label: 'Stay safe' },
+] as const;
+---
+
+<header class="masthead">
+  <div class="container masthead__inner">
+    <a class="wordmark" href="/">
+      Graduate Radar
+    </a>
+    <nav aria-label="Main">
+      <ul>
+        {links.map((l) => (
+          <li>
+            <a href={l.href} aria-current={current === l.key ? 'page' : undefined}>
+              {l.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .masthead {
+    background: var(--color-bg);
+    border-bottom: var(--border-double) double var(--color-ink);
+  }
+  .masthead__inner {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-1);
+    padding-top: var(--space-3);
+  }
+  .wordmark {
+    font-family: var(--font-display);
+    font-weight: var(--weight-bold);
+    font-size: var(--font-size-xl);
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    color: var(--color-ink);
+    text-decoration: none;
+    min-height: var(--tap-min);
+    display: inline-flex;
+    align-items: center;
+  }
+  ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0 var(--space-4);
+  }
+  nav a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-min);
+    color: var(--color-ink);
+    font-weight: var(--weight-semibold);
+    text-decoration: none;
+    border-bottom: var(--border-double) solid transparent;
+  }
+  nav a[aria-current='page'] {
+    border-bottom-color: var(--color-primary);
+  }
+  nav a:hover {
+    text-decoration: underline;
+  }
+</style>
