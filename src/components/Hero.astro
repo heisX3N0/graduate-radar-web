@@ -1,5 +1,5 @@
 ---
-// One line on what this is, the update schedule, and when the data was last updated.
+// One line on what this is, and when the data was last updated (no schedule: GR-011).
 // `updated` is the data's own date (the feed's or the snapshot's), never the build date,
 // so a site stuck on the snapshot shows an old date.
 import { shortDate } from '../lib/dates.ts';
@@ -14,10 +14,7 @@ const updatedText = shortDate(updated);
 
 <section class="hero">
   <h1>{heading}</h1>
-  <p class="hero__what">
-    Graduate trainee programmes, entry-level jobs and free tech trainings. Updated every Tuesday and
-    Friday.
-  </p>
+  <p class="hero__what">Graduate trainee programmes, entry-level jobs and free tech trainings.</p>
   {updatedText && <p class="hero__updated">Last updated {updatedText}</p>}
 </section>
 

@@ -12,7 +12,7 @@ The owner's global rules (`~/.claude/CLAUDE.md`, version 2026-10-22) apply in fu
 ## Gates (run all five before every commit)
 
 ```bash
-npm run lint    # eslint, prettier --check, dash check, style check (tokens only)
+npm run lint    # eslint, prettier --check, dash check, style check (tokens only), schedule check
 npm run check   # astro check (types)
 npm test        # vitest
 npm run build   # astro build, then the dist scan and the page weight budgets
@@ -40,7 +40,7 @@ No automatic PR review on this repo. Run `/code-review` on the diff before openi
 - Mobile first, low data: keep JS minimal; prefer static HTML; respect the budgets in spec section 6.6.
 - Use design tokens from `src/styles/tokens.css`; no hard-coded colours, sizes or spacing in components.
 - Trust copy matters: keep "Never pay to apply" on every detail page.
-- Plain, warm British/Nigerian English in UI copy; no em or en dashes anywhere (the dash check enforces this).
+- Plain, warm British/Nigerian English in UI copy; no em or en dashes anywhere (the dash check enforces this). No update schedule in copy or docs (the schedule check enforces this).
 - Before finishing a task: run the gates and check the page at 360 px width.
 
 ## Infrastructure cost

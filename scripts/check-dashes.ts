@@ -20,7 +20,7 @@ const EM = String.fromCharCode(0x2014);
 const EN = String.fromCharCode(0x2013);
 const DASHES: Record<string, DashFinding['char']> = { [EM]: 'em dash', [EN]: 'en dash' };
 
-function walk(dir: string, out: string[]) {
+export function walk(dir: string, out: string[]) {
   let names: string[];
   try {
     names = readdirSync(dir);
