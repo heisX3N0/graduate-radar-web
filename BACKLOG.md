@@ -8,15 +8,6 @@ Owner decisions that apply to every item (15 Nov 2026): `*.pages.dev` address fo
 
 ---
 
-- [ ] **GR-009 Phone testing and budgets** (M)
-  - **Why:** The audience is on mid-range Android over slow data; spec 6.6 sets hard budgets.
-  - **Do:** Lighthouse mobile on the production URL (home, a job page, trainings), page weight and JS size measured, fixes for anything over budget. Owner tests on 3 or more real Android phones over mobile data.
-  - **Tests:** Negative first: a CI size check fails if home page JS is over 50 KB gzipped or home page transfer is over 150 KB (excluding analytics); a 360 px screenshot check fails on horizontal scroll. Happy path: Lighthouse mobile Performance at least 90, Accessibility at least 95, SEO at least 95 (3 runs each, median reported).
-  - **Docs:** `docs/done.md` entry with the measured numbers and sample sizes.
-  - **Cost:** per visit: nothing metered. Users supported: unchanged.
-  - **Depends on:** GR-006, GR-007, GR-008.
-  - **Open questions for the owner:** none.
-
 - [ ] **GR-010 Launch** (S)
   - **Why:** The sheet's `Start here` tab and the WhatsApp post still point to the old "Publish to web" view.
   - **Do:** Draft the new `Start here` text and the WhatsApp post for you. You publish them; editing the sheet and posting are yours to approve, and I only change the sheet if you ask me to.
