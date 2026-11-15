@@ -6,7 +6,21 @@ import {
   isRealDay,
   lagosToday,
   readDeadline,
+  shortDate,
 } from '../src/lib/dates.ts';
+
+describe('shortDate', () => {
+  it('formats a real day as "27 Nov"', () => {
+    expect(shortDate('2026-11-27')).toBe('27 Nov');
+    expect(shortDate('2027-01-03')).toBe('3 Jan');
+  });
+
+  it('returns an empty string for anything that is not a real day', () => {
+    expect(shortDate('2026-11-31')).toBe('');
+    expect(shortDate('Rolling')).toBe('');
+    expect(shortDate('')).toBe('');
+  });
+});
 
 describe('lagosToday', () => {
   it('is already the next day in Lagos at 23:30 UTC', () => {
