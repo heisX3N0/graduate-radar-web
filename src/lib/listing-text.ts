@@ -1,7 +1,7 @@
 // Shared wording for listings: cards, detail pages and the share button all use these,
 // so a listing reads the same everywhere. No Node-only APIs (also used in the browser).
-import { isAllowedLink } from '../data/schema.ts';
 import { effectiveStatus, isNewThisWeek, lagosToday, readDeadline, shortDate } from './dates.ts';
+import { isAllowedLink } from './links.ts';
 
 interface HasDeadline {
   status: string;
@@ -62,6 +62,17 @@ export function statusBadges(
   if (listing.remote) kinds.push('remote');
   if (isNewThisWeek(listing.firstSeen, today)) kinds.push('new');
   return kinds.map((kind) => ({ kind, text: BADGE_TEXT[kind] }));
+}
+
+/**
+ * What a card should show today: its deadline wording and badges. The browser uses
+ * this to refresh cards rendered at build time, so labels stay right between builds.
+ */
+export function cardState(
+  listing: HasDeadline & { firstSeen: string; remote?: boolean },
+  today: string,
+): { deadline: DeadlineDisplay; badges: { kind: BadgeKind; text: string }[] } {
+  return { deadline: deadlineDisplay(listing, today), badges: statusBadges(listing, today) };
 }
 
 interface Eligibility {

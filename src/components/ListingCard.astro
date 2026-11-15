@@ -4,7 +4,8 @@
 // badges, title, organisation, type and field, location, deadline, eligibility,
 // then the Checked stamp.
 import type { JobListing, TrainingListing } from '../data/feed.ts';
-import { eligibilitySummary, statusBadges } from '../lib/listing-text.ts';
+import { isRealDay } from '../lib/dates.ts';
+import { eligibilitySummary, statusBadges, type BadgeKind } from '../lib/listing-text.ts';
 import DeadlineChip from './DeadlineChip.astro';
 import StatusBadge from './StatusBadge.astro';
 import StatusStamp from './StatusStamp.astro';
@@ -16,10 +17,14 @@ type Props =
 const props = Astro.props;
 const { listing, today } = props;
 const href = `/${props.kind === 'job' ? 'jobs' : 'trainings'}/${listing.slug}`;
-const badges = statusBadges(
-  { ...listing, remote: props.kind === 'job' ? props.listing.remote : false },
-  today,
-);
+const remote = props.kind === 'job' ? props.listing.remote : false;
+const active = new Set(statusBadges({ ...listing, remote }, today).map((b) => b.kind));
+// Render every badge that could apply to this listing, hidden when not active today, so
+// the list script can switch them on or off between builds without losing styles.
+const possible: BadgeKind[] = [];
+if (isRealDay(listing.deadline) || listing.status === 'Closing soon') possible.push('soon');
+if (remote) possible.push('remote');
+if (isRealDay(listing.firstSeen)) possible.push('new');
 const by = props.kind === 'job' ? props.listing.organisation : props.listing.provider;
 const meta =
   props.kind === 'job'
@@ -31,11 +36,11 @@ const summary =
 ---
 
 <article class="card">
-  {badges.length > 0 && (
-    <ul class="card__badges" aria-label="Status">
-      {badges.map((b) => (
-        <li>
-          <StatusBadge kind={b.kind} />
+  {possible.length > 0 && (
+    <ul class="card__badges" aria-label="Status" hidden={active.size === 0}>
+      {possible.map((kind) => (
+        <li data-badge={kind} hidden={!active.has(kind)}>
+          <StatusBadge kind={kind} />
         </li>
       ))}
     </ul>
@@ -70,6 +75,10 @@ const summary =
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2);
+  }
+  .card__badges[hidden],
+  .card__badges > [hidden] {
+    display: none;
   }
   .card__title {
     font-size: var(--font-size-lg);

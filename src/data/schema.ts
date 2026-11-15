@@ -62,7 +62,5 @@ export type Job = z.infer<typeof JobSchema>;
 export type Training = z.infer<typeof TrainingSchema>;
 export type Feed = z.infer<typeof FeedSchema>;
 
-/** Apply links must be https, http or mailto (spec section 5.1). */
-export function isAllowedLink(link: string): boolean {
-  return /^(https?:\/\/|mailto:)\S/i.test(link.trim());
-}
+/** Apply links must be https, http or mailto (spec section 5.1). One copy, in lib/links.ts. */
+export { isAllowedLink } from '../lib/links.ts';

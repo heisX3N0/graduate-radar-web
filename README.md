@@ -43,6 +43,18 @@ npm run snapshot
 
 It reads `FEED_URL` from the environment or `.env` and uses the build's own rules: it refuses to write if the feed is unreachable or has the wrong shape, has no jobs or trainings, or has fewer than half the listings still open in the current snapshot (add `-- --force` to accept a smaller feed on purpose; an empty list is never accepted). Bad listings are dropped, as in the build. Commit the new `src/data/snapshot.json`.
 
+## Search and filters (`/` and `/trainings`)
+
+The server renders every open listing (closed and past-deadline listings are never in the HTML), so the full list works with JavaScript off. `src/scripts/list-page.ts` (10,185 bytes gzipped, measured on the 15 Nov 2026 build; budget 50 KB) adds search, filters and sort on top, and re-checks deadlines against today in Lagos so a listing that closed since the last build disappears.
+
+- **Logic:** `src/lib/filters.ts`, shared by the build and the browser (imports only `dates.ts` and Fuse.js, so no Zod reaches the browser).
+- **Search:** Fuse.js (`fuse.js/basic`), threshold 0.35, over title, organisation or provider, field or track, location, degree class and eligibility. Typo-tolerant ("Deloite" finds Deloitte).
+- **Jobs filters:** Type, Field, Location (Lagos, Abuja, Port Harcourt, Other Nigeria, Remote; "listed as Lagos" notes are ignored), Remote only, Closing soon (7 days or fewer), Degree class I have (2:1 or above shows everything; 2:2 hides 2:1-only listings; "Third class or pass" shows only listings that accept any class or do not state one; owner decision 15 Nov 2026).
+- **Trainings filters:** Track, Cost (Free, Free + stipend, Scholarship, Low-cost), Format (Online, In person, Hybrid, Not stated), Job placement, Closing soon.
+- **Sort:** closing soonest (dated deadlines first, earliest first, then the rest newest first) or newest.
+- **URL:** `q`, `type`, `field`, `loc`, `remote=1`, `soon=1`, `class=21|22|any`, `sort=new` (jobs); `q`, `track`, `cost`, `format`, `place=1`, `soon=1`, `sort=new` (trainings). Defaults are left out; unknown or malformed values are ignored, so any link loads. The search text only ever goes into this page's own URL; the page makes no network requests for search.
+- **Phones:** search is always visible; the other filters fold under "Filters and sort", which opens on desktop and when a shared link has filters set, and shows how many are on.
+
 ## Data feed (Apps Script)
 
 `apps-script/Feed.gs` turns the sheet's two public tabs into JSON. It runs inside the sheet's own Apps Script project; the repo copy exists so it can be tested (`tests/feed.test.ts`). Change it here first, run the tests, then paste it into the script editor so the two stay the same.

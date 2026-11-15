@@ -1,0 +1,132 @@
+---
+// The body of a list page: filters (sidebar from 960 px), result count, the listing
+// cards, and an empty state. Every open listing is rendered on the server, so the full
+// list works without JavaScript; src/scripts/list-page.ts adds search, filters, sort and
+// URL state on top. The page passes its data block (JSON) for the script.
+import EmptyState from './EmptyState.astro';
+import FilterBar from './FilterBar.astro';
+import ResultCount from './ResultCount.astro';
+
+interface Props {
+  count: number;
+  clearHref: string;
+  dataJson: string;
+  filtersLabel: string;
+}
+const { count, clearHref, dataJson, filtersLabel } = Astro.props;
+---
+
+<div class="lists" data-list-page>
+  <form
+    class="lists__filters"
+    data-filters
+    role="search"
+    aria-label={filtersLabel}
+    action={clearHref}
+    method="get"
+  >
+    <FilterBar>
+      <slot name="search" />
+      <details class="lists__more" data-more>
+        <summary>
+          Filters and sort <span class="lists__active" data-active></span>
+        </summary>
+        <div class="lists__more-body">
+          <slot name="filters" />
+        </div>
+      </details>
+    </FilterBar>
+  </form>
+  <div class="lists__results">
+    <div class="lists__count" data-count>
+      <ResultCount count={count} />
+      <a class="lists__clear" href={clearHref} data-clear>
+        Clear filters
+      </a>
+    </div>
+    <ul class="lists__items" data-items>
+      <slot />
+    </ul>
+    <div data-empty data-clear hidden>
+      <EmptyState clearHref={clearHref} />
+    </div>
+  </div>
+</div>
+<script type="application/json" id="list-data" set:html={dataJson} is:inline />
+<script>
+  import { initListPage } from '../scripts/list-page.ts';
+  initListPage();
+</script>
+
+<style>
+  .lists {
+    display: grid;
+    gap: var(--space-4);
+  }
+  @media (min-width: 60rem) {
+    .lists {
+      grid-template-columns: var(--sidebar) minmax(0, 1fr);
+      align-items: start;
+    }
+  }
+  .lists__count {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding-bottom: var(--space-2);
+    border-bottom: var(--border-thin) solid var(--color-rule);
+  }
+  /* On phones the filters fold under one button so the listings start near the top;
+     search stays visible. The script opens it on desktop and when a shared link has
+     filters set. */
+  .lists__more {
+    width: 100%;
+  }
+  .lists__more > summary {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--tap-min);
+    font-weight: var(--weight-semibold);
+    cursor: pointer;
+  }
+  .lists__active {
+    color: var(--color-primary);
+  }
+  .lists__more-body {
+    display: grid;
+    gap: var(--space-3);
+    padding-top: var(--space-2);
+  }
+  .lists__clear[hidden] {
+    display: none;
+  }
+  .lists__clear {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-min);
+  }
+  .lists__items {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: var(--space-4);
+    padding-top: var(--space-4);
+  }
+  .lists__items > :global([hidden]) {
+    display: none;
+  }
+  @media (min-width: 40rem) {
+    .lists__items {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 75rem) {
+    .lists__items {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+</style>

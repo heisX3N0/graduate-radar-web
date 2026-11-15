@@ -1,15 +1,18 @@
 ---
-// Holds the search box, filters and sort. A wrapping row of chips on phones; a sidebar
-// column from 960 px. Behaviour comes in GR-006.
+// Holds the search box, filters and sort. A wrapping row on phones; a sidebar column from
+// 960 px. With a label it is a named region; without one (for example inside a labelled
+// search form) it is a plain container, so the page does not get two landmarks with the
+// same name.
 interface Props {
   label?: string;
 }
-const { label = 'Filters' } = Astro.props;
+const { label } = Astro.props;
+const Tag = label ? 'section' : 'div';
 ---
 
-<section class="filters" aria-label={label}>
+<Tag class="filters" aria-label={label}>
   <slot />
-</section>
+</Tag>
 
 <style>
   .filters {

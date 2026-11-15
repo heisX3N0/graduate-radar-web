@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   applyAction,
+  cardState,
   deadlineDisplay,
   eligibilityItems,
   eligibilitySummary,
@@ -20,6 +21,32 @@ const base = {
   nysc: 'Required done',
   eligibility: 'Computer Science or related',
 };
+
+describe('browser safety', () => {
+  it('listing-text and filters never import the Zod schema (keeps the browser bundle small)', async () => {
+    const { readFileSync } = await import('node:fs');
+    for (const f of [
+      '../src/lib/listing-text.ts',
+      '../src/lib/filters.ts',
+      '../src/lib/links.ts',
+    ]) {
+      const src = readFileSync(new URL(f, import.meta.url), 'utf8');
+      expect(src, f).not.toMatch(/data\/schema|astro\/zod/);
+    }
+  });
+});
+
+describe('cardState: what a card shows today, recomputed in the browser', () => {
+  it('drops New this week once a listing is 7 days old, and updates days left', () => {
+    const s = cardState({ ...base, firstSeen: '2026-11-08', deadline: '2026-11-19' }, TODAY);
+    expect(s.badges.map((b) => b.kind)).toEqual(['soon']);
+    expect(s.deadline).toMatchObject({ text: 'Closes 19 Nov', sub: '4 days left', urgent: true });
+  });
+
+  it('marks a listing closed once its deadline passes', () => {
+    expect(cardState({ ...base, deadline: '2026-11-14' }, TODAY).deadline.kind).toBe('closed');
+  });
+});
 
 describe('applyAction: what must be refused', () => {
   it.each(['javascript:alert(1)', 'data:text/html,x', 'ftp://x.com', 'www.x.com', '', 'mailto:'])(
