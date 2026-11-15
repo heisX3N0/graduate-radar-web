@@ -58,16 +58,6 @@ Owner decisions that apply to every item (15 Nov 2026): `*.pages.dev` address fo
   - **Open questions for the owner:** none.
   - **Owner decisions (2026-11-15):** `/about` says nothing more about who runs the site than the sheet's `Start here` tab does today (no name, no company). Its copy is adapted from that tab: what Graduate Radar is, how it works (added every Tuesday and Friday, links to the employer's own page, suspicious listings checked and left out), what each section holds, how to read a listing, stay safe, and good to know ("we don't hire or process applications", "always confirm on the organisation's page"). Deviation for the website: drop the "Found via" line (that field never reaches the site) and the "use Ctrl+F" tip (the site has search). "WhatsApp channel: coming soon" stays out until a channel exists.
 
-- [ ] **GR-008 Deploy, daily rebuild and analytics** (M)
-  - **Why:** The site must update itself from the sheet with no manual work, and be live on `*.pages.dev`.
-  - **Do:** Connect the repo to Cloudflare Pages (build command, `FEED_URL` as a build variable), create the deploy hook, put it in the Apps Script's Script Properties as `DEPLOY_HOOK_URL`, run `installRebuildTrigger()` once, turn on Cloudflare Web Analytics. You do the dashboard steps (they change account settings); I guide each one. Add Graduate Radar's rows to agent-vault's `shared-quotas.md` after merge.
-  - **Tests:** Negative first: with `FEED_URL` unset the build uses the snapshot and logs the warning (checked in a preview deploy); with a wrong `FEED_URL` the same; a second run of `installRebuildTrigger()` leaves exactly one trigger. Happy path: change a listing's Notes in the sheet, run `triggerRebuild`, and the live page shows the change after the build; the next morning's 07:30 build appears in the deployments list without anyone touching it.
-  - **Docs:** README "Deploy", `docs/infra-capacity.md` with the first measured build time and build count.
-  - **Cost:** per day: 1 Pages build, 1 URL fetch, 2 to 3 Apps Script executions. Per month: about 31 of the account's roughly 300 remaining builds (estimate). Users supported: unchanged.
-  - **Depends on:** GR-002, GR-003.
-  - **Open questions for the owner:** none.
-  - **Owner decisions (2026-11-15):** Deploy early: build this right after GR-003 and before GR-004, so every later PR gets a preview URL to open on a phone. Cost of that choice: preview builds start counting against the shared 500 a month from day 2 instead of day 5 (about 10 to 20 extra builds in launch week, estimate).
-
 - [ ] **GR-009 Phone testing and budgets** (M)
   - **Why:** The audience is on mid-range Android over slow data; spec 6.6 sets hard budgets.
   - **Do:** Lighthouse mobile on the production URL (home, a job page, trainings), page weight and JS size measured, fixes for anything over budget. Owner tests on 3 or more real Android phones over mobile data.
