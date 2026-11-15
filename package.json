@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build && node scripts/check-dist.ts",
+    "build": "astro build && node scripts/check-dist.ts && node scripts/check-budgets.ts",
     "preview": "astro preview",
     "check": "astro check",
     "lint": "eslint . && prettier --check . && node scripts/check-dashes.ts && node scripts/check-styles.ts",
@@ -17,7 +17,9 @@
     "test": "vitest run",
     "snapshot": "node scripts/snapshot.ts",
     "og": "node scripts/og/render.ts",
-    "check:dist": "node scripts/check-dist.ts"
+    "check:dist": "node scripts/check-dist.ts",
+    "check:mobile": "node scripts/check-mobile.ts",
+    "check:budgets": "node scripts/check-budgets.ts"
   },
   "dependencies": {
     "astro": "7.4.12",

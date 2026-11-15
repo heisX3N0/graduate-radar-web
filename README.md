@@ -64,6 +64,12 @@ The server renders every open listing (closed and past-deadline listings are nev
 - **sitemap.xml** lists the main pages and every open listing; **robots.txt** allows everything and points to the sitemap. `/design` and `404` carry `noindex`.
 - **`npm run check:dist`** (CI runs it after the build) scans `dist/` and fails if any file contains "Found via" or the private "Postgrad Scholarships" tab name, if a detail page lacks "Never pay to apply", or if no detail pages were built.
 
+## Budgets and phone checks (spec 6.6)
+
+- **Page weight** (`scripts/check-budgets.ts`, part of `npm run build`): every built page must stay within 50 KB of JavaScript and a 150 KB first load (HTML plus its CSS and JS), gzipped. Cloudflare's analytics script is added at serve time and is not counted. On 15 Nov 2026 the home page was 18.8 KB (HTML 7.3, CSS 1.4, JS 10.0).
+- **360 px** (`scripts/check-mobile.ts`, `npm run check:mobile`, run in CI after the build): opens every built page in headless Chrome or Edge at 360 x 800 and fails on sideways scroll or a tap target under 44 px (inline text links in a sentence are exempt). Needs Chrome or Edge installed, or `CHROME_PATH`.
+- **Lighthouse** is run by hand on the live site (it is not a CI step): mobile defaults, 3 runs per page, median reported in `docs/done.md`.
+
 ## Data feed (Apps Script)
 
 `apps-script/Feed.gs` turns the sheet's two public tabs into JSON. It runs inside the sheet's own Apps Script project; the repo copy exists so it can be tested (`tests/feed.test.ts`). Change it here first, run the tests, then paste it into the script editor so the two stay the same.

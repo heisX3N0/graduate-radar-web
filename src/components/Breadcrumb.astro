@@ -22,6 +22,16 @@ const last = items.length - 1;
 </nav>
 
 <style>
+  /* overflow: hidden also makes the breadcrumb ask for no minimum width, so a long title
+     on one row can never widen a grid column (found by the 360 px check on /design). */
+  .crumbs {
+    min-width: 0;
+    overflow: hidden;
+    /* Room for the focus ring, which overflow would otherwise clip; the negative margin
+       keeps the layout where it was. */
+    padding: calc(var(--focus-ring-width) + var(--focus-ring-offset));
+    margin: calc((var(--focus-ring-width) + var(--focus-ring-offset)) * -1);
+  }
   /* One row: the links keep their full tap height; the current page (already the
      heading below) is cut short with an ellipsis instead of wrapping onto a second row. */
   ol {
