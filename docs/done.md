@@ -6,7 +6,7 @@ Finished backlog items, newest first. Each entry: ID and title, merge SHA, what 
 
 - [x] **GR-003 Data layer: feed, snapshot, dates and slugs** (M). Done in cf18964 (data layer) and 8a44fc6 (review fixes).
   - **Shipped:** `src/data/schema.ts` (feed contract in Zod, via Astro's bundled copy, so no new dependency; unknown fields stripped), `src/data/feed.ts` (`getListings()`: one fetch per build, 30 second timeout, per-listing checks, snapshot fallback, refuses an empty site, slugs), `src/lib/dates.ts` (Lagos today, deadlines, effective status, new this week, days-left labels), `src/lib/slug.ts` (hash suffix on collision; slugs never move when other rows change), `scripts/snapshot.ts` (`npm run snapshot`, same rules as the build), first `src/data/snapshot.json` from the live feed (17 jobs, 7 trainings). The placeholder page shows open counts and the date the data came from, to prove the build reads the feed.
-  - **Verified:** builds with the live feed (no warning), with no `FEED_URL` and with a broken URL (HTTP 404) both fell back to the snapshot with one warning; a local `.env` alone feeds the build. 100 tests (53 new for this item).
+  - **Verified:** builds with the live feed (no warning), with no `FEED_URL` and with a broken URL (HTTP 404) both fell back to the snapshot with one warning; a local `.env` alone feeds the build. 100 tests (61 new for this item: 25 dates, 8 slugs, 28 loader).
   - **Owner decisions (2026-11-15):** none new.
   - **Deviations:**
     1. `src/lib/filters.ts` moved to GR-006: its rules depend on that item's UI, and one ("Min class: Any") is an open question there.
