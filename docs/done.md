@@ -4,6 +4,15 @@ Finished backlog items, newest first. Each entry: ID and title, merge SHA, what 
 
 ---
 
+- [x] **GR-014 Say where "Checked" is confirmed, and who writes to the sheet** (S). Done in 8d43e60.
+  - **Shipped:** About now reads "**Checked** is the last date we confirmed on the employer's or provider's own page that the opening was real and still open." `docs/infra-capacity.md` principle 3: "The sheet is the only store; the owner and private automated processes write to it." Five lines made neutral: `docs/build-spec.md` Data feed row, the feed setup paragraph and one bullet in the later list (removed); `docs/infra-capacity.md` Apps Script URL fetch row and upgrade step 2. 2 new tests in `tests/detail-pages.test.ts` (392 in total).
+  - **Verified (15 Nov 2026, one run each):** the built `about.html` has the new sentence once and not the old one; all five gates passed (30 pages at 360 px).
+  - **Not verified (owner):** the live About page after the deploy.
+  - **Owner decisions (2026-11-15):** "Checked" stays as the word; the definition names the employer's or provider's own page; principle 3 gets one neutral line; the five existing lines are made neutral here; `docs/public-routes.md` unchanged.
+  - **Deviations:**
+    1. Principle 3 no longer names the sweep separately; "private automated processes" covers it.
+    2. The item's `git grep` check was run by hand, not added as a test, so no public test file has to name what it looks for.
+
 - [x] **GR-013 WhatsApp channel link in the footer and on About** (S). Done in 95ebfff (link) and 8f2d37c (review fixes).
   - **Shipped:** `CHANNEL_URL` in `src/lib/site.ts` (`https://www.whatsapp.com/channel/0029VbDs41p11ulNTNQBxp1T`, the Graduate Radar Nigeria channel) and `isWhatsAppChannel`, which accepts only an https `www.whatsapp.com/channel/<ID>` address with nothing after it. Footer on every page: "Follow Graduate Radar on WhatsApp" beside Stay safe and About. About: a "Follow on WhatsApp" section, "See new openings in the Graduate Radar Nigeria channel on WhatsApp.", and the link. `scripts/check-dist.ts` now fails a build where a page has no site footer, a site footer lacks the channel link, About has no channel section of its own, or About is missing; it reads the site footer by its class, so a `<footer>` inside a card is not mistaken for it. README line. 14 new tests (390 in total).
   - **Verified (15 Nov 2026, one run each):** the channel link answered 200 with the page title "Graduate Radar Nigeria" (before the item). Built site: all 30 pages pass the new footer rule; About has the section; home page HTML 7.4 KB gzipped (was 7.3); 360 px check passes (the new link is at least 44 px tall).
