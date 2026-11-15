@@ -8,16 +8,6 @@ Owner decisions that apply to every item (15 Nov 2026): `*.pages.dev` address fo
 
 ---
 
-- [ ] **GR-004 Brand directions on /design** (M)
-  - **Why:** You asked for 2 to 3 real directions to choose from, not a generic template. The choice sets every token, so it comes before the component build.
-  - **Do:** Build `/design` (not in nav) showing 2 to 3 distinct directions. Each one has: a colour system (primary, warm "Closing soon" accent, neutrals, semantic colours) checked for WCAG AA and for sunlight readability on cheap screens; a type choice (system stack or one self-hosted variable font, with its weight in KB); a job card and a detail page header in that direction; and a short reason grounded in the audience (trust, phones, WhatsApp arrivals, Nigerian without clichés). Share the preview URL or screenshots at 360 px for you to pick.
-  - **Tests:** Negative first: any colour pair used for text below AA contrast fails a contrast check script; a direction whose font adds more than 50 KB fails the budget check. Happy path: each direction renders at 360 px with no horizontal scroll.
-  - **Docs:** A short "Brand directions" note in `docs/design.md` with each direction's reasoning; after your pick, record the choice and delete the rest.
-  - **Cost:** per visit: nothing metered. Builds: 1 per push. Users supported: unchanged.
-  - **Depends on:** GR-001.
-  - **Open questions for the owner:** none.
-  - **Owner decisions (2026-11-15):** No colour or brand preferences: start from the audience and brand attributes only. No logo for now; each direction sets the name "Graduate Radar" as a typographic wordmark in its own type, so no logo file is needed. A logo can be its own item later.
-
 - [ ] **GR-005 Design system: tokens and components** (L)
   - **Why:** Pages must be built only from shared components so later products (community, CV tool) reuse the look.
   - **Do:** Final `src/styles/tokens.css` and `global.css` from the chosen direction (spec section 7), then every component in spec 7 (Header, Footer, Hero, SearchInput, FilterBar, FilterChip, Select, ResultCount, ListingCard job and training variants, StatusBadge, DeadlineChip, EligibilityChecklist, ApplyButton with `mailto:`, ShareButton, SafetyNote, EmptyState, Banner, Breadcrumb). `/design` shows every component in every state. No Apply button on cards (owner decision).
@@ -25,7 +15,8 @@ Owner decisions that apply to every item (15 Nov 2026): `*.pages.dev` address fo
   - **Docs:** `docs/design.md` (tokens, component list, naming for later extraction).
   - **Cost:** per visit: nothing metered. Builds: 1 per push. Users supported: unchanged.
   - **Depends on:** GR-004 (your pick).
-  - **Open questions for the owner:** none until GR-004 is decided.
+  - **Open questions for the owner:** none.
+  - **Owner decisions (2026-11-15):** Direction A, Noticeboard, with the "Checked" stamp (`docs/design.md`). So: phone serif for headlines and phone sans for text (0 KB of fonts), A's colour tokens, square ruled cards, a boxed red deadline stamp, and a small ink-green "Checked <date>" stamp on every card (the word "Checked", not "Verified"; no ticks on eligibility). Add StatusStamp (checked) to the component list. Delete directions B and C, `src/design/samples.ts` if no longer used, and the `@fontsource-variable/bricolage-grotesque` dependency. Resolve the look-alike: the green "New this week" badge must not resemble the Checked stamp. Replace the hard-coded greys on `/design` with tokens (left from the GR-004 review).
 
 - [ ] **GR-006 Jobs and Trainings list pages** (L)
   - **Why:** Finding an opening you qualify for in under a minute is the main goal.

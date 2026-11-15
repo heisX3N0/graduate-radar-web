@@ -4,6 +4,15 @@ Finished backlog items, newest first. Each entry: ID and title, merge SHA, what 
 
 ---
 
+- [x] **GR-004 Brand directions on /design** (M). Done in f7734a8 (directions), 1199c5c (review fixes), 5baf30d (Checked stamp).
+  - **Shipped:** `/design` (noindex, not linked) with three directions (A. Noticeboard, B. Stamped, C. Bright Start), each beside a 360 px phone frame of real listings; `src/design/directions.ts` (tokens, type, reasoning, downsides), `src/design/contrast.ts` (WCAG contrast with a sunlight bar: body 7:1, everything else 4.5:1), `src/design/samples.ts` (safe sample picking), `shortDate` in `src/lib/dates.ts`, `docs/design.md`. 26 new tests (138 in total).
+  - **Verified:** every direction passes every contrast pair (ink on paper 15.9:1, 15.7:1, 16.4:1); font budget from real file sizes (C: 41.3 KB, A and B: 0 KB); 360 px in the browser pane, page width exactly 360 px and nothing past the edge (one run each, before and after the stamp).
+  - **Owner decisions (2026-11-15):** Direction A, Noticeboard, with B's verified stamp adapted as a quiet ink-green "Checked <date>" stamp (not "Verified"; no ticks on eligibility). Recorded in `docs/design.md` and in GR-005.
+  - **Deviations:**
+    1. The 360 px check was by hand in the browser pane, not an automatic test; the automatic check is in GR-009.
+    2. The other directions are not deleted here; GR-005 deletes B, C and the font dependency when it builds the system (so `/design` keeps working until then).
+    3. Review finding 6 (hard-coded greys on `/design`) moved to GR-005.
+
 - [x] **GR-008 Deploy, daily rebuild and analytics** (M). Done in ce36c84 (rebuild and steps), 8ad01ae (review fixes), f961ad5 (measured builds).
   - **Shipped:** live at https://graduate-radar.pages.dev (Cloudflare Pages, build image v3, Node from `.nvmrc`). `triggerRebuild` only calls `https://api.cloudflare.com/` hooks, throws on any non-2xx answer or network error, and never puts the hook URL in an error. Deploy hook `daily-rebuild` (branch `main`) in Script Properties; one time-based `triggerRebuild` trigger. Web Analytics enabled. Failed-deployment emails for production. README "Deploy (Cloudflare Pages)" with 11 steps and failure handling; `docs/public-routes.md` covers the hook; capacity doc has the first measured builds. 12 new tests (112 in total).
   - **Verified (15 Nov 2026):** live site HTTP 200 from Cloudflare's Lagos location, "Open now: 17 jobs and 7 trainings. Data from 2026-11-15" (one fetch). Preview `https://gr-008-deploy.graduate-radar.pages.dev` built for this PR, same counts, with the Web Analytics script. Owner screenshots: `FEED_URL` set, deploy hook present, one `triggerRebuild` trigger (not yet run), Web Analytics enabled, failed-deployment notification set.

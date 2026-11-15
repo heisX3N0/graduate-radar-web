@@ -1,5 +1,9 @@
 # Design
 
+## Chosen direction (owner, 15 Nov 2026)
+
+**A. Noticeboard, with the "Checked" stamp** (described below). GR-005 builds the design system from A's tokens and type, adds the stamp as a component, and deletes B, C and the Bricolage Grotesque dependency.
+
 ## Brand directions (GR-004)
 
 Three directions for the owner to choose from, shown on `/design` (not linked, not indexed). Each renders the same real listings from the feed at phone width, so the choice is about the look, not the content. The definitions live in `src/design/directions.ts`; the reasoning below is also on the page.
