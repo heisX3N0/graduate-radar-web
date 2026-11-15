@@ -7,7 +7,7 @@ Status: scaffold (GR-001), the Apps Script feed (GR-002), the data layer (GR-003
 ## How data flows
 
 ```
-Claude sweep (Tue and Fri 05:41 Lagos) -> Google Sheet (database)
+Claude sweep (scheduled)                -> Google Sheet (database)
 Apps Script web app (feed)              -> JSON of public listing fields only
 Daily 07:30 trigger                     -> Cloudflare Pages deploy hook
 Astro static build                      -> Cloudflare Pages (*.pages.dev)
@@ -58,7 +58,7 @@ The server renders every open listing (closed and past-deadline listings are nev
 ## Detail pages, SEO and sharing
 
 - **Pages:** `/jobs/<slug>` and `/trainings/<slug>` for every listing in the feed, including Closed ones checked in the last 60 days, so a shared link to a closed listing shows "This opening has closed" (no Apply button, links to similar open listings) instead of a 404. After 60 days the listing leaves the feed and its address gets the 404 page. Also `/about`, `/stay-safe` and `404`.
-- **Every page:** unique title and description, canonical link, Open Graph and Twitter tags with absolute URLs (from `SITE_URL`, default `https://graduate-radar.pages.dev`; `src/lib/site.ts`), and one sharing image, `public/og-default.png` (1200 x 630, 50.5 KB). Edit `scripts/og/og.html` and run `npm run og` to regenerate it (needs Edge or Chrome installed).
+- **Every page:** unique title and description, canonical link, Open Graph and Twitter tags with absolute URLs (from `SITE_URL`, default `https://graduate-radar.pages.dev`; `src/lib/site.ts`), and one sharing image, `public/og-default.png` (1200 x 630, 49.8 KB). Edit `scripts/og/og.html` and run `npm run og` to regenerate it (needs Edge or Chrome installed).
 - **JobPosting data** (schema.org JSON-LD) on open job pages only: never on closed or past-deadline listings, never on trainings. `validThrough` comes from the deadline when it is a date; remote jobs are marked telecommute, open to applicants in Nigeria. Google may still rank listings low because applications happen on the employer's site.
 - **Sharing:** the WhatsApp button opens `https://wa.me/?text=` with "title · organisation · Closes 27 Nov · page URL" ("Closed" for a past deadline).
 - **sitemap.xml** lists the main pages and every open listing; **robots.txt** allows everything and points to the sitemap. `/design` and `404` carry `noindex`.
@@ -150,7 +150,7 @@ npm test
 npm run build
 ```
 
-`npm run lint` runs ESLint, Prettier (check only) and the dash check (`scripts/check-dashes.ts`), which fails on any em or en dash in source, docs or root files, and the style check (`scripts/check-styles.ts`), which fails on any hard-coded colour, size or spacing in a component or layout style (use `src/styles/tokens.css`).
+`npm run lint` runs ESLint, Prettier (check only) and the dash check (`scripts/check-dashes.ts`), which fails on any em or en dash in source, docs or root files, and the style check (`scripts/check-styles.ts`), which fails on any hard-coded colour, size or spacing in a component or layout style (use `src/styles/tokens.css`), and the schedule check (`scripts/check-schedule.ts`), which fails on any claim about which days or how often the list is updated (patterns in the script) in the site, the sharing image, the launch drafts, this README or the spec. The site promises no schedule (owner decision, 15 Nov 2026), so the sweep can change frequency without a copy change. It never scans `dist/`, because listing notes from the sheet may name a day.
 
 ## Environment variables
 

@@ -17,7 +17,7 @@ It has search, filters (type, field, location, degree class) and a page for ever
 Trainings and scholarships: https://graduate-radar.pages.dev/trainings
 
 How it works
-New openings are added every Tuesday and Friday morning, and closed ones are marked.
+We add new openings and mark closed ones as we find them.
 Every listing links to the employer's or provider's own page wherever possible.
 This sheet is the list behind the website. The website updates from it every morning.
 
@@ -41,8 +41,6 @@ What's new:
 • Search, and filter by type, field, location and degree class
 • Every opening has its own page with the deadline and the Apply link
 • Works well on phones and uses little data
-
-New openings are added every Tuesday and Friday.
 
 Never pay to apply. If anyone asks you for a fee, stop.
 

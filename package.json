@@ -12,7 +12,7 @@
     "build": "astro build && node scripts/check-dist.ts && node scripts/check-budgets.ts",
     "preview": "astro preview",
     "check": "astro check",
-    "lint": "eslint . && prettier --check . && node scripts/check-dashes.ts && node scripts/check-styles.ts",
+    "lint": "eslint . && prettier --check . && node scripts/check-dashes.ts && node scripts/check-styles.ts && node scripts/check-schedule.ts",
     "format": "prettier --write .",
     "test": "vitest run",
     "snapshot": "node scripts/snapshot.ts",

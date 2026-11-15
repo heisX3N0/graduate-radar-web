@@ -16,7 +16,7 @@ Graduate Radar is a free, checked directory of opportunities for Nigerian gradua
 It already runs on a Google Sheet that is kept up to date automatically:
 
 - **Spreadsheet ID:** `1dRl1vgvRixtVZJIkXbd6iNFpeBjgzKkaz1L-tp8k6yo` (time zone Africa/Lagos)
-- **A Claude scheduled task ("Graduate Radar sweep")** runs every Tuesday and Friday at 05:41 Lagos time. It finds new openings, checks them for scams, writes them to the sheet, marks closed ones, and logs each run.
+- **A Claude scheduled task ("Graduate Radar sweep")** runs on a schedule (set in the task itself, not repeated here). It finds new openings, checks them for scams, writes them to the sheet, marks closed ones, and logs each run.
 - **Public tabs:** `Start here`, `Jobs`, `Trainings & Scholarships`.
 - **Private tabs (must never reach the website):** `Postgrad Scholarships`, `Calendar`, `Review`, `Sources`, `Settings`, `Log`.
 
@@ -50,7 +50,7 @@ The sheet is also published with Google's "Publish to web", but that view is sta
 ## 4. Architecture
 
 ```
-Claude sweep (Tue/Fri 05:41) ──► Google Sheet (database, unchanged)
+Claude sweep (scheduled)     ──► Google Sheet (database, unchanged)
                                      │
                                      ▼
                  Apps Script web app "feed"  ── JSON of public listings only
@@ -74,7 +74,7 @@ Claude sweep (Tue/Fri 05:41) ──► Google Sheet (database, unchanged)
 | Styling | Plain CSS with design tokens (CSS custom properties), scoped Astro component styles | Tokens make the design system portable to future products; no build-time CSS framework to learn or upgrade. | Tailwind: fine, but tokens-in-CSS keeps the design system explicit and framework-free. If Claude Code strongly prefers Tailwind, map tokens into its theme instead. |
 | Interactivity | Vanilla TypeScript (or Preact island if it clearly simplifies) for filters; Fuse.js for fuzzy search | A few hundred rows, so filtering in the browser is instant and needs no server. | Server search (Algolia etc.): overkill, adds cost and accounts. |
 | Hosting | Cloudflare Pages (free plan), on a `*.pages.dev` address for launch | Free with unmetered bandwidth, global CDN including a Lagos location, deploy hooks, preview deploys per branch. Builds count against the account's 500 builds a month, shared with Aimery (see `docs/infra-capacity.md`). | Workers static assets: third-party sources say Cloudflare now points new projects there, but it uses `*.workers.dev` and we found no documented deploy hook for Workers Builds. A plain static site can move later by hand. Vercel/Netlify: also fine; Cloudflare chosen for bandwidth terms and Nigeria latency. |
-| Freshness | Daily rebuild via deploy hook, plus deadline logic in the browser | The sheet changes twice a week, but deadlines pass daily. A daily 07:30 rebuild catches sweep results and drops expired listings; browser-side date checks keep "Closing soon"/"Closed" correct even between builds. | Fetching the feed live on every visit: slower first paint, depends on Apps Script uptime and quotas, worse SEO. |
+| Freshness | Daily rebuild via deploy hook, plus deadline logic in the browser | The sheet changes when the sweep runs, but deadlines pass daily. A daily 07:30 rebuild catches sweep results and drops expired listings; browser-side date checks keep "Closing soon"/"Closed" correct even between builds. | Fetching the feed live on every visit: slower first paint, depends on Apps Script uptime and quotas, worse SEO. |
 | Analytics | Cloudflare Web Analytics only (page views, cookie-free) | Simple and low-maintenance; same Cloudflare account, nothing new to run; no cookies, so the privacy note stays one line. Detail-page views show which listings people open. | Mixpanel: tracks Apply clicks, filters and shares, but the browser SDK eats much of the JS budget and is one more service to maintain. GA4: heavier script, cookie banner concerns. |
 | Code hosting | Public GitHub repo `heisX3N0/graduate-radar-web` | Cloudflare Pages builds from GitHub automatically. Public repos use no Actions minutes (the account's 2,000 a month are shared and near 70%). Everything in the repo is already public data; the feed URL is a Cloudflare build setting, never committed. | Private repo: CI would draw on the shared Actions minutes. |
 
@@ -177,11 +177,11 @@ Note: the sheet is on a gmail.com account (owner, 15 Nov 2026), so no Workspace 
 
 | Route | Purpose | Key content |
 |---|---|---|
-| `/` | Jobs home | Short hero (one line: what this is, "updated every Tue & Fri", last updated date). "Closing this week" strip. Search + filters. Job cards. Link to trainings. |
+| `/` | Jobs home | Short hero (one line: what this is, and the last updated date; no update schedule, owner decision 15 Nov 2026). "Closing this week" strip. Search + filters. Job cards. Link to trainings. |
 | `/trainings` | Trainings home | Same pattern for trainings. Filters: track, cost, format, job placement, closing soon. |
 | `/jobs/[slug]` | Job detail | Title, organisation, type, location/remote, deadline (with "X days left"), eligibility broken into a checklist (degree class, max age, NYSC, other text), notes, **Apply** button, "Verified on" date, "Never pay to apply" note, Share to WhatsApp button, back link. Closed listings show a clear "This opening has closed" banner, no Apply button, and links to similar open listings. |
 | `/trainings/[slug]` | Training detail | Same pattern: provider, track, cost, format, duration, job placement, eligibility, deadline, Apply. |
-| `/about` | Trust page | Who runs it, how listings are found and checked, update schedule, "we don't hire or process applications". |
+| `/about` | Trust page | Who runs it, how listings are found and checked, "we don't hire or process applications". |
 | `/stay-safe` | Scam guidance | Never pay to apply; red flags (Gmail-only recruiters, fees, too-good pay); how to verify an employer; what to do if asked for money. |
 | `/design` | Design system showcase (not linked in nav) | Tokens, type scale, every component in every state. |
 | `404` | Friendly not-found | Search box + link home. |
