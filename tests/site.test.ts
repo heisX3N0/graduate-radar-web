@@ -3,7 +3,14 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { absolute, canonicalPath, DEFAULT_SITE, siteOrigin } from '../src/lib/site.ts';
+import {
+  absolute,
+  canonicalPath,
+  CHANNEL_URL,
+  DEFAULT_SITE,
+  isWhatsAppChannel,
+  siteOrigin,
+} from '../src/lib/site.ts';
 
 const ROOT = join(import.meta.dirname, '..');
 
@@ -41,5 +48,26 @@ describe('the site address', () => {
   it('can still be overridden with SITE_URL', () => {
     vi.stubEnv('SITE_URL', 'https://preview.example.com/');
     expect(siteOrigin(undefined)).toBe('https://preview.example.com');
+  });
+});
+
+describe('the WhatsApp channel link (GR-013)', () => {
+  it.each([
+    ['http, not https', 'http://www.whatsapp.com/channel/0029VbDs41p11ulNTNQBxp1T'],
+    ['no www (redirects)', 'https://whatsapp.com/channel/0029VbDs41p11ulNTNQBxp1T'],
+    ['a wa.me chat link', 'https://wa.me/2348000000000'],
+    ['another host', 'https://www.whatsapp.com.example.com/channel/0029VbDs41p11ulNTNQBxp1T'],
+    ['no channel ID', 'https://www.whatsapp.com/channel/'],
+    [
+      'tracking parameters',
+      'https://www.whatsapp.com/channel/0029VbDs41p11ulNTNQBxp1T?utm_source=site',
+    ],
+  ])('refuses %s', (_name, url) => {
+    expect(isWhatsAppChannel(url)).toBe(false);
+  });
+
+  it('is the www channel address agreed with the owner', () => {
+    expect(CHANNEL_URL).toBe('https://www.whatsapp.com/channel/0029VbDs41p11ulNTNQBxp1T');
+    expect(isWhatsAppChannel(CHANNEL_URL)).toBe(true);
   });
 });

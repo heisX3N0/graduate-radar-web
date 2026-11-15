@@ -1,8 +1,9 @@
 ---
 // About (trust page). Copy adapted from the sheet's "Start here" tab (owner decision,
-// 15 Nov 2026): no name or company, no "Found via" line, no Ctrl+F tip, no WhatsApp
-// channel until one exists. Includes the one-line privacy note (spec 6.7).
+// 15 Nov 2026): no name or company, no "Found via" line, no Ctrl+F tip. Links the
+// WhatsApp channel (GR-013). Includes the one-line privacy note (spec 6.7).
 import Base from '../layouts/Base.astro';
+import { CHANNEL_URL } from '../lib/site.ts';
 ---
 
 <Base
@@ -37,6 +38,12 @@ import Base from '../layouts/Base.astro';
         tech scholarships (software, data, design, product, cloud, cybersecurity, AI).
       </li>
     </ul>
+
+    <h2>Follow on WhatsApp</h2>
+    <p>See new openings in the Graduate Radar Nigeria channel on WhatsApp.</p>
+    <p>
+      <a href={CHANNEL_URL}>Follow Graduate Radar on WhatsApp</a>
+    </p>
 
     <h2>How to read a listing</h2>
     <ul>
