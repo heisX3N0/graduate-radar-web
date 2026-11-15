@@ -46,7 +46,16 @@ describe('checkBudgets: what must be refused', () => {
     ).toMatch(/first load/);
   });
 
-  it('counts inline scripts and styles in the HTML itself', () => {
+  it('counts inline styles as part of the HTML', () => {
+    file('index.html', html(`<style>${noise(220 * 1024)}</style>`));
+    expect(
+      checkBudgets(dist)
+        .map((f) => f.reason)
+        .join(' '),
+    ).toMatch(/first load/);
+  });
+
+  it('counts inline scripts in the HTML itself', () => {
     file('index.html', html(`<script>${noise(80 * 1024)}</script>`));
     expect(checkBudgets(dist).length).toBeGreaterThan(0);
   });

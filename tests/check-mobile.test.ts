@@ -44,6 +44,47 @@ describe.skipIf(!browser)('checkMobile: what must be refused', () => {
   }, 60_000);
 });
 
+describe('checkMobile: a browser that will not start', () => {
+  it('fails fast instead of hanging, and leaves nothing running', async () => {
+    page('index.html', '<p>hi</p>');
+    // Node is not a browser: it rejects the Chrome flags and exits at once.
+    const started = Date.now();
+    await expect(checkMobile(dist, process.execPath)).rejects.toThrow(/browser/);
+    expect(Date.now() - started).toBeLessThan(10_000);
+  }, 30_000);
+});
+
+describe.skipIf(!browser)('checkMobile: hidden parts are checked too', () => {
+  it('opens closed <details> panels before measuring (the folded filters)', async () => {
+    // A closed panel hides its width from the page, so a too-wide control inside it
+    // only shows up once the panel is open. Its tap size is measured either way.
+    page(
+      'index.html',
+      '<details><summary style="min-height:48px">Filters</summary><div style="width:500px">Wide inside</div><button style="height:20px;padding:0">Hidden tiny</button></details>',
+    );
+    const reasons = (await checkMobile(dist, browser!)).map((f) => f.reason).join(' | ');
+    expect(reasons).toMatch(/sideways/);
+    expect(reasons).toMatch(/Hidden tiny/);
+  }, 60_000);
+});
+
+describe.skipIf(!browser)('the site CSS breaks long unbroken listing text', () => {
+  it('a long URL in a paragraph does not scroll sideways with global.css', async () => {
+    const { readFileSync } = await import('node:fs');
+    const css = readFileSync(new URL('../src/styles/global.css', import.meta.url), 'utf8').replace(
+      /@import[^;]+;/,
+      '',
+    );
+    const url =
+      'https://careers.example.com/graduate-programme-2026/apply-now-for-the-programme?ref=graduate-radar-whatsapp-share';
+    page(
+      'index.html',
+      `<style>${css}</style><main><p>Apply via ${url}</p><h1>${'Supercalifragilistic'.repeat(4)}</h1></main>`,
+    );
+    expect(await checkMobile(dist, browser!)).toEqual([]);
+  }, 60_000);
+});
+
 describe.skipIf(!browser)('checkMobile: happy path', () => {
   it('passes a narrow page with big targets and inline text links', async () => {
     page(

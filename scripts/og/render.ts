@@ -2,21 +2,13 @@
 // locally installed Edge or Chrome in headless mode. Run it by hand after editing og.html;
 // the build only copies the PNG.
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdtempSync, rmSync, statSync } from 'node:fs';
+import { mkdtempSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { findBrowser } from '../browsers.ts';
 
-const BROWSERS = [
-  process.env['CHROME_PATH'],
-  'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
-  'C:/Program Files/Google/Chrome/Application/chrome.exe',
-  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-  '/usr/bin/google-chrome',
-  '/usr/bin/chromium',
-].filter((p): p is string => !!p);
-
-const browser = BROWSERS.find((p) => existsSync(p));
+const browser = findBrowser();
 if (!browser) {
   console.error('No Edge or Chrome found. Set CHROME_PATH to a Chromium-based browser.');
   process.exitCode = 1;

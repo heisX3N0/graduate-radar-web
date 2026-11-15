@@ -19,6 +19,9 @@ body {
   font-family: var(--font-body);
   font-size: var(--font-size-body);
   line-height: var(--line-body);
+  /* Listing text comes from the sheet: a long URL or code with no spaces must wrap
+     rather than make a phone page scroll sideways. */
+  overflow-wrap: anywhere;
 }
 
 h1,

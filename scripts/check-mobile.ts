@@ -12,29 +12,19 @@ import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { extname, join, normalize, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { findBrowser } from './browsers.ts';
+
+export { findBrowser };
 
 export interface MobileFinding {
   page: string;
   reason: string;
 }
 
-const CANDIDATES = [
-  process.env['CHROME_PATH'],
-  '/usr/bin/google-chrome',
-  '/usr/bin/google-chrome-stable',
-  '/usr/bin/chromium',
-  '/usr/bin/chromium-browser',
-  'C:/Program Files/Google/Chrome/Application/chrome.exe',
-  'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
-  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-];
-
-export function findBrowser(): string | null {
-  return CANDIDATES.find((p): p is string => !!p && existsSync(p)) ?? null;
-}
-
-// Runs inside the page. Returns one message per problem.
+// Runs inside the page. Returns one message per problem. Closed <details> panels (the
+// folded filters) are opened first so the controls inside them are measured too.
 const CHECK = `(() => {
+  document.querySelectorAll('details').forEach((d) => { d.open = true; });
   const W = document.documentElement.clientWidth;
   const out = [];
   const sw = document.documentElement.scrollWidth;
@@ -112,8 +102,14 @@ function launch(browser: string, profile: string): Promise<{ ws: string; proc: C
   ]);
   return new Promise((ok, fail) => {
     let err = '';
+    // On any failure, stop the browser so it does not outlive the check.
+    const giveUp = (e: Error) => {
+      clearTimeout(timer);
+      proc.kill();
+      fail(e);
+    };
     const timer = setTimeout(
-      () => fail(new Error(`browser did not start: ${err.slice(-300)}`)),
+      () => giveUp(new Error(`browser did not start: ${err.slice(-300)}`)),
       20_000,
     );
     proc.stderr?.on('data', (d: Buffer) => {
@@ -124,10 +120,10 @@ function launch(browser: string, profile: string): Promise<{ ws: string; proc: C
         ok({ ws: m[1]!, proc });
       }
     });
-    proc.on('error', (e) => {
-      clearTimeout(timer);
-      fail(e);
-    });
+    proc.on('error', giveUp);
+    proc.on('exit', (code) =>
+      giveUp(new Error(`browser exited (code ${code}) before starting: ${err.slice(-300)}`)),
+    );
   });
 }
 
@@ -186,10 +182,13 @@ function pages(dist: string, dir = dist, out: string[] = []): string[] {
 export async function checkMobile(dist: string, browser: string): Promise<MobileFinding[]> {
   const { origin, server } = await serve(dist);
   const profile = mkdtempSync(join(tmpdir(), 'gr-mobile-'));
-  const { ws, proc } = await launch(browser, profile);
-  const cdp = connect(ws);
   const findings: MobileFinding[] = [];
+  let proc: ChildProcess | undefined;
+  let cdp: ReturnType<typeof connect> | undefined;
   try {
+    const started = await launch(browser, profile);
+    proc = started.proc;
+    cdp = connect(started.ws);
     await cdp.ready;
     const { targetId } = await cdp.send<{ targetId: string }>('Target.createTarget', {
       url: 'about:blank',
@@ -216,8 +215,8 @@ export async function checkMobile(dist: string, browser: string): Promise<Mobile
       for (const reason of res.result.value) findings.push({ page, reason });
     }
   } finally {
-    cdp.close();
-    proc.kill();
+    cdp?.close();
+    proc?.kill();
     server.close();
     // The browser can hold its profile for a moment after exit (Windows).
     await new Promise((r) => setTimeout(r, 300));
