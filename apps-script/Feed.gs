@@ -192,11 +192,24 @@ function asJson_(body) {
 // Rebuild the site daily so expired listings drop off and sweep results go live.
 // Wired up in GR-008: set DEPLOY_HOOK_URL in Script Properties, then run
 // installRebuildTrigger() once.
+//
+// Fails loudly: a missing or wrong hook, or any answer other than 2xx, throws, so the
+// trigger shows as failed in Executions and Google emails the owner. The hook URL is a
+// secret and never appears in an error message.
 function triggerRebuild() {
   const url = PropertiesService.getScriptProperties().getProperty('DEPLOY_HOOK_URL');
   if (!url) throw new Error('Set DEPLOY_HOOK_URL in Script Properties');
+  if (!/^https:\/\/api\.cloudflare\.com\//.test(url)) {
+    throw new Error(
+      'DEPLOY_HOOK_URL must be a Cloudflare deploy hook (https://api.cloudflare.com/...)',
+    );
+  }
   CacheService.getScriptCache().remove('feed');
-  UrlFetchApp.fetch(url, { method: 'post', muteHttpExceptions: true });
+  const res = UrlFetchApp.fetch(url, { method: 'post', muteHttpExceptions: true });
+  const code = res.getResponseCode();
+  if (code < 200 || code > 299) {
+    throw new Error('Cloudflare deploy hook answered HTTP ' + code + '; no rebuild was started');
+  }
 }
 
 function installRebuildTrigger() {
