@@ -1,0 +1,57 @@
+---
+// Every page: head basics, masthead, main content, footer. Per-page SEO and sharing
+// tags (Open Graph, JSON-LD) come in GR-007.
+import '../styles/global.css';
+import tokensCss from '../styles/tokens.css?raw';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+
+// The browser toolbar colour, read from the --color-bg token so it never drifts.
+const themeColor = /--color-bg:\s*(#[0-9a-f]{6})/i.exec(tokensCss)?.[1];
+
+interface Props {
+  title: string;
+  description: string;
+  current?: 'jobs' | 'trainings' | 'stay-safe' | 'about';
+  noindex?: boolean;
+}
+const { title, description, current, noindex = false } = Astro.props;
+const fullTitle = title === 'Graduate Radar' ? title : `${title} | Graduate Radar`;
+---
+
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex" />}
+    {themeColor && <meta name="theme-color" content={themeColor} />}
+  </head>
+  <body>
+    <a class="skip" href="#main">
+      Skip to content
+    </a>
+    <Header current={current} />
+    <main id="main" class="container">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>
+
+<style>
+  .skip {
+    position: absolute;
+    left: var(--space-2);
+    top: calc(var(--space-12) * -2);
+    z-index: var(--z-header);
+    padding: var(--space-2) var(--space-3);
+    background: var(--color-surface);
+    color: var(--color-ink);
+  }
+  .skip:focus {
+    top: var(--space-2);
+  }
+</style>

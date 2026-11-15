@@ -1,41 +1,67 @@
 # Design
 
-## Chosen direction (owner, 15 Nov 2026)
+Graduate Radar uses **direction A, Noticeboard, with the "Checked" stamp**, chosen by the owner on 15 Nov 2026 (GR-004): the vacancies page of a newspaper you trust, made for a phone. Live showcase: `/design` (not linked, not indexed), with every token and every component in every state.
 
-**A. Noticeboard, with the "Checked" stamp** (described below). GR-005 builds the design system from A's tokens and type, adds the stamp as a component, and deletes B, C and the Bricolage Grotesque dependency.
+## Why this look
 
-## Brand directions (GR-004)
+- **Trust first.** Graduates are targeted by fake jobs. Newsprint paper, serif headlines and hairline rules borrow the credibility of national newspapers' vacancies pages, where graduates have long found real openings.
+- **Fast on slow data.** Phone fonts only (Noto Serif and Roboto on Android): 0 KB of fonts downloaded.
+- **Readable in sunlight.** Near-black ink on warm paper, 15.9:1 (measured, `contrastRatio`).
+- **One strong colour.** Ink green is saved for actions (Apply, links) and the Checked stamp. Red is for urgency only (closing soon, closed, warnings).
 
-Three directions for the owner to choose from, shown on `/design` (not linked, not indexed). Each renders the same real listings from the feed at phone width, so the choice is about the look, not the content. The definitions live in `src/design/directions.ts`; the reasoning below is also on the page.
+## Tokens (`src/styles/tokens.css`)
 
-All three start from the same constraints (spec section 3): mid-range Android phones, often read outdoors; visitors arriving from WhatsApp; and trust as the product, because graduates are targeted by fake jobs.
+The only place colours, sizes and spacing are defined. `scripts/check-styles.ts` (part of `npm run lint`) fails if a component or layout style uses a hard-coded colour, length or named colour. `tests/tokens.test.ts` checks every text colour pair against a sunlight bar: 7:1 for body text, 4.5:1 for everything else.
 
-| | A. Noticeboard | B. Stamped | C. Bright Start |
-| --- | --- | --- | --- |
-| Idea | The vacancies page of a newspaper you trust, made for a phone | Every listing looks checked and signed off | Warm, confident and young: the first rung |
-| Colour | Near-black ink on warm newsprint; deep ink green for Apply; vermilion stamp for closing dates | Deep emerald on cool off-white; burnt orange for closing dates | Indigo (adire colour, no patterns) on cream; sunflower highlight; kola orange for closing dates |
-| Type | Phone serif for headlines, phone sans for text | Phone sans throughout, tabular figures | Bricolage Grotesque for headlines, phone sans for text |
-| Font download | 0 KB | 0 KB | 41.3 KB (measured: one variable Latin file, all weights) |
-| Structure | Square cards, double-ruled masthead, boxed red deadline stamp | Rounded cards with a green edge, dashed "Verified" stamp, ticked checklist | Round cards, soft shadow, big highlighted day count, pill buttons |
-| Main risk | Can feel old-fashioned to some younger readers | Closest to a generic "app" look | Font download on slow data; playful tone next to scam warnings |
+- **Colour:** `--color-bg`, `--color-surface`, `--color-neutral-bg`, `--color-ink`, `--color-ink-muted`, `--color-rule`, `--color-primary`, `--color-on-primary`, `--color-primary-soft`, `--color-soon`, `--color-soon-bg`, `--color-ok`, `--color-ok-bg`, `--color-new`, `--color-new-bg`.
+- **Type:** `--font-display` (serif), `--font-body` (sans); sizes `--font-size-xs` (12) to `--font-size-2xl` (30), body 16; line heights, weights, `--tracking-caps`.
+- **Space:** `--space-1` (4 px) to `--space-12` (48 px).
+- **Shape:** square (`--radius-none`, `--radius-sm` 2 px); borders `--border-thin`, `--border-stamp`, `--border-strong`, `--border-double`, `--border-accent`.
+- **Layout:** `--tap-min` (44 px), `--tap-comfort` (48 px), `--measure`, `--container`, `--sidebar`, `--label-width`.
+- **Other:** z-index layers, focus ring (3 px ink), motion durations (0 when `prefers-reduced-motion`).
+- **Breakpoints** cannot be custom properties in media queries, so they are written in `@media` lines only: 40rem (640 px), 60rem (960 px), 75rem (1200 px).
+- **Dark mode:** not in v1. Redefine the `--color-*` tokens under `prefers-color-scheme: dark`; nothing else needs to change.
 
-### Noticeboard with a "Checked" stamp (owner request, 15 Nov 2026)
+## Components (`src/components/`)
 
-The owner liked A and asked whether B's verified stamp would work with it. It is shown on A's cards, adapted:
+Named generically so they can move into a shared package for later products.
 
-- It says **"Checked 14 Nov"**, not "Verified": we check listings, we cannot guarantee them, and the sheet's own copy says "checked".
-- Ink green, solid thin border, square corners, upright, 12 px: smaller and quieter than the red deadline stamp, so red stays the only urgent colour.
-- B's ticks on the eligibility list are not brought across: a tick beside "2:1 or above" reads as "you meet this".
-- To resolve in GR-005: the green "New this week" badge looks similar to the stamp; one of them should change shape or colour.
+| Component | What it is | States on `/design` |
+| --- | --- | --- |
+| Header | Masthead: serif wordmark, double rule, main nav (current page marked) | as used |
+| Footer | Never pay to apply, update schedule, Stay safe and About links | as used |
+| Hero | One line on what this is, schedule, last updated (the data's date) | with date |
+| StatusBadge | Filled label: Closing soon, Remote, New this week | all three |
+| StatusStamp | Outlined "Checked 14 Nov"; never "Verified"; nothing for a bad date | with and without date |
+| DeadlineChip | Boxed deadline: red within 7 days, muted when closed | 6 states |
+| ListingCard | Job or training; whole card links to the detail page; no Apply button | 6 job states, 1 training |
+| EligibilityChecklist | Labelled list, no ticks | stated, not stated |
+| ApplyButton | Web or email; refuses any other link | web, email, refused |
+| ShareButton | WhatsApp link: title, organisation, closing date, page | as used |
+| SafetyNote | Never pay to apply, link to Stay safe | as used |
+| Banner | info, warning, closed | all three |
+| Breadcrumb | Labelled nav, current page marked | as used |
+| SearchInput | Labelled search box | empty |
+| Select | Labelled native select | value chosen |
+| FilterChip | Toggle with `aria-pressed` | on, off |
+| FilterBar | Wrapping row on phones, sidebar from 960 px | as used |
+| ResultCount | "17 openings", polite live region | 0, 1, many |
+| EmptyState | No matches, with Clear filters | as used |
+| Base layout | Head, skip link, Header, main, Footer | every page |
 
-## Rules every direction meets
+Not built: SkeletonCard. Lists render on the server and filter in place, so nothing loads on the client (spec 7 lists it only "if any client loading is used").
 
-- **Contrast, set higher than usual for sunlight** (`src/design/contrast.ts`, checked by `tests/directions.test.ts` on every build): body text at least 7:1 (WCAG AAA), secondary text, buttons, links and badges at least 4.5:1 (WCAG AA). Measured ratios for ink on paper: Noticeboard 15.9:1, Stamped 15.7:1, Bright Start 16.4:1.
-- **Font budget:** fonts a direction downloads may not exceed 50 KB (spec 6.6); the test reads the real file sizes.
-- **360 px:** no horizontal scroll at 360 px wide (checked by hand in the browser pane on 15 Nov 2026: page width 360, no element past the edge). An automatic check comes with GR-009.
-- **Tap targets:** the Apply button is at least 48 px tall.
-- **No hard-coded brand colours in components:** every colour is a token with the same name in each direction (`bg`, `surface`, `ink`, `inkMuted`, `rule`, `primary`, `onPrimary`, `primarySoft`, `soon`, `soonBg`, `ok`, `okBg`, `newText`, `newBg`), so GR-005 can turn the chosen set into `src/styles/tokens.css` directly.
+Rules the components follow:
 
-## After the choice
+- **Badges are filled, stamps are outlined.** Filled badges are facts about a listing; outlined stamps (Checked, deadline) are marks made by Graduate Radar. This keeps "New this week" from looking like the Checked stamp.
+- **No Apply on cards** (owner decision): people read eligibility on the detail page first.
+- **No ticks on eligibility**: a tick beside "2:1 or above" reads as "you meet this".
+- **Tap targets** at least 44 px; Apply at least 48 px.
+- **Focus:** every focusable element shows a 3 px ink ring when reached by keyboard; a focused card rings the whole card.
+- **Wording** for deadlines, badges, eligibility, Apply and sharing comes from `src/lib/listing-text.ts`, so it reads the same everywhere.
 
-The owner picks one direction by name. GR-005 then: writes its tokens to `src/styles/tokens.css`, deletes the other two (and the Bricolage Grotesque dependency if C is not chosen), and turns `/design` into the component showcase.
+## Checks done on 15 Nov 2026 (`/design`, browser pane at 360 x 800, one run each)
+
+- Page width exactly 360 px; no element past the right edge.
+- 24 visible tap targets, all at least 44 px tall.
+- 30 keyboard Tab stops, every one with a visible focus ring (links, search, select, chips, cards, Apply, Share, skip link).

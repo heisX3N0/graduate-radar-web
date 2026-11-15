@@ -12,13 +12,12 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
-    "lint": "eslint . && prettier --check . && node scripts/check-dashes.ts",
+    "lint": "eslint . && prettier --check . && node scripts/check-dashes.ts && node scripts/check-styles.ts",
     "format": "prettier --write .",
     "test": "vitest run",
     "snapshot": "node scripts/snapshot.ts"
   },
   "dependencies": {
-    "@fontsource-variable/bricolage-grotesque": "5.3.0",
     "astro": "7.4.12"
   },
   "devDependencies": {

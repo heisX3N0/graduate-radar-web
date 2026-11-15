@@ -1,0 +1,47 @@
+---
+// The Apply action on detail pages only (no Apply on cards, owner decision).
+// https, http and mailto links only; anything else renders no link at all.
+import { applyAction } from '../lib/listing-text.ts';
+
+interface Props {
+  href: string;
+}
+const action = applyAction(Astro.props.href);
+---
+
+{action.kind === 'refused' ? (
+  <p class="unavailable">
+    Apply link unavailable. Search for this opening on the organisation's official website.
+  </p>
+) : (
+  <a class="apply" href={action.href} rel="noopener">
+    {action.label}
+  </a>
+)}
+
+<style>
+  .apply {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: var(--tap-comfort);
+    padding: var(--space-2) var(--space-4);
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    font-weight: var(--weight-bold);
+    font-size: var(--font-size-md);
+    text-align: center;
+    text-decoration: none;
+    border-radius: var(--radius-none);
+    transition: background-color var(--duration-fast);
+  }
+  .apply:hover {
+    text-decoration: underline;
+  }
+  .unavailable {
+    padding: var(--space-3);
+    border: var(--border-strong) solid var(--color-soon);
+    color: var(--color-ink);
+  }
+</style>

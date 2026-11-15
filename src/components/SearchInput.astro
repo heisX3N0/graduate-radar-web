@@ -1,0 +1,48 @@
+---
+// A labelled search box. Behaviour (fuzzy search, URL state) comes in GR-006.
+interface Props {
+  id: string;
+  label: string;
+  name?: string;
+  value?: string;
+  placeholder?: string;
+}
+const { id, label, name = 'q', value = '', placeholder } = Astro.props;
+---
+
+<div class="search">
+  <label for={id}>{label}</label>
+  <input
+    id={id}
+    type="search"
+    name={name}
+    value={value}
+    placeholder={placeholder}
+    autocomplete="off"
+    enterkeyhint="search"
+  />
+</div>
+
+<style>
+  .search {
+    display: grid;
+    gap: var(--space-1);
+  }
+  label {
+    font-weight: var(--weight-semibold);
+  }
+  input {
+    width: 100%;
+    min-height: var(--tap-comfort);
+    padding: var(--space-2) var(--space-3);
+    font: inherit;
+    font-size: var(--font-size-body);
+    color: var(--color-ink);
+    background: var(--color-surface);
+    border: var(--border-strong) solid var(--color-ink);
+    border-radius: var(--radius-none);
+  }
+  input::placeholder {
+    color: var(--color-ink-muted);
+  }
+</style>

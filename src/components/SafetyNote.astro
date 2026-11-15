@@ -1,0 +1,30 @@
+---
+// Trust copy that appears on every detail page (spec acceptance criterion 7).
+---
+
+<aside class="safety" aria-label="Stay safe">
+  <p>
+    <strong>Never pay to apply.</strong> Real employers do not charge application or "processing"
+    fees.
+  </p>
+  <a href="/stay-safe">How to spot a fake job</a>
+</aside>
+
+<style>
+  .safety {
+    display: grid;
+    justify-items: start;
+    padding: var(--space-3) var(--space-4) var(--space-1);
+    background: var(--color-soon-bg);
+    color: var(--color-ink);
+    border-left: var(--border-accent) solid var(--color-soon);
+    font-size: var(--font-size-body);
+  }
+  .safety a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-min);
+    color: var(--color-ink);
+    font-weight: var(--weight-semibold);
+  }
+</style>

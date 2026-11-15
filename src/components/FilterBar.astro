@@ -1,0 +1,36 @@
+---
+// Holds the search box, filters and sort. A wrapping row of chips on phones; a sidebar
+// column from 960 px. Behaviour comes in GR-006.
+interface Props {
+  label?: string;
+}
+const { label = 'Filters' } = Astro.props;
+---
+
+<section class="filters" aria-label={label}>
+  <slot />
+</section>
+
+<style>
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    background: var(--color-surface);
+    border-top: var(--border-thin) solid var(--color-rule);
+    border-bottom: var(--border-thin) solid var(--color-rule);
+  }
+  .filters > :global(*) {
+    flex: 1 1 auto;
+  }
+  @media (min-width: 60rem) {
+    .filters {
+      flex-direction: column;
+      flex-wrap: nowrap;
+      align-items: stretch;
+      width: var(--sidebar);
+    }
+  }
+</style>

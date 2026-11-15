@@ -1,0 +1,42 @@
+---
+// A toggle for one filter value. aria-pressed tells screen readers whether it is on.
+// Toggling and URL state come in GR-006; this renders the on and off states.
+interface Props {
+  label: string;
+  pressed: boolean;
+  name?: string;
+  value?: string;
+}
+const { label, pressed, name, value } = Astro.props;
+---
+
+<button
+  type="button"
+  class="chip"
+  aria-pressed={pressed ? 'true' : 'false'}
+  data-filter={name}
+  data-value={value}
+>
+  {label}
+</button>
+
+<style>
+  .chip {
+    min-height: var(--tap-min);
+    padding: var(--space-1) var(--space-3);
+    font: inherit;
+    font-size: var(--font-size-sm);
+    font-weight: var(--weight-semibold);
+    color: var(--color-ink);
+    background: var(--color-surface);
+    border: var(--border-thin) solid var(--color-ink);
+    border-radius: var(--radius-none);
+    cursor: pointer;
+    transition: background-color var(--duration-fast);
+  }
+  .chip[aria-pressed='true'] {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-on-primary);
+  }
+</style>

@@ -1,0 +1,40 @@
+---
+// Shown when filters match nothing, with a way out.
+interface Props {
+  clearHref: string;
+}
+const { clearHref } = Astro.props;
+---
+
+<div class="empty">
+  <p class="empty__title">No openings match these filters.</p>
+  <p>
+    Try fewer filters, or check back after the next update. We add openings every Tuesday and
+    Friday.
+  </p>
+  <a class="empty__clear" href={clearHref}>
+    Clear filters
+  </a>
+</div>
+
+<style>
+  .empty {
+    display: grid;
+    gap: var(--space-2);
+    justify-items: start;
+    padding: var(--space-6) var(--space-4);
+    background: var(--color-surface);
+    border-top: var(--border-strong) solid var(--color-ink);
+  }
+  .empty__title {
+    font-family: var(--font-display);
+    font-size: var(--font-size-lg);
+    font-weight: var(--weight-bold);
+  }
+  .empty__clear {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-min);
+    font-weight: var(--weight-semibold);
+  }
+</style>

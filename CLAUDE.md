@@ -12,7 +12,7 @@ The owner's global rules (`~/.claude/CLAUDE.md`, version 2026-10-22) apply in fu
 ## Gates (run all four before every commit)
 
 ```bash
-npm run lint    # eslint, prettier --check, dash check
+npm run lint    # eslint, prettier --check, dash check, style check (tokens only)
 npm run check   # astro check (types)
 npm test        # vitest
 npm run build   # astro build

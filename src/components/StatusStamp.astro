@@ -1,0 +1,29 @@
+---
+// "Checked 14 Nov": when Graduate Radar last checked the listing (the sheet's
+// "Verified on"). Says "Checked", never "Verified": we check, we cannot guarantee
+// (owner decision, 15 Nov 2026). Outlined in ink green, quieter than the red deadline.
+// Renders nothing for a missing or impossible date.
+import { isRealDay, shortDate } from '../lib/dates.ts';
+
+interface Props {
+  date: string;
+}
+const { date } = Astro.props;
+const show = isRealDay(date);
+---
+
+{show && <span class="stamp">Checked {shortDate(date)}</span>}
+
+<style>
+  .stamp {
+    display: inline-block;
+    padding: 0 var(--space-2);
+    border: var(--border-stamp) solid var(--color-primary);
+    color: var(--color-primary);
+    font-size: var(--font-size-xs);
+    font-weight: var(--weight-bold);
+    line-height: var(--line-body);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-caps);
+  }
+</style>

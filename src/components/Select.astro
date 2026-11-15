@@ -1,0 +1,44 @@
+---
+// A labelled native select (sort order, location, type). Native, so it works with
+// screen readers and the phone's own picker.
+interface Props {
+  id: string;
+  label: string;
+  options: { value: string; label: string }[];
+  value?: string;
+  name?: string;
+}
+const { id, label, options, value, name = id } = Astro.props;
+---
+
+<div class="select">
+  <label for={id}>{label}</label>
+  <select id={id} name={name}>
+    {options.map((o) => (
+      <option value={o.value} selected={o.value === value}>
+        {o.label}
+      </option>
+    ))}
+  </select>
+</div>
+
+<style>
+  .select {
+    display: grid;
+    gap: var(--space-1);
+  }
+  label {
+    font-weight: var(--weight-semibold);
+    font-size: var(--font-size-sm);
+  }
+  select {
+    width: 100%;
+    min-height: var(--tap-min);
+    padding: var(--space-2) var(--space-3);
+    font: inherit;
+    color: var(--color-ink);
+    background: var(--color-surface);
+    border: var(--border-thin) solid var(--color-ink);
+    border-radius: var(--radius-none);
+  }
+</style>

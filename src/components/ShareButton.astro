@@ -1,0 +1,35 @@
+---
+// Share a listing on WhatsApp: "title · organisation · Closes 27 Nov · page URL".
+import { shareUrl } from '../lib/listing-text.ts';
+
+interface Props {
+  title: string;
+  organisation: string;
+  deadline: string;
+  url: string;
+}
+const { title, organisation, deadline, url } = Astro.props;
+const href = shareUrl({ title, organisation, deadline }, url);
+---
+
+<a class="share" href={href} rel="noopener noreferrer">
+  Share on WhatsApp
+</a>
+
+<style>
+  .share {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--tap-min);
+    padding: var(--space-2) var(--space-4);
+    border: var(--border-strong) solid var(--color-ink);
+    color: var(--color-ink);
+    background: var(--color-surface);
+    font-weight: var(--weight-semibold);
+    text-decoration: none;
+  }
+  .share:hover {
+    text-decoration: underline;
+  }
+</style>

@@ -4,6 +4,16 @@ Finished backlog items, newest first. Each entry: ID and title, merge SHA, what 
 
 ---
 
+- [x] **GR-005 Design system: tokens and components** (L). Done in 7dd31d4 (system) and 1e6d0a2 (review fixes).
+  - **Shipped:** `src/styles/tokens.css` and `global.css` from direction A (Noticeboard); 19 components in `src/components/` (Header, Footer, Hero, SearchInput, FilterBar, FilterChip, Select, ResultCount, ListingCard for jobs and trainings, StatusBadge, StatusStamp, DeadlineChip, EligibilityChecklist, ApplyButton, ShareButton, SafetyNote, EmptyState, Banner, Breadcrumb) and `src/layouts/Base.astro`; `src/lib/listing-text.ts` (shared wording); `scripts/check-styles.ts` in `npm run lint`; `/design` is now the showcase of every token and component state; the placeholder home page uses the new frame. Directions B and C, `src/design/samples.ts` and Bricolage Grotesque removed. Components tested with Astro's container API (`vitest.config.ts` uses `getViteConfig`). 196 tests: 82 in new files (tokens 6, style check 14, wording 23, components 32, contrast 7, of which 6 moved from the removed directions test); 24 removed with B and C.
+  - **Verified (15 Nov 2026, `/design` in the browser pane at 360 x 800, one run each):** page width 360, nothing past the edge; 24 visible tap targets, all at least 44 px; 30 keyboard Tab stops, all with a visible focus ring.
+  - **Owner decisions (2026-11-15):** direction A with the Checked stamp; "Checked", not "Verified"; no ticks on eligibility; no Apply on cards.
+  - **Deviations:**
+    1. SkeletonCard not built: nothing loads on the client (spec 7 lists it only "if any client loading is used").
+    2. The look-alike between "New this week" and the stamp is solved by a rule: badges are filled, stamps are outlined.
+    3. Apply links use `rel="noopener"` without `noreferrer` (review finding), so employers see visits come from graduate-radar.pages.dev. The browser's default referrer policy sends only the site address, never the page path. The owner can veto.
+    4. The 360 px, tap target and focus checks were done by hand in the browser pane; the automatic checks are in GR-009.
+
 - [x] **GR-004 Brand directions on /design** (M). Done in f7734a8 (directions), 1199c5c (review fixes), 5baf30d (Checked stamp).
   - **Shipped:** `/design` (noindex, not linked) with three directions (A. Noticeboard, B. Stamped, C. Bright Start), each beside a 360 px phone frame of real listings; `src/design/directions.ts` (tokens, type, reasoning, downsides), `src/design/contrast.ts` (WCAG contrast with a sunlight bar: body 7:1, everything else 4.5:1), `src/design/samples.ts` (safe sample picking), `shortDate` in `src/lib/dates.ts`, `docs/design.md`. 26 new tests (138 in total).
   - **Verified:** every direction passes every contrast pair (ink on paper 15.9:1, 15.7:1, 16.4:1); font budget from real file sizes (C: 41.3 KB, A and B: 0 KB); 360 px in the browser pane, page width exactly 360 px and nothing past the edge (one run each, before and after the stamp).
