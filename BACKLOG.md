@@ -21,7 +21,8 @@ Owner decisions that apply to every item (15 Nov 2026): `*.pages.dev` address fo
   - **Docs:** README "Search and filters".
   - **Cost:** per visit: nothing metered (filtering runs in the browser). JS budget: Fuse.js plus filter code, measured and reported against 50 KB gzipped. Users supported: unchanged.
   - **Depends on:** GR-003, GR-005.
-  - **Open questions for the owner:** "Min class I have" offers 2:1, 2:2 and Any. Does "Any" mean "show me everything" (no class filter), or "I have below a 2:2, show only listings that accept any class or don't say"? Recommended: the second, labelled plainly (for example "Third class or pass").
+  - **Open questions for the owner:** none.
+  - **Owner decisions (2026-11-15):** "Min class I have" option "Any" means "I have below a 2:2": it shows only listings that accept any class or do not state one, and is labelled plainly ("Third class or pass"). 2:1 shows everything; 2:2 hides listings that need a 2:1.
 
 - [ ] **GR-007 Detail pages, trust pages, SEO and sharing** (L)
   - **Why:** Most visitors arrive on one listing from WhatsApp; the preview card, trust copy and Apply action decide whether they stay.
