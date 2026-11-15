@@ -6,7 +6,7 @@ import '../styles/global.css';
 import tokensCss from '../styles/tokens.css?raw';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
-import { absolute } from '../lib/site.ts';
+import { absolute, canonicalPath } from '../lib/site.ts';
 
 // The browser toolbar colour, read from the --color-bg token so it never drifts.
 const themeColor = /--color-bg:\s*(#[0-9a-f]{6})/i.exec(tokensCss)?.[1];
@@ -32,7 +32,7 @@ const {
   jsonLd,
 } = Astro.props;
 const fullTitle = title === 'Graduate Radar' ? title : `${title} | Graduate Radar`;
-const canonical = absolute(Astro.site, path === '/' ? '/' : path.replace(/\.html$/, ''));
+const canonical = absolute(Astro.site, canonicalPath(path));
 const image = absolute(Astro.site, '/og-default.png');
 const imageAlt =
   'Graduate Radar: checked graduate jobs and free tech trainings for Nigerian graduates';

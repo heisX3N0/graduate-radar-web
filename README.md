@@ -10,7 +10,7 @@ Status: scaffold (GR-001), the Apps Script feed (GR-002), the data layer (GR-003
 Claude sweep (scheduled)                -> Google Sheet (database)
 Apps Script web app (feed)              -> JSON of public listing fields only
 Daily 07:30 trigger                     -> Cloudflare Pages deploy hook
-Astro static build                      -> Cloudflare Pages (*.pages.dev)
+Astro static build                      -> Cloudflare Pages (graduateradar.versionphi.com)
 ```
 
 Full detail: `docs/build-spec.md` section 4. Deploy setup: "Deploy (Cloudflare Pages)" below.
@@ -58,7 +58,7 @@ The server renders every open listing (closed and past-deadline listings are nev
 ## Detail pages, SEO and sharing
 
 - **Pages:** `/jobs/<slug>` and `/trainings/<slug>` for every listing in the feed, including Closed ones checked in the last 60 days, so a shared link to a closed listing shows "This opening has closed" (no Apply button, links to similar open listings) instead of a 404. After 60 days the listing leaves the feed and its address gets the 404 page. Also `/about`, `/stay-safe` and `404`.
-- **Every page:** unique title and description, canonical link, Open Graph and Twitter tags with absolute URLs (from `SITE_URL`, default `https://graduate-radar.pages.dev`; `src/lib/site.ts`), and one sharing image, `public/og-default.png` (1200 x 630, 49.8 KB). Edit `scripts/og/og.html` and run `npm run og` to regenerate it (needs Edge or Chrome installed).
+- **Every page:** unique title and description, canonical link, Open Graph and Twitter tags with absolute URLs (from `SITE_URL`, default `https://graduateradar.versionphi.com`; `src/lib/site.ts` and `astro.config.mjs`, which a test keeps in step), and one sharing image, `public/og-default.png` (1200 x 630, 49.8 KB). Edit `scripts/og/og.html` and run `npm run og` to regenerate it (needs Edge or Chrome installed).
 - **JobPosting data** (schema.org JSON-LD) on open job pages only: never on closed or past-deadline listings, never on trainings. `validThrough` comes from the deadline when it is a date; remote jobs are marked telecommute, open to applicants in Nigeria. Google may still rank listings low because applications happen on the employer's site.
 - **Sharing:** the WhatsApp button opens `https://wa.me/?text=` with "title · organisation · Closes 27 Nov · page URL" ("Closed" for a past deadline).
 - **sitemap.xml** lists the main pages and every open listing; **robots.txt** allows everything and points to the sitemap. `/design` and `404` carry `noindex`.
@@ -94,8 +94,8 @@ The site is static and hosted on Cloudflare Pages (free plan). Cloudflare builds
 ### First-time setup (owner; not timed, 11 steps)
 
 1. **Create the project.** Cloudflare dashboard > Workers & Pages > Create > Pages > Connect to Git. Pick GitHub, authorise Cloudflare for `heisX3N0/graduate-radar-web` only, and select it.
-2. **Build settings.** Project name: `graduate-radar` (the live address becomes `https://graduate-radar.pages.dev`; if the name is taken Cloudflare adds a suffix, then set `SITE_URL` in step 3). Production branch: `main`. Framework preset: Astro. Build command: `npm run build`. Build output directory: `dist`. Root directory: blank.
-3. **Environment variables** (same screen, "Environment variables (advanced)"): add `FEED_URL` = the `/exec` URL, type Text. If the address is not `https://graduate-radar.pages.dev`, also add `SITE_URL` = the real address. Save and Deploy.
+2. **Build settings.** Project name: `graduate-radar` (Cloudflare also serves it at `https://graduate-radar.pages.dev`; the real address is the custom domain, see "Custom domain" below). Production branch: `main`. Framework preset: Astro. Build command: `npm run build`. Build output directory: `dist`. Root directory: blank.
+3. **Environment variables** (same screen, "Environment variables (advanced)"): add `FEED_URL` = the `/exec` URL, type Text. Leave `SITE_URL` unset: the default is the real address. Save and Deploy.
 4. After the first build finishes, open Settings > Variables and Secrets and check `FEED_URL` is set for both Production and Preview.
 5. **Deploy hook.** Settings > Builds > Deploy hooks > Add deploy hook. Name: `daily-rebuild`. Branch: `main`. Copy the URL it shows (it starts `https://api.cloudflare.com/`). It is a secret: anyone with it can start builds. Never paste it into the repo, a chat or a ticket.
 6. **Give the hook to Apps Script.** Graduate Radar sheet > Extensions > Apps Script > Project Settings (gear) > Script Properties > Add script property: `DEPLOY_HOOK_URL` = the hook URL. Save.
@@ -105,11 +105,26 @@ The site is static and hosted on Cloudflare Pages (free plan). Cloudflare builds
 10. **Web Analytics.** Cloudflare > the `graduate-radar` Pages project > Metrics > Web Analytics > Enable. Cloudflare adds its page counter to the next deployment; no code change.
 11. **Failed-build emails.** Cloudflare dashboard > Notifications > Add > Pages > deployment failure, for the `graduate-radar` project, production only, to your email. Without this, a build that fails in Cloudflare leaves the site silently out of date (the hook call itself still succeeds, so Apps Script reports nothing).
 
+### Custom domain (owner; done 15 Nov 2026)
+
+The site lives at `https://graduateradar.versionphi.com` (GR-012). `versionphi.com` is a zone on the same Cloudflare account, so Cloudflare added the DNS record and certificate itself.
+
+1. Workers & Pages, select `graduate-radar`, then the **Custom domains** tab.
+2. **Set up a custom domain**, enter `graduateradar.versionphi.com`, continue and confirm the DNS record.
+3. Wait until the domain shows **Active** with **SSL enabled**.
+
+`https://graduate-radar.pages.dev` still works, so old links keep opening, but `public/_headers` sends `X-Robots-Tag: noindex` on every `pages.dev` address (production and branch previews), so search shows only the real domain. No redirect (owner decision, 15 Nov 2026). `npm run build` fails if `_headers` loses that rule, if the rule would also hide the real domain, or if any page still points to `graduate-radar.pages.dev`.
+
+`SITE_URL` must not be set in the Cloudflare project (Settings, Variables and Secrets). If it still holds the old `pages.dev` address, every build, including the daily rebuild, fails the check above.
+
+Optional (owner): add `https://graduateradar.versionphi.com` as a property in Google Search Console and submit `https://graduateradar.versionphi.com/sitemap.xml`, so Google finds the new domain sooner while the `pages.dev` copies drop out.
+
 ### When something goes wrong
 
 - **A Cloudflare build fails:** the failed-build email from step 11 arrives; the live site keeps the last good build. Open the build log in Cloudflare (Deployments, the failed one).
 - **The daily rebuild fails** (no hook, wrong hook, network error, or Cloudflare refuses it): `triggerRebuild` throws, so the run shows as Failed in Apps Script > Executions, and Google sends the trigger owner a failure email (Google's default for script-made triggers is a daily summary; not checked on this account). The live site keeps serving the last good build.
 - **The feed is down at build time:** the build uses `src/data/snapshot.json` and logs a `[feed]` warning in the Cloudflare build log; the page's "Data from" date shows the snapshot's date.
+- **Every build fails with "points to the old address graduate-radar.pages.dev":** `SITE_URL` is set to the old address in the Cloudflare project. Delete it (Settings, Variables and Secrets), then retry the deployment.
 - **The hook URL leaks:** delete it in Cloudflare (Settings > Builds > Deploy hooks), add a new one, and replace `DEPLOY_HOOK_URL` in Script Properties.
 
 ## Launch
@@ -155,7 +170,7 @@ npm run build
 ## Environment variables
 
 - `FEED_URL`: the Apps Script `/exec` URL. Used by the build and by `npm run snapshot`. Set it in a local `.env` (copy `.env.example`) and as a Cloudflare Pages variable (Production and Preview). Never commit it.
-- `SITE_URL` (optional): the site's public address, used for absolute links. Defaults to `https://graduate-radar.pages.dev`; set it in Cloudflare if the address differs or when a custom domain is added.
+- `SITE_URL` (optional): the site's public address, used for absolute links. Defaults to `https://graduateradar.versionphi.com`. Leave it unset in Cloudflare; set it only to build for a different address.
 - `DEPLOY_HOOK_URL`: not an environment variable of the site. It lives only in the Apps Script project's Script Properties and in the Cloudflare dashboard. Secret.
 
 ## Docs

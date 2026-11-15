@@ -10,7 +10,7 @@ import {
 } from '../src/lib/seo.ts';
 
 const TODAY = '2026-11-15';
-const SITE = 'https://graduate-radar.pages.dev';
+const SITE = 'https://graduateradar.versionphi.com';
 
 const job = (over: Partial<JobListing> = {}): JobListing => ({
   key: 'deloitte|cyber|2026',

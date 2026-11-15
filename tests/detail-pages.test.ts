@@ -191,21 +191,21 @@ describe('trust pages and 404', () => {
 });
 
 describe('sitemap and robots', () => {
-  const site = new URL('https://graduate-radar.pages.dev');
+  const site = new URL('https://graduateradar.versionphi.com');
 
   it('sitemap lists the main pages and open listings with absolute URLs, not /design or 404', async () => {
     const res = await sitemap({ site } as never);
     const xml = await res.text();
     expect(res.headers.get('content-type')).toMatch(/xml/);
-    expect(xml).toContain('<loc>https://graduate-radar.pages.dev/</loc>');
-    expect(xml).toContain('<loc>https://graduate-radar.pages.dev/trainings</loc>');
-    expect(xml).toMatch(/<loc>https:\/\/graduate-radar\.pages\.dev\/jobs\/[a-z0-9-]+<\/loc>/);
+    expect(xml).toContain('<loc>https://graduateradar.versionphi.com/</loc>');
+    expect(xml).toContain('<loc>https://graduateradar.versionphi.com/trainings</loc>');
+    expect(xml).toMatch(/<loc>https:\/\/graduateradar\.versionphi\.com\/jobs\/[a-z0-9-]+<\/loc>/);
     expect(xml).not.toMatch(/\/design|404/);
   });
 
   it('robots points at the sitemap', async () => {
     const txt = await (await robots({ site } as never)).text();
-    expect(txt).toContain('Sitemap: https://graduate-radar.pages.dev/sitemap.xml');
+    expect(txt).toContain('Sitemap: https://graduateradar.versionphi.com/sitemap.xml');
     expect(txt).toMatch(/User-agent: \*/);
   });
 });

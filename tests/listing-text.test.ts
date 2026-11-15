@@ -163,12 +163,12 @@ describe('shareUrl', () => {
   it('builds a WhatsApp link with title, organisation, closing date and page URL', () => {
     const url = shareUrl(
       { title: 'Deloitte Academy', organisation: 'Deloitte Nigeria', deadline: '2026-11-27' },
-      'https://graduate-radar.pages.dev/jobs/deloitte',
+      'https://graduateradar.versionphi.com/jobs/deloitte',
       TODAY,
     );
     expect(url.startsWith('https://wa.me/?text=')).toBe(true);
     expect(decodeURIComponent(url.slice('https://wa.me/?text='.length))).toBe(
-      'Deloitte Academy · Deloitte Nigeria · Closes 27 Nov · https://graduate-radar.pages.dev/jobs/deloitte',
+      'Deloitte Academy · Deloitte Nigeria · Closes 27 Nov · https://graduateradar.versionphi.com/jobs/deloitte',
     );
   });
 

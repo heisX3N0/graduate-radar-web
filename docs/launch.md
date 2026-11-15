@@ -12,9 +12,9 @@ Clear the tab's old text first (select it all and press Delete), so no old line 
 GRADUATE RADAR
 Checked graduate jobs and free tech trainings for Nigerian graduates.
 
-Use the website: https://graduate-radar.pages.dev
+Use the website: https://graduateradar.versionphi.com
 It has search, filters (type, field, location, degree class) and a page for every opening with its Apply link. It works well on phones and uses little data.
-Trainings and scholarships: https://graduate-radar.pages.dev/trainings
+Trainings and scholarships: https://graduateradar.versionphi.com/trainings
 
 How it works
 We add new openings and mark closed ones as we find them.
@@ -24,7 +24,7 @@ This sheet is the list behind the website.
 Stay safe
 Never pay to apply. If anyone asks you for a fee, stop and don't send money.
 Apply only through the Apply link or the organisation's official website.
-How to spot a fake job: https://graduate-radar.pages.dev/stay-safe
+How to spot a fake job: https://graduateradar.versionphi.com/stay-safe
 ```
 
 ## WhatsApp post
@@ -35,7 +35,7 @@ WhatsApp shows `*text*` as bold. Send it to yourself first to check the preview 
 *Graduate Radar is now a website*
 
 Checked graduate trainee programmes, entry-level jobs and free tech trainings for Nigerian graduates, all in one place:
-https://graduate-radar.pages.dev
+https://graduateradar.versionphi.com
 
 What's new:
 • Search, and filter by type, field, location and degree class

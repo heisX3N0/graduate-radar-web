@@ -12,6 +12,7 @@ import EmptyState from '../components/EmptyState.astro';
 import FilterBar from '../components/FilterBar.astro';
 import FilterChip from '../components/FilterChip.astro';
 import Hero from '../components/Hero.astro';
+import { absolute } from '../lib/site.ts';
 import ListingCard from '../components/ListingCard.astro';
 import ResultCount from '../components/ResultCount.astro';
 import SafetyNote from '../components/SafetyNote.astro';
@@ -243,7 +244,7 @@ const sortOptions = [
           title={realJob.title}
           organisation={realJob.organisation}
           deadline={realJob.deadline}
-          url={`https://graduate-radar.pages.dev/jobs/${realJob.slug}`}
+          url={absolute(Astro.site, `/jobs/${realJob.slug}`)}
         />
         <SafetyNote />
       </div>
