@@ -1,43 +1,115 @@
 ---
-// Placeholder until the list page (GR-006), now in the chosen design (GR-005). Shows live
-// counts to prove the build reads the feed, and the data's own date so a site stuck on
-// the snapshot shows an old date.
+// Jobs home (spec 6.1, 6.3): hero, closing this week, filters, and every open job.
+import ClosingSoon from '../components/ClosingSoon.astro';
+import FilterChip from '../components/FilterChip.astro';
 import Hero from '../components/Hero.astro';
-import SafetyNote from '../components/SafetyNote.astro';
+import ListingCard from '../components/ListingCard.astro';
+import ListLayout from '../components/ListLayout.astro';
+import SearchInput from '../components/SearchInput.astro';
+import Select from '../components/Select.astro';
 import { getListings } from '../data/feed.ts';
 import Base from '../layouts/Base.astro';
 import { effectiveStatus, lagosToday } from '../lib/dates.ts';
+import { LOCATIONS, openOnly, sortListings } from '../lib/filters.ts';
+import { distinct, jsonForScript, toJobItem } from '../lib/list-data.ts';
 
-const listings = await getListings();
+const { jobs, generatedAt } = await getListings();
 const today = lagosToday();
-const open = (items: { status: string; deadline: string }[]) =>
-  items.filter((i) => effectiveStatus(i, today) !== 'Closed').length;
-const openJobs = open(listings.jobs);
-const openTrainings = open(listings.trainings);
-const parsed = new Date(listings.generatedAt);
+const parsed = new Date(generatedAt);
 const dataDay = Number.isNaN(parsed.getTime()) ? '' : lagosToday(parsed);
+
+const open = sortListings(openOnly(jobs, today), 'soon');
+const closingSoon = open
+  .filter((j) => effectiveStatus(j, today) === 'Closing soon' && /^\d/.test(j.deadline))
+  .slice(0, 5)
+  .map((j) => ({
+    key: j.key,
+    title: j.title,
+    by: j.organisation,
+    href: `/jobs/${j.slug}`,
+    deadline: j.deadline,
+  }));
+
+const types = distinct(jobs.map((j) => j.type));
+const fields = distinct(jobs.map((j) => j.field));
+const dataJson = jsonForScript({
+  kind: 'jobs',
+  items: open.map(toJobItem),
+  options: { types, fields },
+});
+
+const all = (label: string, values: readonly string[]) => [
+  { value: '', label },
+  ...values.map((v) => ({ value: v, label: v })),
+];
+const classOptions = [
+  { value: '', label: 'Any (no filter)' },
+  { value: '21', label: '2:1 or above' },
+  { value: '22', label: '2:2' },
+  { value: 'any', label: 'Third class or pass' },
+];
+const sortOptions = [
+  { value: '', label: 'Closing soonest' },
+  { value: 'new', label: 'Newest' },
+];
 ---
 
 <Base
   title="Graduate Radar"
-  description="A free, checked list of graduate trainee programmes, entry-level jobs and free tech trainings for Nigerian graduates."
+  description="A free, checked list of graduate trainee programmes, internships, entry-level and NYSC roles for Nigerian graduates. Updated every Tuesday and Friday."
   current="jobs"
 >
-  <Hero updated={dataDay} />
-  <div class="soon">
-    <p>
-      Open now: {openJobs} jobs and {openTrainings} trainings. The full list with search and filters
-      is on its way.
+  <Hero updated={dataDay} heading="Graduate jobs, checked for you" />
+  <div class="page">
+    <ClosingSoon items={closingSoon} />
+    <p class="page__other">
+      Looking for free tech courses? <a href="/trainings">See trainings and scholarships</a>
     </p>
-    <SafetyNote />
+    <ListLayout
+      count={open.length}
+      clearHref="/"
+      dataJson={dataJson}
+      filtersLabel="Search and filter jobs"
+    >
+      <Fragment slot="search">
+        <SearchInput id="q" label="Search jobs" placeholder="Company, role, city or course" />
+      </Fragment>
+      <Fragment slot="filters">
+        <Select id="type" label="Type" options={all('All types', types)} />
+        <Select id="field" label="Field" options={all('All fields', fields)} />
+        <Select id="loc" label="Location" options={all('Anywhere', LOCATIONS)} />
+        <Select id="class" label="Degree class I have" options={classOptions} />
+        <div class="page__chips">
+          <FilterChip label="Remote only" pressed={false} name="remote" />
+          <FilterChip label="Closing soon" pressed={false} name="soon" />
+        </div>
+        <Select id="sort" label="Sort" options={sortOptions} />
+      </Fragment>
+      {open.map((j) => (
+        <li data-key={j.key}>
+          <ListingCard kind="job" listing={j} today={today} />
+        </li>
+      ))}
+    </ListLayout>
   </div>
 </Base>
 
 <style>
-  .soon {
+  .page {
     display: grid;
     gap: var(--space-4);
-    max-width: var(--measure);
-    margin-inline: auto;
+  }
+  .page__other a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-min);
+  }
+  .page__other {
+    font-size: var(--font-size-sm);
+  }
+  .page__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
   }
 </style>

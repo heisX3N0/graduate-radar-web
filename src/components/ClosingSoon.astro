@@ -1,0 +1,66 @@
+---
+// "Closing this week": quick links to listings with 7 days or fewer left, soonest first.
+// Each link carries its deadline so the browser can hide it once the date has passed.
+import { shortDate } from '../lib/dates.ts';
+
+interface Props {
+  items: { key: string; title: string; by: string; href: string; deadline: string }[];
+}
+const { items } = Astro.props;
+---
+
+{items.length > 0 && (
+  <section class="soon" aria-labelledby="soon-h">
+    <h2 id="soon-h">Closing this week</h2>
+    <ul>
+      {items.map((i) => (
+        <li data-deadline={i.deadline}>
+          <a href={i.href}>
+            <strong>{i.title}</strong>
+            <span class="soon__meta">
+              {i.by} · Closes {shortDate(i.deadline)}
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+)}
+
+<style>
+  .soon {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    background: var(--color-surface);
+    border: var(--border-strong) solid var(--color-soon);
+  }
+  h2 {
+    font-size: var(--font-size-md);
+    color: var(--color-soon);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-caps);
+  }
+  ul {
+    list-style: none;
+    padding: 0;
+    display: grid;
+  }
+  li + li {
+    border-top: var(--border-thin) solid var(--color-rule);
+  }
+  a {
+    display: grid;
+    min-height: var(--tap-min);
+    padding: var(--space-2) 0;
+    color: var(--color-ink);
+    text-decoration: none;
+  }
+  a:hover strong {
+    text-decoration: underline;
+  }
+  .soon__meta {
+    font-size: var(--font-size-sm);
+    color: var(--color-ink-muted);
+  }
+</style>
