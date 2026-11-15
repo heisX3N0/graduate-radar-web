@@ -8,16 +8,6 @@ Owner decisions that apply to every item (15 Nov 2026): `*.pages.dev` address fo
 
 ---
 
-- [ ] **GR-005 Design system: tokens and components** (L)
-  - **Why:** Pages must be built only from shared components so later products (community, CV tool) reuse the look.
-  - **Do:** Final `src/styles/tokens.css` and `global.css` from the chosen direction (spec section 7), then every component in spec 7 (Header, Footer, Hero, SearchInput, FilterBar, FilterChip, Select, ResultCount, ListingCard job and training variants, StatusBadge, DeadlineChip, EligibilityChecklist, ApplyButton with `mailto:`, ShareButton, SafetyNote, EmptyState, Banner, Breadcrumb). `/design` shows every component in every state. No Apply button on cards (owner decision).
-  - **Tests:** Negative first: a lint rule or test fails on hard-coded colours, sizes or spacing in component styles (tokens only); ApplyButton refuses to render a link whose scheme is not `https`, `http` or `mailto`; focus states visible (keyboard test on `/design`). Happy path: every component renders at 360 px in all states; tap targets at least 44 px.
-  - **Docs:** `docs/design.md` (tokens, component list, naming for later extraction).
-  - **Cost:** per visit: nothing metered. Builds: 1 per push. Users supported: unchanged.
-  - **Depends on:** GR-004 (your pick).
-  - **Open questions for the owner:** none.
-  - **Owner decisions (2026-11-15):** Direction A, Noticeboard, with the "Checked" stamp (`docs/design.md`). So: phone serif for headlines and phone sans for text (0 KB of fonts), A's colour tokens, square ruled cards, a boxed red deadline stamp, and a small ink-green "Checked <date>" stamp on every card (the word "Checked", not "Verified"; no ticks on eligibility). Add StatusStamp (checked) to the component list. Delete directions B and C, `src/design/samples.ts` if no longer used, and the `@fontsource-variable/bricolage-grotesque` dependency. Resolve the look-alike: the green "New this week" badge must not resemble the Checked stamp. Replace the hard-coded greys on `/design` with tokens (left from the GR-004 review).
-
 - [ ] **GR-006 Jobs and Trainings list pages** (L)
   - **Why:** Finding an opening you qualify for in under a minute is the main goal.
   - **Do:** `/` and `/trainings` per spec 6.1 and 6.3: hero with last-updated date, "Closing this week" strip, full server-rendered list, Fuse.js search, filters, sort, filter state in the URL, result count, empty state. Without JavaScript the full list still shows. Includes `src/lib/filters.ts` (filter and search logic shared by build and browser), moved here from GR-003 because its rules depend on this item's UI choices.
