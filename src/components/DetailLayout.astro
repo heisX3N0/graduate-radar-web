@@ -1,0 +1,139 @@
+---
+// The shared body of job and training detail pages (spec 6.1): breadcrumb, closed banner,
+// title block, deadline and Checked stamp, the page's own facts (slot), Apply (only while
+// open), Never pay to apply, WhatsApp share, similar listings and a way back.
+import ApplyButton from './ApplyButton.astro';
+import Banner from './Banner.astro';
+import Breadcrumb from './Breadcrumb.astro';
+import DeadlineChip from './DeadlineChip.astro';
+import SafetyNote from './SafetyNote.astro';
+import ShareButton from './ShareButton.astro';
+import SimilarListings from './SimilarListings.astro';
+import StatusBadge from './StatusBadge.astro';
+import StatusStamp from './StatusStamp.astro';
+import { effectiveStatus } from '../lib/dates.ts';
+import { statusBadges } from '../lib/listing-text.ts';
+
+interface Props {
+  section: { label: string; href: string };
+  listing: {
+    title: string;
+    status: string;
+    deadline: string;
+    firstSeen: string;
+    verifiedOn: string;
+    applyLink: string;
+    remote?: boolean;
+  };
+  by: string;
+  kicker: string;
+  pageUrl: string;
+  today: string;
+  similar: { key: string; title: string; by: string; href: string; deadline: string }[];
+}
+const { section, listing, by, kicker, pageUrl, today, similar } = Astro.props;
+const closed = effectiveStatus(listing, today) === 'Closed';
+const badges = statusBadges(listing, today);
+---
+
+<article class="detail">
+  <Breadcrumb items={[section, { label: listing.title }]} />
+  {closed && (
+    <Banner kind="closed" title="This opening has closed">
+      <p>You can no longer apply. Similar openings that are still open are listed below.</p>
+    </Banner>
+  )}
+  <header class="detail__head">
+    <p class="detail__kicker">{kicker}</p>
+    {badges.length > 0 && (
+      <ul class="detail__badges" aria-label="Status">
+        {badges.map((b) => (
+          <li>
+            <StatusBadge kind={b.kind} />
+          </li>
+        ))}
+      </ul>
+    )}
+    <h1>{listing.title}</h1>
+    <p class="detail__by">{by}</p>
+    <div class="detail__marks">
+      <DeadlineChip listing={listing} today={today} />
+      <StatusStamp date={listing.verifiedOn} />
+    </div>
+  </header>
+
+  <slot />
+
+  <div class="detail__actions">
+    {!closed && <ApplyButton href={listing.applyLink} />}
+    <SafetyNote />
+    <ShareButton
+      title={listing.title}
+      organisation={by}
+      deadline={listing.deadline}
+      url={pageUrl}
+    />
+  </div>
+
+  <SimilarListings
+    heading={closed ? 'Still open: similar openings' : 'Similar openings'}
+    items={similar}
+  />
+
+  <p class="detail__back">
+    <a href={section.href}>Back to all {section.label.toLowerCase()}</a>
+  </p>
+</article>
+
+<style>
+  .detail {
+    display: grid;
+    gap: var(--space-6);
+    max-width: var(--measure);
+    margin-inline: auto;
+    padding-block: var(--space-4);
+  }
+  .detail__head {
+    display: grid;
+    gap: var(--space-2);
+    border-top: var(--border-strong) solid var(--color-ink);
+    padding-top: var(--space-4);
+  }
+  .detail__kicker {
+    font-size: var(--font-size-sm);
+    color: var(--color-ink-muted);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-caps);
+    font-weight: var(--weight-semibold);
+  }
+  .detail__badges {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  h1 {
+    font-size: var(--font-size-2xl);
+  }
+  .detail__by {
+    font-weight: var(--weight-semibold);
+    font-size: var(--font-size-md);
+  }
+  .detail__marks {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+  }
+  .detail__actions {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .detail__back a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-min);
+    font-weight: var(--weight-semibold);
+  }
+</style>

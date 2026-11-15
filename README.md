@@ -55,6 +55,15 @@ The server renders every open listing (closed and past-deadline listings are nev
 - **URL:** `q`, `type`, `field`, `loc`, `remote=1`, `soon=1`, `class=21|22|any`, `sort=new` (jobs); `q`, `track`, `cost`, `format`, `place=1`, `soon=1`, `sort=new` (trainings). Defaults are left out; unknown or malformed values are ignored, so any link loads. The search text only ever goes into this page's own URL; the page makes no network requests for search.
 - **Phones:** search is always visible; the other filters fold under "Filters and sort", which opens on desktop and when a shared link has filters set, and shows how many are on.
 
+## Detail pages, SEO and sharing
+
+- **Pages:** `/jobs/<slug>` and `/trainings/<slug>` for every listing in the feed, including Closed ones checked in the last 60 days, so a shared link to a closed listing shows "This opening has closed" (no Apply button, links to similar open listings) instead of a 404. After 60 days the listing leaves the feed and its address gets the 404 page. Also `/about`, `/stay-safe` and `404`.
+- **Every page:** unique title and description, canonical link, Open Graph and Twitter tags with absolute URLs (from `SITE_URL`, default `https://graduate-radar.pages.dev`; `src/lib/site.ts`), and one sharing image, `public/og-default.png` (1200 x 630, 50.5 KB). Edit `scripts/og/og.html` and run `npm run og` to regenerate it (needs Edge or Chrome installed).
+- **JobPosting data** (schema.org JSON-LD) on open job pages only: never on closed or past-deadline listings, never on trainings. `validThrough` comes from the deadline when it is a date; remote jobs are marked telecommute, open to applicants in Nigeria. Google may still rank listings low because applications happen on the employer's site.
+- **Sharing:** the WhatsApp button opens `https://wa.me/?text=` with "title · organisation · Closes 27 Nov · page URL" ("Closed" for a past deadline).
+- **sitemap.xml** lists the main pages and every open listing; **robots.txt** allows everything and points to the sitemap. `/design` and `404` carry `noindex`.
+- **`npm run check:dist`** (CI runs it after the build) scans `dist/` and fails if any file contains "Found via" or the private "Postgrad Scholarships" tab name, if a detail page lacks "Never pay to apply", or if no detail pages were built.
+
 ## Data feed (Apps Script)
 
 `apps-script/Feed.gs` turns the sheet's two public tabs into JSON. It runs inside the sheet's own Apps Script project; the repo copy exists so it can be tested (`tests/feed.test.ts`). Change it here first, run the tests, then paste it into the script editor so the two stay the same.

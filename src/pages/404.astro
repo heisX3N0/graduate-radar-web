@@ -1,0 +1,74 @@
+---
+// Friendly not-found page (spec 6.1). Cloudflare Pages serves dist/404.html for any
+// unknown address, including a listing's page after it leaves the feed (60 days after
+// closing). The search goes to the jobs list, which reads ?q= from the address.
+import SearchInput from '../components/SearchInput.astro';
+import Base from '../layouts/Base.astro';
+---
+
+<Base
+  title="Page not found"
+  description="This page doesn't exist. Search for graduate jobs and trainings on Graduate Radar."
+  path="/404"
+  noindex
+>
+  <section class="nf">
+    <h1>Page not found</h1>
+    <p>
+      The link may be wrong, or the opening closed a while ago and has been taken down. Try
+      searching instead.
+    </p>
+    <form class="nf__search" action="/" method="get" role="search" aria-label="Search jobs">
+      <SearchInput
+        id="nf-q"
+        label="Search jobs"
+        name="q"
+        placeholder="Company, role, city or course"
+      />
+      <button type="submit">Search</button>
+    </form>
+    <p class="nf__links">
+      <a href="/">See all jobs</a>
+      <a href="/trainings">See trainings</a>
+    </p>
+  </section>
+</Base>
+
+<style>
+  .nf {
+    display: grid;
+    gap: var(--space-4);
+    max-width: var(--measure);
+    margin-inline: auto;
+    padding-block: var(--space-8);
+  }
+  h1 {
+    font-size: var(--font-size-2xl);
+  }
+  .nf__search {
+    display: grid;
+    gap: var(--space-2);
+  }
+  button {
+    min-height: var(--tap-comfort);
+    padding: var(--space-2) var(--space-4);
+    font: inherit;
+    font-weight: var(--weight-bold);
+    color: var(--color-on-primary);
+    background: var(--color-primary);
+    border: 0;
+    border-radius: var(--radius-none);
+    cursor: pointer;
+  }
+  .nf__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--space-4);
+  }
+  .nf__links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-min);
+    font-weight: var(--weight-semibold);
+  }
+</style>

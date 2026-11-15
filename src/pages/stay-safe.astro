@@ -1,0 +1,117 @@
+---
+// Stay safe (spec 6.1): never pay to apply, red flags, how to check an employer, and
+// what to do if someone asks for money. Linked from every page's footer.
+import Banner from '../components/Banner.astro';
+import Base from '../layouts/Base.astro';
+---
+
+<Base
+  title="Stay safe: how to spot a fake job"
+  description="Never pay to apply. Red flags of fake graduate jobs in Nigeria, how to check an employer is real, and what to do if someone asks you for money."
+  current="stay-safe"
+>
+  <article class="prose">
+    <h1>Stay safe: how to spot a fake job</h1>
+    <Banner kind="warning" title="Never pay to apply">
+      <p>
+        Real employers do not charge application, "processing", training, medical or uniform fees to
+        hire you. If you are asked to pay to get a job or to "secure" a place, it is a scam.
+      </p>
+    </Banner>
+
+    <h2>Red flags</h2>
+    <ul>
+      <li>
+        <strong>Any request for money</strong>, before or after an "offer", by transfer, card or
+        airtime.
+      </li>
+      <li>
+        <strong>A recruiter who only uses Gmail, Yahoo or WhatsApp</strong> for a big company. Real
+        companies usually write from their own domain (for example name@company.com).
+      </li>
+      <li>
+        <strong>Pay that is far too good</strong> for a graduate role, or a job offered with no
+        interview.
+      </li>
+      <li>
+        <strong>Pressure to act now</strong>: "only today", "slots are filling up", "don't tell
+        anyone".
+      </li>
+      <li>
+        <strong>Requests for your BVN, bank login, card PIN or OTP.</strong> No employer needs these
+        to hire you.
+      </li>
+      <li>
+        <strong>An interview in a hotel, a house or another odd place</strong>, or late at night.
+      </li>
+      <li>
+        <strong>Spelling mistakes, a fake-looking website</strong>, or a web address that is close
+        to a real company's but not quite right.
+      </li>
+    </ul>
+
+    <h2>How to check an employer is real</h2>
+    <ol>
+      <li>
+        Find the company's official website yourself (not from the message) and look for the opening
+        on its careers page.
+      </li>
+      <li>Check that emails come from the company's own domain, not a free email address.</li>
+      <li>Search the company's name with words like "scam" or "fake" and read what others say.</li>
+      <li>If you can, call the company on a number from its official website and ask.</li>
+      <li>
+        Ask someone you trust, such as a lecturer, a career adviser or a friend in the industry.
+      </li>
+    </ol>
+
+    <h2>If someone asks you for money</h2>
+    <ul>
+      <li>Stop. Don't send money, and don't share your bank details, card, BVN or OTP.</li>
+      <li>Keep the messages, emails and account numbers as evidence.</li>
+      <li>If you have already paid, contact your bank straight away.</li>
+      <li>Report it to the platform where you saw the opening, and to the police or the EFCC.</li>
+      <li>Warn your friends, so the same people can't catch them.</li>
+    </ul>
+
+    <h2>How we help</h2>
+    <p>
+      We check openings before listing them and leave out ones we can't confirm. Every listing shows
+      when we last checked it. But we can't guarantee any employer, so always confirm on the
+      organisation's own page. We don't hire or process applications.
+    </p>
+    <p>
+      <a href="/">See checked jobs</a>
+    </p>
+  </article>
+</Base>
+
+<style>
+  .prose {
+    display: grid;
+    gap: var(--space-3);
+    max-width: var(--measure);
+    margin-inline: auto;
+    padding-block: var(--space-6);
+  }
+  h1 {
+    font-size: var(--font-size-2xl);
+  }
+  h2 {
+    font-size: var(--font-size-lg);
+    margin-top: var(--space-4);
+    padding-top: var(--space-3);
+    border-top: var(--border-thin) solid var(--color-rule);
+  }
+  ul,
+  ol {
+    display: grid;
+    gap: var(--space-2);
+    padding-left: var(--space-5);
+  }
+  .prose > p > a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-min);
+    font-weight: var(--weight-semibold);
+  }
+</style>

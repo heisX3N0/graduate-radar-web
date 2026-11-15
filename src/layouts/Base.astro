@@ -1,10 +1,12 @@
 ---
-// Every page: head basics, masthead, main content, footer. Per-page SEO and sharing
-// tags (Open Graph, JSON-LD) come in GR-007.
+// Every page: head basics, sharing tags, masthead, main content, footer (spec 6.5).
+// Canonical and Open Graph URLs are absolute, from the site address (src/lib/site.ts).
+// One static sharing image for v1 (public/og-default.png, 1200 x 630).
 import '../styles/global.css';
 import tokensCss from '../styles/tokens.css?raw';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
+import { absolute } from '../lib/site.ts';
 
 // The browser toolbar colour, read from the --color-bg token so it never drifts.
 const themeColor = /--color-bg:\s*(#[0-9a-f]{6})/i.exec(tokensCss)?.[1];
@@ -14,9 +16,26 @@ interface Props {
   description: string;
   current?: 'jobs' | 'trainings' | 'stay-safe' | 'about';
   noindex?: boolean;
+  /** Path of this page for the canonical link, e.g. "/jobs/deloitte". Defaults to the URL. */
+  path?: string;
+  ogType?: 'website' | 'article';
+  /** schema.org JSON-LD, already serialised safely (jsonForScript). */
+  jsonLd?: string | undefined;
 }
-const { title, description, current, noindex = false } = Astro.props;
+const {
+  title,
+  description,
+  current,
+  noindex = false,
+  path = Astro.url.pathname,
+  ogType = 'website',
+  jsonLd,
+} = Astro.props;
 const fullTitle = title === 'Graduate Radar' ? title : `${title} | Graduate Radar`;
+const canonical = absolute(Astro.site, path === '/' ? '/' : path.replace(/\.html$/, ''));
+const image = absolute(Astro.site, '/og-default.png');
+const imageAlt =
+  'Graduate Radar: checked graduate jobs and free tech trainings for Nigerian graduates';
 ---
 
 <!doctype html>
@@ -28,6 +47,23 @@ const fullTitle = title === 'Graduate Radar' ? title : `${title} | Graduate Rada
     <meta name="description" content={description} />
     {noindex && <meta name="robots" content="noindex" />}
     {themeColor && <meta name="theme-color" content={themeColor} />}
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta property="og:site_name" content="Graduate Radar" />
+    <meta property="og:locale" content="en_GB" />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={image} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={imageAlt} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={image} />
+    {jsonLd && <script type="application/ld+json" set:html={jsonLd} is:inline />}
   </head>
   <body>
     <a class="skip" href="#main">
