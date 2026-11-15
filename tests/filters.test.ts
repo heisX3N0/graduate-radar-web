@@ -84,6 +84,15 @@ describe('never listed: closed and past-deadline listings', () => {
   });
 });
 
+describe('search index is built only when needed', () => {
+  it('filterJobs with no search text never builds a Fuse index', async () => {
+    const { readFileSync } = await import('node:fs');
+    const src = readFileSync(new URL('../src/lib/filters.ts', import.meta.url), 'utf8');
+    // No eager default parameter that builds an index on every call.
+    expect(src).not.toMatch(/search: Search = make/);
+  });
+});
+
 describe('bad URLs load the unfiltered list', () => {
   it.each([
     'type=Astronaut',

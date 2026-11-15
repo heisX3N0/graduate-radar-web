@@ -4,6 +4,7 @@
 // today's date in Lagos so a listing that closed since the last build disappears.
 // It never sends anything anywhere: the search text only goes into this page's URL.
 import { lagosToday } from '../lib/dates.ts';
+import { cardState } from '../lib/listing-text.ts';
 import {
   filterJobs,
   filterTrainings,
@@ -44,6 +45,7 @@ export function initListPage(): void {
   const empty = root.querySelector<HTMLElement>('[data-empty]');
   const more = root.querySelector<HTMLDetailsElement>('[data-more]');
   const active = root.querySelector<HTMLElement>('[data-active]');
+  const clearLink = root.querySelector<HTMLElement>('.lists__clear');
   if (!form || !list) return;
 
   const today = lagosToday();
@@ -102,13 +104,47 @@ export function initListPage(): void {
       (k) => k !== 'q' && k !== 'sort',
     ).length;
     if (active) active.textContent = on > 0 ? `(${on} on)` : '';
+    // "Clear filters" beside the count only when a filter or search is in use.
+    if (clearLink) clearLink.hidden = on === 0 && !params.get('q');
     if (updateUrl) history.replaceState(null, '', `${location.pathname}${query}${location.hash}`);
   };
 
-  // Hide "Closing this week" links whose deadline has passed since the build.
-  root.querySelectorAll<HTMLElement>('[data-deadline]').forEach((el) => {
-    if ((el.dataset['deadline'] ?? '') < today) el.hidden = true;
-  });
+  // "Closing this week" sits above the list (outside root): hide links whose deadline has
+  // passed since the build, and the whole box when none are left.
+  const strip = document.querySelector<HTMLElement>('[data-closing-soon]');
+  if (strip) {
+    const links = [...strip.querySelectorAll<HTMLElement>('[data-deadline]')];
+    for (const el of links) if ((el.dataset['deadline'] ?? '') < today) el.hidden = true;
+    if (links.every((el) => el.hidden)) strip.hidden = true;
+  }
+
+  // Cards were labelled at build time; bring "N days left" and the badges up to today.
+  const items = new Map<string, JobItem | TrainingItem>(data.items.map((i) => [i.key, i]));
+  for (const [key, el] of cards) {
+    const item = items.get(key);
+    if (!item) continue;
+    const state = cardState({ ...item, remote: 'remote' in item ? item.remote : false }, today);
+    const chip = el.querySelector<HTMLElement>('[data-deadline-chip]');
+    if (chip) {
+      const variant =
+        state.deadline.kind === 'closed' ? 'closed' : state.deadline.urgent ? 'urgent' : 'calm';
+      chip.classList.remove('deadline--calm', 'deadline--urgent', 'deadline--closed');
+      chip.classList.add(`deadline--${variant}`);
+      const text = chip.querySelector('.deadline__text');
+      const sub = chip.querySelector<HTMLElement>('.deadline__sub');
+      if (text) text.textContent = state.deadline.text;
+      if (sub) {
+        sub.textContent = state.deadline.sub;
+        sub.hidden = !state.deadline.sub;
+      }
+    }
+    const kinds = new Set(state.badges.map((b) => b.kind));
+    const badgeList = el.querySelector<HTMLElement>('.card__badges');
+    el.querySelectorAll<HTMLElement>('[data-badge]').forEach((b) => {
+      b.hidden = !kinds.has(b.dataset['badge'] as 'soon' | 'remote' | 'new');
+    });
+    if (badgeList) badgeList.hidden = kinds.size === 0;
+  }
 
   const initial = new URLSearchParams(location.search);
   writeControls(initial);

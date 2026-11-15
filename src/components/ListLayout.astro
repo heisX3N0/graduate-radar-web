@@ -25,7 +25,7 @@ const { count, clearHref, dataJson, filtersLabel } = Astro.props;
     action={clearHref}
     method="get"
   >
-    <FilterBar label={filtersLabel}>
+    <FilterBar>
       <slot name="search" />
       <details class="lists__more" data-more>
         <summary>
@@ -99,6 +99,9 @@ const { count, clearHref, dataJson, filtersLabel } = Astro.props;
     display: grid;
     gap: var(--space-3);
     padding-top: var(--space-2);
+  }
+  .lists__clear[hidden] {
+    display: none;
   }
   .lists__clear {
     display: inline-flex;

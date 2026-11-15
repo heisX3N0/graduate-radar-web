@@ -177,6 +177,17 @@ describe('StatusStamp and StatusBadge', () => {
   });
 });
 
+describe('DeadlineChip text', () => {
+  it('keeps a space between the date and the days left, for screen readers', async () => {
+    const html = await render(DeadlineChip, { listing: job, today: TODAY });
+    const text = html
+      .replace(/<[^>]+>/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    expect(text).toContain('Closes 19 Nov 4 days left');
+  });
+});
+
 describe('DeadlineChip', () => {
   it('marks a near deadline as urgent and a past one as closed', async () => {
     expect(await render(DeadlineChip, { listing: job, today: TODAY })).toMatch(/deadline--urgent/);

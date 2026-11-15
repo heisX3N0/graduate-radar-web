@@ -12,9 +12,11 @@ const d = deadlineDisplay(listing, today);
 const variant = d.kind === 'closed' ? 'closed' : d.urgent ? 'urgent' : 'calm';
 ---
 
-<p class={`deadline deadline--${variant}`}>
-  <strong class="deadline__text">{d.text}</strong>
-  {d.sub && <span class="deadline__sub">{d.sub}</span>}
+<p class={`deadline deadline--${variant}`} data-deadline-chip>
+  <strong class="deadline__text">{d.text}</strong>{' '}
+  <span class="deadline__sub" hidden={!d.sub}>
+    {d.sub}
+  </span>
 </p>
 
 <style>

@@ -10,7 +10,7 @@ const { items } = Astro.props;
 ---
 
 {items.length > 0 && (
-  <section class="soon" aria-labelledby="soon-h">
+  <section class="soon" aria-labelledby="soon-h" data-closing-soon>
     <h2 id="soon-h">Closing this week</h2>
     <ul>
       {items.map((i) => (
@@ -45,6 +45,10 @@ const { items } = Astro.props;
     list-style: none;
     padding: 0;
     display: grid;
+  }
+  .soon[hidden],
+  li[hidden] {
+    display: none;
   }
   li + li {
     border-top: var(--border-thin) solid var(--color-rule);

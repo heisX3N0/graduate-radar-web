@@ -13,20 +13,29 @@ let trainingsHtml: string;
 // 'never closed' checks have real closed listings to catch.
 const NOW = new Date('2026-11-25T08:00:00Z');
 let today = '';
+let fetchSpy: ReturnType<typeof vi.spyOn>;
 
 beforeAll(async () => {
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(NOW);
   today = lagosToday();
-  // No FEED_URL in tests, so the pages build from the committed snapshot.
-  delete process.env['FEED_URL'];
+  // Empty FEED_URL in both process.env and import.meta.env (Vitest loads .env into the
+  // latter), so the pages always build from the snapshot, never the live feed.
+  vi.stubEnv('FEED_URL', '');
+  fetchSpy = vi.spyOn(globalThis, 'fetch');
   const c = await AstroContainer.create();
   jobsHtml = await c.renderToString(JobsPage);
   trainingsHtml = await c.renderToString(TrainingsPage);
 });
 
+it('builds from the snapshot without touching the network, even when .env has FEED_URL', () => {
+  expect(fetchSpy).not.toHaveBeenCalled();
+});
+
 afterAll(() => {
   vi.useRealTimers();
+  vi.unstubAllEnvs();
+  fetchSpy.mockRestore();
 });
 
 const keysIn = (html: string) =>

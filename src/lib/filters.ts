@@ -244,9 +244,9 @@ export function filterJobs(
   items: readonly JobItem[],
   f: JobFilters,
   today: string,
-  search: Search = makeJobSearch(items),
+  search?: Search,
 ): JobItem[] {
-  const hits = f.q ? search(f.q) : null;
+  const hits = f.q ? (search ?? makeJobSearch(items))(f.q) : null;
   const kept = openOnly(items, today).filter(
     (j) =>
       (!hits || hits.has(j.key)) &&
@@ -264,9 +264,9 @@ export function filterTrainings(
   items: readonly TrainingItem[],
   f: TrainingFilters,
   today: string,
-  search: Search = makeTrainingSearch(items),
+  search?: Search,
 ): TrainingItem[] {
-  const hits = f.q ? search(f.q) : null;
+  const hits = f.q ? (search ?? makeTrainingSearch(items))(f.q) : null;
   const kept = openOnly(items, today).filter(
     (t) =>
       (!hits || hits.has(t.key)) &&
