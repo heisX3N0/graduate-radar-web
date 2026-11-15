@@ -14,7 +14,8 @@
     "check": "astro check",
     "lint": "eslint . && prettier --check . && node scripts/check-dashes.ts",
     "format": "prettier --write .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "snapshot": "node scripts/snapshot.ts"
   },
   "dependencies": {
     "astro": "7.4.12"
