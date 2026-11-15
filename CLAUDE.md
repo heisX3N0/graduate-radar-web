@@ -20,6 +20,8 @@ npm run build   # astro build
 
 Node 24.16 or later on the 24 line (see `.nvmrc` and `engines`; eslint-plugin-astro needs 24.16+). TypeScript is pinned to 6.0 because typescript-eslint and @astrojs/check do not support TypeScript 7 yet (checked 15 Nov 2026).
 
+Gotcha: worktrees live inside the main checkout (`.claude/worktrees/`). Astro's bundler also reads the main checkout's `tsconfig.json`, so if the main checkout has no `node_modules`, `npm run build` in a worktree fails with "Tsconfig not found astro/tsconfigs/strictest". Fix: run `npm ci` in the main checkout once (and again after dependency changes merge). CI and Cloudflare are not affected.
+
 ## Reviews
 
 No automatic PR review on this repo. Run `/code-review` on the diff before opening each PR and put its findings, and how each was answered, in the PR's Review section (owner decision, 15 Nov 2026). Merge with a merge commit.

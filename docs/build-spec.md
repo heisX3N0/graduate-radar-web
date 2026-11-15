@@ -159,130 +159,17 @@ Value conventions written by the sweep:
 }
 ```
 
-### 5.4 Apps Script feed (starting code)
+### 5.4 Apps Script feed
+
+The feed code lives in `apps-script/Feed.gs` (tested by `tests/feed.test.ts`, which runs the real file against stand-ins for the Apps Script services). It replaced the starting code that was here, so there is only one copy to keep in sync with the bound script.
 
 Create it as the bound script of the Graduate Radar sheet (Extensions > Apps Script). Set the script time zone to Africa/Lagos. This same project will later host the Phase 2 scraper, so keep feed code in its own file (`Feed.gs`).
-
-```javascript
-// Feed.gs
-const FEED_TABS = {
-  jobs: {
-    sheet: 'Jobs',
-    fields: {
-      'Key': 'key', 'First seen': 'firstSeen', 'Organisation': 'organisation',
-      'Role / Programme': 'title', 'Type': 'type', 'Field': 'field',
-      'Location': 'location', 'Remote': 'remote', 'Eligibility': 'eligibility',
-      'Min class': 'minClass', 'Max age': 'maxAge', 'NYSC': 'nysc',
-      'Deadline': 'deadline', 'Apply link': 'applyLink',
-      'Verified on': 'verifiedOn', 'Status': 'status', 'Notes': 'notes'
-    }
-  },
-  trainings: {
-    sheet: 'Trainings & Scholarships',
-    fields: {
-      'Key': 'key', 'First seen': 'firstSeen', 'Provider': 'provider',
-      'Programme': 'title', 'Track': 'track', 'Cost': 'cost', 'Format': 'format',
-      'Duration': 'duration', 'Eligibility': 'eligibility',
-      'Job placement?': 'jobPlacement', 'Deadline': 'deadline',
-      'Apply link': 'applyLink', 'Verified on': 'verifiedOn',
-      'Status': 'status', 'Notes': 'notes'
-    }
-  }
-};
-const REQUIRED_HEADERS = ['Key', 'Apply link', 'Status'];
-const DATE_HEADERS = ['First seen', 'Deadline', 'Verified on'];
-const ALLOWED_LINK = /^(https?:\/\/|mailto:)/i;
-const TZ = 'Africa/Lagos';
-const CLOSED_KEEP_DAYS = 60;
-const CACHE_SECONDS = 600;
-
-function doGet() {
-  const cache = CacheService.getScriptCache();
-  const cached = cache.get('feed');
-  if (cached) return asJson_(cached);
-
-  const out = { generatedAt: new Date().toISOString() };
-  Object.keys(FEED_TABS).forEach(name => { out[name] = readTab_(FEED_TABS[name]); });
-  const body = JSON.stringify(out);
-  if (body.length < 95000) cache.put('feed', body, CACHE_SECONDS); // cache value limit ~100KB
-  return asJson_(body);
-}
-
-function readTab_(cfg) {
-  const sh = SpreadsheetApp.getActive().getSheetByName(cfg.sheet);
-  if (!sh) return [];
-  const range = sh.getDataRange();
-  const values = range.getDisplayValues();
-  const raw = range.getValues(); // real Date objects for date cells
-  const header = values[0].map(h => String(h).trim());
-  const col = {};
-  header.forEach((h, i) => { if (cfg.fields[h]) col[h] = i; });
-  if (REQUIRED_HEADERS.some(h => col[h] === undefined)) {
-    console.error('Feed: missing required header in ' + cfg.sheet);
-    return [];
-  }
-  const cutoff = Utilities.formatDate(new Date(Date.now() - CLOSED_KEEP_DAYS * 864e5), TZ, 'yyyy-MM-dd');
-  const rows = [];
-  for (let r = 1; r < values.length; r++) {
-    const get = h => {
-      if (col[h] === undefined) return '';
-      if (DATE_HEADERS.indexOf(h) !== -1) return day_(raw[r][col[h]], values[r][col[h]]);
-      return String(values[r][col[h]]).trim();
-    };
-    const status = get('Status');
-    const link = get('Apply link');
-    if (!get('Key') || !ALLOWED_LINK.test(link)) continue;
-    if (status === 'Closed') {
-      const v = get('Verified on');
-      if (!v || v < cutoff) continue; // yyyy-MM-dd strings compare correctly
-    } else if (status !== 'Open' && status !== 'Closing soon') {
-      continue;
-    }
-    const item = {};
-    Object.keys(cfg.fields).forEach(h => { item[cfg.fields[h]] = get(h); });
-    if ('remote' in item) item.remote = item.remote.toLowerCase() === 'yes';
-    rows.push(item);
-  }
-  return rows;
-}
-
-// Normalise a date field to yyyy-MM-dd in Lagos time. Keeps the words the sweep
-// writes for deadlines ("Rolling", "Not stated"); returns '' for anything else.
-function day_(rawValue, display) {
-  if (Object.prototype.toString.call(rawValue) === '[object Date]' && !isNaN(rawValue)) {
-    return Utilities.formatDate(rawValue, TZ, 'yyyy-MM-dd');
-  }
-  const s = String(display).trim();
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-  if (s === 'Rolling' || s === 'Not stated') return s;
-  return '';
-}
-
-function asJson_(body) {
-  return ContentService.createTextOutput(body).setMimeType(ContentService.MimeType.JSON);
-}
-
-// Rebuild the site daily so expired listings drop off and sweep results go live.
-function triggerRebuild() {
-  const url = PropertiesService.getScriptProperties().getProperty('DEPLOY_HOOK_URL');
-  if (!url) throw new Error('Set DEPLOY_HOOK_URL in Script Properties');
-  CacheService.getScriptCache().remove('feed');
-  UrlFetchApp.fetch(url, { method: 'post', muteHttpExceptions: true });
-}
-
-function installRebuildTrigger() {
-  ScriptApp.getProjectTriggers()
-    .filter(t => t.getHandlerFunction() === 'triggerRebuild')
-    .forEach(t => ScriptApp.deleteTrigger(t));
-  ScriptApp.newTrigger('triggerRebuild').timeBased().everyDays(1).atHour(7).nearMinute(30).create();
-}
-```
 
 Deploy: Deploy > New deployment > Web app > Execute as **Me** > Who has access **Anyone**. Put the `/exec` URL in Cloudflare Pages as the build environment variable `FEED_URL`. Put the Cloudflare deploy hook URL in Script Properties as `DEPLOY_HOOK_URL`, then run `installRebuildTrigger()` once.
 
 Note: Apps Script web apps answer with a redirect to `script.googleusercontent.com`; the build-time fetch must follow redirects (Node `fetch` does by default).
 
-Note: if the sheet belongs to a Google Workspace account, the Workspace admin may block "Anyone" access to web apps. Check this before day 1 ends. Quotas also differ: a gmail.com account gets 90 minutes of trigger runtime and 20,000 URL fetches a day; Workspace gets 6 hours and 100,000 (see `docs/infra-capacity.md`).
+Note: the sheet is on a gmail.com account (owner, 15 Nov 2026), so no Workspace admin can block "Anyone" access, and consumer quotas apply: 90 minutes of trigger runtime and 20,000 URL fetches a day (see `docs/infra-capacity.md`).
 
 ## 6. Website specification
 
