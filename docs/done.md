@@ -4,6 +4,18 @@ Finished backlog items, newest first. Each entry: ID and title, merge SHA, what 
 
 ---
 
+- [x] **GR-010 Launch** (S). Done in 15734d8 (drafts), cf553e1 (review fixes), c1c1763 (phone check cleanup).
+  - **Shipped:** `docs/launch.md` with the new `Start here` tab text, the WhatsApp post, the owner's launch steps and where the fallback lives. `tests/launch-copy.test.ts` (20 tests) fails if either draft links to the Google Sheet or "Publish to web", mentions `Found via`, drops "Never pay to apply", leads with anything but the site home page, or links to a page the site does not build. Bare domains and lookalike hosts count as links. README "Launch" section. 22 new tests in total, with the 2 below (346).
+  - **Fixed on the way:** the 360 px check's test failed 3 times in 8 full test runs on Windows, because the browser still held its temp profile when the check deleted it (EPERM). The check now waits for the browser to exit (at most 5 s), and a profile it cannot delete is a warning, not a failure. 10 of 10 full runs passed after the fix.
+  - **Not verified (owner):** publishing the `Start here` text and the WhatsApp post; the preview card from the post; that the old "Publish to web" link still loads after launch.
+  - **Owner decisions (2026-11-15):** keep the "Publish to web" view live as a fallback.
+  - **Deviations:**
+    1. The drafts were written without seeing the current `Start here` tab (the sheet is never read directly). The owner keeps any still-true lines of their own.
+    2. The "Never pay to apply" check on both drafts is not in the item; it follows the site's trust copy rule.
+    3. The fallback's address is not stored in the repo, so nothing here points people to it; the README says where it is managed instead.
+    4. The cleanup fix is to GR-009's check, not GR-010; it is here because it blocked this item's gates.
+    5. cf553e1 was committed while that flaky test failed once; the failure was the cleanup race above, fixed in c1c1763.
+
 - [x] **GR-009 Phone testing and budgets** (M). Done in f1bb663 (checks) and 2b411d7 (review fixes).
   - **Shipped:** `scripts/check-budgets.ts`, part of `npm run build`: every built page must stay within 50 KB of JavaScript and a 150 KB first load (HTML with inline styles and scripts, linked CSS, linked JS), all gzipped, and fails if a linked asset is missing. `scripts/check-mobile.ts` (`npm run check:mobile`, the fifth gate and a CI step after build): opens every built page in headless Chrome or Edge at 360 x 800 with mobile emulation, opens closed `<details>` panels, and fails on sideways scroll (naming the elements that stick out) or a tap target under 44 px (inline text links in a sentence are exempt). It talks to the browser over the DevTools protocol with Node's built-in WebSocket: no new dependency. `scripts/browsers.ts` (one browser lookup for this check and `npm run og`). Fixes the check found: `/design` overflowed at 360 px, and the breadcrumb could widen any grid column (now `min-width: 0` and `overflow: hidden`, with room for the focus ring); body text now wraps long unbroken words and URLs (`overflow-wrap: anywhere`). 13 new tests (324 in total).
   - **Measured, page weight (15 Nov 2026, this branch's build, snapshot data):** home page HTML 7.3 KB, CSS 1.5 KB, JS 10.0 KB, first load 18.8 KB gzipped (budgets 50 KB JS, 150 KB first load). All 30 built pages pass both budgets and the 360 px check.
