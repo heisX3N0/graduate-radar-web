@@ -2,7 +2,7 @@
 
 A free, checked list of graduate trainee programmes, entry-level jobs and free tech trainings for Nigerian graduates. This repo is the public website. The Google Sheet stays the database; the site is rebuilt from it every day.
 
-Status: scaffold (GR-001) and the Apps Script feed (GR-002). See `BACKLOG.md` for what comes next.
+Status: scaffold (GR-001), the Apps Script feed (GR-002) and the data layer (GR-003). See `BACKLOG.md` for what comes next.
 
 ## How data flows
 
@@ -13,7 +13,32 @@ Daily 07:30 trigger                     -> Cloudflare Pages deploy hook
 Astro static build                      -> Cloudflare Pages (*.pages.dev)
 ```
 
-Full detail: `docs/build-spec.md` section 4. The data layer (GR-003) and the deploy (GR-008) are not built yet.
+Full detail: `docs/build-spec.md` section 4. The deploy and daily trigger (GR-008) are not built yet.
+
+### In the build
+
+`src/data/feed.ts` (`getListings()`) fetches `FEED_URL` once per build and checks it against the contract in `src/data/schema.ts`. Fields not in the contract are stripped, listings with an Apply link that is not `https`, `http` or `mailto` are dropped, a repeated key keeps its first listing, and every listing gets a stable `slug` (`src/lib/slug.ts`).
+
+The build uses the committed snapshot (`src/data/snapshot.json`) instead of the feed, with one `[feed]` warning in the build log, when:
+
+- `FEED_URL` is not set;
+- the fetch fails, times out (30 seconds) or answers anything but HTTP 200 with JSON;
+- the JSON does not match the contract (any listing);
+- the feed has no jobs or no trainings, or fewer than half the snapshot's count of either.
+
+If the feed fails and the snapshot is empty too, the build stops rather than publish an empty site.
+
+Dates: `src/lib/dates.ts` holds all deadline logic, in Lagos time. A date deadline before today closes a listing whatever the sheet says; a deadline 7 days away or fewer shows "Closing soon"; `Rolling` and `Not stated` never close on their own; "New this week" means first seen 0 to 6 days ago.
+
+### Refreshing the snapshot
+
+The build cannot update the snapshot itself, so refresh it by hand: in any PR, and at least monthly.
+
+```bash
+npm run snapshot
+```
+
+It reads `FEED_URL` from the environment or `.env`, and refuses to write if the feed fails the contract, has no jobs or trainings, or has fewer than half the current snapshot's count (add `-- --force` to accept a smaller feed on purpose). Commit the new `src/data/snapshot.json`.
 
 ## Data feed (Apps Script)
 
@@ -68,7 +93,7 @@ npm run build
 
 ## Environment variables
 
-- `FEED_URL`: the Apps Script `/exec` URL. Used by the build from GR-003. Set it in a local `.env` (copy `.env.example`) and, from GR-008, as a Cloudflare Pages build variable. Never commit it.
+- `FEED_URL`: the Apps Script `/exec` URL. Used by the build and by `npm run snapshot`. Set it in a local `.env` (copy `.env.example`) and, from GR-008, as a Cloudflare Pages build variable. Never commit it.
 
 ## Docs
 

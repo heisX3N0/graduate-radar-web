@@ -1,5 +1,15 @@
 ---
 // Placeholder until the list page (GR-006). No styling on purpose: the brand is chosen in GR-004.
+// It shows live counts only to prove the build reads the feed (GR-003).
+import { getListings } from '../data/feed.ts';
+import { effectiveStatus, lagosToday } from '../lib/dates.ts';
+
+const listings = await getListings();
+const today = lagosToday();
+const open = (items: { status: string; deadline: string }[]) =>
+  items.filter((i) => effectiveStatus(i, today) !== 'Closed').length;
+const openJobs = open(listings.jobs);
+const openTrainings = open(listings.trainings);
 ---
 
 <html lang="en-GB">
@@ -17,6 +27,9 @@
     <p>
       A free, checked list of graduate trainee programmes, entry-level jobs and free tech trainings
       for Nigerian graduates. The website is on its way.
+    </p>
+    <p>
+      Open now: {openJobs} jobs and {openTrainings} trainings.
     </p>
     <p>
       <strong>Never pay to apply.</strong>

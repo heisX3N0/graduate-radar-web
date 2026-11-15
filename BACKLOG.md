@@ -47,7 +47,7 @@ Owner decisions that apply to every item (15 Nov 2026): `*.pages.dev` address fo
 
 - [ ] **GR-006 Jobs and Trainings list pages** (L)
   - **Why:** Finding an opening you qualify for in under a minute is the main goal.
-  - **Do:** `/` and `/trainings` per spec 6.1 and 6.3: hero with last-updated date, "Closing this week" strip, full server-rendered list, Fuse.js search, filters, sort, filter state in the URL, result count, empty state. Without JavaScript the full list still shows.
+  - **Do:** `/` and `/trainings` per spec 6.1 and 6.3: hero with last-updated date, "Closing this week" strip, full server-rendered list, Fuse.js search, filters, sort, filter state in the URL, result count, empty state. Without JavaScript the full list still shows. Includes `src/lib/filters.ts` (filter and search logic shared by build and browser), moved here from GR-003 because its rules depend on this item's UI choices.
   - **Tests:** Negative first:
     1. Closed and past-deadline listings never appear in the lists (server and browser).
     2. A URL with unknown or malformed filter values loads the unfiltered list without errors.
@@ -58,7 +58,7 @@ Owner decisions that apply to every item (15 Nov 2026): `*.pages.dev` address fo
   - **Docs:** README "Search and filters".
   - **Cost:** per visit: nothing metered (filtering runs in the browser). JS budget: Fuse.js plus filter code, measured and reported against 50 KB gzipped. Users supported: unchanged.
   - **Depends on:** GR-003, GR-005.
-  - **Open questions for the owner:** none.
+  - **Open questions for the owner:** "Min class I have" offers 2:1, 2:2 and Any. Does "Any" mean "show me everything" (no class filter), or "I have below a 2:2, show only listings that accept any class or don't say"? Recommended: the second, labelled plainly (for example "Third class or pass").
 
 - [ ] **GR-007 Detail pages, trust pages, SEO and sharing** (L)
   - **Why:** Most visitors arrive on one listing from WhatsApp; the preview card, trust copy and Apply action decide whether they stay.
