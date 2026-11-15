@@ -5,7 +5,7 @@
   "version": "0.1.0",
   "description": "Graduate Radar: a free, checked list of graduate jobs and tech trainings for Nigerian graduates.",
   "engines": {
-    "node": ">=22.23.4"
+    "node": "^22.23.4 || ^24.16.0 || >=26.3.0"
   },
   "scripts": {
     "dev": "astro dev",

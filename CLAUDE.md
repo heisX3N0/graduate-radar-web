@@ -18,7 +18,7 @@ npm test        # vitest
 npm run build   # astro build
 ```
 
-Node 24 or later (see `.nvmrc`). TypeScript is pinned to 6.0 because typescript-eslint and @astrojs/check do not support TypeScript 7 yet (checked 15 Nov 2026).
+Node 24.16 or later on the 24 line (see `.nvmrc` and `engines`; eslint-plugin-astro needs 24.16+). TypeScript is pinned to 6.0 because typescript-eslint and @astrojs/check do not support TypeScript 7 yet (checked 15 Nov 2026).
 
 ## Reviews
 

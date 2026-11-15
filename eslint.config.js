@@ -8,7 +8,14 @@ export default [
   js.configs.recommended,
   ...tseslint.configs.recommended,
   ...astro.configs.recommended,
+  // Site code runs in the browser (and at build time in Astro frontmatter).
   {
-    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+    files: ['src/**'],
+    languageOptions: { globals: { ...globals.browser } },
+  },
+  // Scripts, tests and config files run in Node only.
+  {
+    files: ['scripts/**', 'tests/**', '*.js', '*.mjs', '*.ts'],
+    languageOptions: { globals: { ...globals.node } },
   },
 ];

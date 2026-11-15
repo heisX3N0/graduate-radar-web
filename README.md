@@ -17,7 +17,7 @@ Full detail: `docs/build-spec.md` section 4. The feed (GR-002), the data layer (
 
 ## Setup
 
-Needs Node 24 or later (`.nvmrc`).
+Needs Node 24.16 or later on the 24 line (`.nvmrc`, `engines` in package.json).
 
 ```bash
 npm install

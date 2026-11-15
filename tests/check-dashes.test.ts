@@ -41,6 +41,12 @@ describe('findDashes', () => {
     expect(findDashes(root).map((f) => f.file)).toEqual(['BACKLOG.md', 'README.md']);
   });
 
+  it('checks root config files such as package.json and astro.config.mjs', () => {
+    file('package.json', `{ "description": "Jobs ${EM} free" }`);
+    file('astro.config.mjs', `// Days 1${EN}7`);
+    expect(findDashes(root).map((f) => f.file)).toEqual(['astro.config.mjs', 'package.json']);
+  });
+
   it('ignores node_modules, dist and .astro', () => {
     file('node_modules/pkg/readme.md', `x ${EM} y`);
     file('dist/index.html', `x ${EM} y`);
