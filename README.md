@@ -19,7 +19,7 @@ Full detail: `docs/build-spec.md` section 4. The data layer (GR-003) and the dep
 
 `apps-script/Feed.gs` turns the sheet's two public tabs into JSON. It runs inside the sheet's own Apps Script project; the repo copy exists so it can be tested (`tests/feed.test.ts`). Change it here first, run the tests, then paste it into the script editor so the two stay the same.
 
-What it sends: only the fields in `FEED_TABS` (never `Found via`, never the private tabs), rows that are Open or Closing soon plus Closed rows checked in the last 60 days, Apply links that start with `https://`, `http://` or `mailto:`, and dates as `yyyy-MM-dd` (or `Rolling`, `Not stated`, or empty).
+What it sends: only the fields in `FEED_TABS` (never `Found via`, never the private tabs), rows that are Open or Closing soon plus Closed rows checked in the last 60 days, Apply links that start with `https://`, `http://` or `mailto:`, and dates as `yyyy-MM-dd` (or `Rolling`, `Not stated`, or empty for anything that is not a real date). It keeps the first row of a repeated `Key`, and sends nothing for a tab where a column name appears twice; both are logged in the script's Executions page.
 
 ### Deploying or updating the feed (owner)
 

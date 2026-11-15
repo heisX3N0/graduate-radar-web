@@ -61,7 +61,7 @@ const ALLOWED_LINK = /^(https?:\/\/|mailto:)/i;
 const TZ = 'Africa/Lagos';
 const CLOSED_KEEP_DAYS = 60;
 const CACHE_SECONDS = 600;
-const CACHE_MAX_CHARS = 95000; // CacheService values are limited to about 100 KB
+const CACHE_MAX_BYTES = 95000; // CacheService values are limited to 100 KB (bytes, not characters)
 
 function doGet() {
   const cache = CacheService.getScriptCache();
@@ -73,7 +73,14 @@ function doGet() {
     out[name] = readTab_(FEED_TABS[name]);
   });
   const body = JSON.stringify(out);
-  if (body.length < CACHE_MAX_CHARS) cache.put('feed', body, CACHE_SECONDS);
+  // Caching is an optimisation: it must never fail the request.
+  if (Utilities.newBlob(body).getBytes().length < CACHE_MAX_BYTES) {
+    try {
+      cache.put('feed', body, CACHE_SECONDS);
+    } catch (e) {
+      console.error('Feed: cache put failed: ' + e);
+    }
+  }
   return asJson_(body);
 }
 
@@ -88,9 +95,17 @@ function readTab_(cfg) {
   const raw = range.getValues(); // real Date objects for date cells
   const header = values[0].map((h) => String(h).trim());
   const col = {};
+  const dupes = [];
   header.forEach((h, i) => {
-    if (cfg.fields[h]) col[h] = i;
+    if (!Object.prototype.hasOwnProperty.call(cfg.fields, h)) return;
+    if (col[h] !== undefined) dupes.push(h);
+    col[h] = i;
   });
+  if (dupes.length) {
+    // Two columns with one name: we cannot know which the owner means, so send nothing.
+    console.error('Feed: duplicate header(s) ' + dupes.join(', ') + ' in ' + cfg.sheet);
+    return [];
+  }
   const missing = REQUIRED_HEADERS.filter((h) => col[h] === undefined);
   if (missing.length) {
     console.error('Feed: missing required header(s) ' + missing.join(', ') + ' in ' + cfg.sheet);
@@ -98,12 +113,14 @@ function readTab_(cfg) {
   }
 
   // yyyy-MM-dd strings compare correctly as text.
+  const today = Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd');
   const cutoff = Utilities.formatDate(
     new Date(Date.now() - CLOSED_KEEP_DAYS * 864e5),
     TZ,
     'yyyy-MM-dd',
   );
   const rows = [];
+  const seen = {};
   for (let r = 1; r < values.length; r++) {
     const get = (h) => {
       if (col[h] === undefined) return '';
@@ -111,13 +128,23 @@ function readTab_(cfg) {
       return String(values[r][col[h]]).trim();
     };
     const status = get('Status');
-    if (!get('Key') || !ALLOWED_LINK.test(get('Apply link'))) continue;
+    const key = get('Key');
+    if (!key || !ALLOWED_LINK.test(get('Apply link'))) continue;
     if (status === 'Closed') {
       const verified = get('Verified on');
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(verified) || verified < cutoff) continue;
+      // Unreadable, older than 60 days, or in the future (a typo): leave it out.
+      if (!verified || verified < cutoff || verified > today) continue;
     } else if (status !== 'Open' && status !== 'Closing soon') {
       continue;
     }
+    if (Object.prototype.hasOwnProperty.call(seen, key)) {
+      // Same key means same URL on the site; keep the first row only.
+      console.error(
+        'Feed: duplicate Key "' + key + '" in ' + cfg.sheet + ', row ' + (r + 1) + ' skipped',
+      );
+      continue;
+    }
+    seen[key] = true;
     const item = {};
     Object.keys(cfg.fields).forEach((h) => {
       item[cfg.fields[h]] = get(h);
@@ -135,9 +162,20 @@ function day_(rawValue, display) {
     return Utilities.formatDate(rawValue, TZ, 'yyyy-MM-dd');
   }
   const s = String(display).trim();
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  if (isRealDay_(s)) return s;
   if (s === 'Rolling' || s === 'Not stated') return s;
   return '';
+}
+
+// True for yyyy-MM-dd text that names a real calendar day (so not 2026-11-31).
+function isRealDay_(s) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (!m) return false;
+  const y = Number(m[1]);
+  const mo = Number(m[2]) - 1;
+  const d = Number(m[3]);
+  const t = new Date(Date.UTC(y, mo, d));
+  return t.getUTCFullYear() === y && t.getUTCMonth() === mo && t.getUTCDate() === d;
 }
 
 function asJson_(body) {

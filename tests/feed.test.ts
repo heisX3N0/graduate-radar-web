@@ -183,6 +183,50 @@ describe('feed: what must never leave the sheet', () => {
   });
 });
 
+describe('feed: review fixes (GR-002)', () => {
+  it('exposes doGet as the only web app route (docs/public-routes.md)', () => {
+    expect(run([job()]).routes).toEqual(['doGet']);
+  });
+
+  it('still answers when the body is under the character limit but over 100 KB in bytes', () => {
+    // 40,000 naira signs: 40,000 characters, 120,000 bytes in UTF-8.
+    const { out, cache } = run([job({ Notes: '₦'.repeat(40000) })]);
+    expect(out.jobs).toHaveLength(1);
+    expect(cache.has('feed')).toBe(false);
+  });
+
+  it.each(['2026-13-01', '2026-11-31', '2026-02-29', '2026-00-10'])(
+    'sends an empty string for the impossible date %j',
+    (bad) => {
+      const { out } = run([job({ Deadline: bad })]);
+      expect(out.jobs[0]?.['deadline']).toBe('');
+    },
+  );
+
+  it('keeps only the first row of a duplicated Key and logs it', () => {
+    const { out, errors } = run([
+      job({ Notes: 'first' }),
+      job({ Notes: 'second' }),
+      job({ Key: 'other|x|2026' }),
+    ]);
+    expect(out.jobs.map((j) => j['notes'])).toEqual(['first', '24-month programme']);
+    expect(errors.join('\n')).toContain('duplicate Key');
+  });
+
+  it('drops a Closed row whose Verified on is in the future', () => {
+    const { out } = run([job({ Status: 'Closed', 'Verified on': '2027-11-14' })]);
+    expect(out.jobs).toEqual([]);
+  });
+
+  it('refuses a tab where an allowlisted header appears twice, and logs it', () => {
+    const headers = [...JOB_HEADERS, 'Status'];
+    const { out, errors } = run([job()], [training()], headers);
+    expect(out.jobs).toEqual([]);
+    expect(out.trainings).toHaveLength(1);
+    expect(errors.join('\n')).toContain('duplicate header');
+  });
+});
+
 describe('feed: dates', () => {
   it('turns a real date cell shown as dd/MM/yyyy into yyyy-MM-dd', () => {
     const { out } = run([

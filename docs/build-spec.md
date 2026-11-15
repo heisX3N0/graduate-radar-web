@@ -169,7 +169,7 @@ Deploy: Deploy > New deployment > Web app > Execute as **Me** > Who has access *
 
 Note: Apps Script web apps answer with a redirect to `script.googleusercontent.com`; the build-time fetch must follow redirects (Node `fetch` does by default).
 
-Note: if the sheet belongs to a Google Workspace account, the Workspace admin may block "Anyone" access to web apps. Check this before day 1 ends. Quotas also differ: a gmail.com account gets 90 minutes of trigger runtime and 20,000 URL fetches a day; Workspace gets 6 hours and 100,000 (see `docs/infra-capacity.md`).
+Note: the sheet is on a gmail.com account (owner, 15 Nov 2026), so no Workspace admin can block "Anyone" access, and consumer quotas apply: 90 minutes of trigger runtime and 20,000 URL fetches a day (see `docs/infra-capacity.md`).
 
 ## 6. Website specification
 
