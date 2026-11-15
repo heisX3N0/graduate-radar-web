@@ -90,9 +90,9 @@ function readTab_(cfg) {
     console.error('Feed: missing tab ' + cfg.sheet);
     return [];
   }
-  const range = sh.getDataRange();
-  const values = range.getDisplayValues();
-  const raw = range.getValues(); // real Date objects for date cells
+  // One read of every cell as shown in the sheet. Raw values (real Date objects)
+  // are read later for the date columns only, once the tab has passed its checks.
+  const values = sh.getDataRange().getDisplayValues();
   const header = values[0].map((h) => String(h).trim());
   const col = {};
   const dupes = [];
@@ -119,12 +119,19 @@ function readTab_(cfg) {
     TZ,
     'yyyy-MM-dd',
   );
+  // Raw values for each date column present: one single-column read each.
+  const raw = {};
+  DATE_HEADERS.forEach((h) => {
+    if (col[h] === undefined) return;
+    raw[h] = sh.getRange(1, col[h] + 1, values.length, 1).getValues();
+  });
+
   const rows = [];
   const seen = {};
   for (let r = 1; r < values.length; r++) {
     const get = (h) => {
       if (col[h] === undefined) return '';
-      if (DATE_HEADERS.indexOf(h) !== -1) return day_(raw[r][col[h]], values[r][col[h]]);
+      if (raw[h]) return day_(raw[h][r][0], values[r][col[h]]);
       return String(values[r][col[h]]).trim();
     };
     const status = get('Status');

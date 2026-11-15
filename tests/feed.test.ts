@@ -227,6 +227,29 @@ describe('feed: review fixes (GR-002)', () => {
   });
 });
 
+describe('feed: sheet reads', () => {
+  it('reads every cell once for display, and raw values only for the date columns', () => {
+    const rows = [job(), job({ Key: 'b|b|2026' }), job({ Key: 'c|c|2026' })];
+    const { reads } = run(rows);
+    const jobs = reads.filter((r) => r.tab === 'Jobs');
+    const height = rows.length + 1; // header row included
+    // One display read of the whole tab.
+    expect(jobs.filter((r) => r.kind === 'display')).toEqual([
+      { tab: 'Jobs', kind: 'display', cells: height * JOB_HEADERS.length },
+    ]);
+    // Raw reads: one single column per date header (First seen, Deadline, Verified on), no more.
+    const raw = jobs.filter((r) => r.kind === 'raw');
+    expect(raw).toHaveLength(3);
+    expect(raw.every((r) => r.cells === height)).toBe(true);
+  });
+
+  it('does no raw reads at all for a tab it refuses', () => {
+    const headers = JOB_HEADERS.filter((h) => h !== 'Key');
+    const { reads } = run([job()], [training()], headers);
+    expect(reads.filter((r) => r.tab === 'Jobs' && r.kind === 'raw')).toEqual([]);
+  });
+});
+
 describe('feed: dates', () => {
   it('turns a real date cell shown as dd/MM/yyyy into yyyy-MM-dd', () => {
     const { out } = run([

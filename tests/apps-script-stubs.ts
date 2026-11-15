@@ -18,6 +18,8 @@ export interface Harness {
   /** Web app entry points (doGet, doPost, ...) the script defines. */
   routes: string[];
   opened: string[];
+  /** Every cell read: which tab, raw or display values, and how many cells. */
+  reads: { tab: string; kind: 'raw' | 'display'; cells: number }[];
   errors: string[];
   cache: Map<string, string>;
 }
@@ -45,15 +47,34 @@ export function loadFeed(tabs: Record<string, Grid>): Harness {
   const errors: string[] = [];
   const cache = new Map<string, string>();
 
+  const reads: Harness['reads'] = [];
+
   const sheetFor = (name: string) => {
     opened.push(name);
     const grid = tabs[name];
     if (!grid) return null;
+    // A range over grid rows [r0, r0 + nr) and columns [c0, c0 + nc), 0-based.
+    const rangeOf = (r0: number, c0: number, nr: number, nc: number) => {
+      const block = () => grid.slice(r0, r0 + nr).map((row) => row.slice(c0, c0 + nc));
+      return {
+        getValues: () => {
+          reads.push({ tab: name, kind: 'raw', cells: nr * nc });
+          return block().map((row) => [...row]);
+        },
+        getDisplayValues: () => {
+          reads.push({ tab: name, kind: 'display', cells: nr * nc });
+          return block().map((row) => row.map(display));
+        },
+      };
+    };
+    const rows = grid.length;
+    const cols = grid[0]?.length ?? 0;
     return {
-      getDataRange: () => ({
-        getValues: () => grid.map((row) => [...row]),
-        getDisplayValues: () => grid.map((row) => row.map(display)),
-      }),
+      getDataRange: () => rangeOf(0, 0, rows, cols),
+      getLastRow: () => rows,
+      // Apps Script getRange(row, column, numRows, numColumns) is 1-based.
+      getRange: (row: number, column: number, numRows: number, numColumns: number) =>
+        rangeOf(row - 1, column - 1, numRows, numColumns),
     };
   };
 
@@ -111,5 +132,5 @@ export function loadFeed(tabs: Record<string, Grid>): Harness {
   const code = readFileSync(new URL('../apps-script/Feed.gs', import.meta.url), 'utf8');
   const feed = runInContext(`${code}\n;({ doGet, readTab_, day_, FEED_TABS })`, context) as FeedApi;
   const routes = Object.keys(context).filter((k) => /^do[A-Z]/.test(k));
-  return { feed, routes, opened, errors, cache };
+  return { feed, routes, opened, reads, errors, cache };
 }
