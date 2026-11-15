@@ -27,7 +27,7 @@ Owner decisions that apply to every item (15 Nov 2026): `*.pages.dev` address fo
   - **Cost:** per build: 1 to 2 Apps Script executions; per direct hit on `/exec`: 1 execution (cached for 10 minutes). URL fetches: 0 until GR-008 adds the daily hook call (1 a day). Users supported: unchanged (visitors never call the feed).
   - **Depends on:** GR-001.
   - **Open questions for the owner:** none.
-  - **Owner decisions (2026-11-15):** The sheet is on a gmail.com account, so no Workspace admin can block "Anyone" access; consumer quotas apply (20,000 URL fetches and 90 minutes of trigger runtime a day). The owner does the Apps Script deploy clicks; Claude guides each step.
+  - **Owner decisions (2026-11-15):** The sheet is on a gmail.com account, so no Workspace admin can block "Anyone" access; consumer quotas apply (20,000 URL fetches and 90 minutes of trigger runtime a day). The owner does the Apps Script deploy clicks; Claude guides each step. The feed runs against the original sheet, not the owner's public copy (the copy pulls the public tabs and stays as the "Publish to web" fallback): a live copy can be stale or half-loaded when a script reads it, and the Phase 2 scraper needs the original. The script is not locked to its own file with `@OnlyCurrentDoc`; it keeps Google's default access.
 
 - [ ] **GR-003 Data layer: feed, snapshot, dates and slugs** (M)
   - **Why:** Every page reads listings through one module, so validation, the snapshot fallback, Lagos dates and stable slugs must be right once. The first-draft slug rule (`-2` on collision) could move a listing to another URL when rows were reordered.
