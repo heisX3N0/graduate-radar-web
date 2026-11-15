@@ -112,6 +112,12 @@ The site is static and hosted on Cloudflare Pages (free plan). Cloudflare builds
 - **The feed is down at build time:** the build uses `src/data/snapshot.json` and logs a `[feed]` warning in the Cloudflare build log; the page's "Data from" date shows the snapshot's date.
 - **The hook URL leaks:** delete it in Cloudflare (Settings > Builds > Deploy hooks), add a new one, and replace `DEPLOY_HOOK_URL` in Script Properties.
 
+## Launch
+
+The website replaces the sheet's "Publish to web" view as the link we share. `docs/launch.md` holds the drafts the owner publishes by hand (the sheet's `Start here` tab and the WhatsApp post) and the owner's launch steps; `tests/launch-copy.test.ts` checks that both drafts lead with the website and never link to the Sheet.
+
+**Fallback:** the "Publish to web" view stays live (owner decision, 15 Nov 2026). It is managed in the sheet under File, Share, Publish to web, and its address is deliberately not in this repo. Anyone with the old link still sees the old view, which may show columns the website never sends (such as `Found via`).
+
 ## Setup
 
 Needs Node 24.16 or later on the 24 line (`.nvmrc`, `engines` in package.json).
@@ -158,4 +164,5 @@ npm run build
 - `BACKLOG.md`: open work. `docs/done.md`: what shipped.
 - `docs/infra-capacity.md`: free-plan limits and what each action costs.
 - `docs/public-routes.md`: the only public endpoints.
+- `docs/launch.md`: launch drafts (Start here tab, WhatsApp post) and the fallback.
 - `CLAUDE.md`: rules for Claude Code in this repo.

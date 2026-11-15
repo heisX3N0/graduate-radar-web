@@ -86,6 +86,32 @@ function serve(dist: string): Promise<{ origin: string; server: Server }> {
   );
 }
 
+/** Stops the browser and waits for it to exit (at most 5 s), so it lets go of its profile. */
+export function stopBrowser(proc: ChildProcess): Promise<void> {
+  if (proc.exitCode !== null || proc.signalCode !== null) return Promise.resolve();
+  return new Promise((done) => {
+    const timer = setTimeout(done, 5_000);
+    proc.once('exit', () => {
+      clearTimeout(timer);
+      done();
+    });
+    proc.kill();
+  });
+}
+
+/**
+ * Deletes the throwaway browser profile. On Windows the browser's helper processes can
+ * hold files for a moment after it exits; a leftover folder in the temp directory is
+ * not a phone problem, so it is reported as a warning and never fails the check.
+ */
+export function removeProfile(profile: string, remove: typeof rmSync = rmSync): void {
+  try {
+    remove(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+  } catch (err) {
+    console.warn(`[check-mobile] could not delete ${profile}: ${(err as Error).message}`);
+  }
+}
+
 function launch(browser: string, profile: string): Promise<{ ws: string; proc: ChildProcess }> {
   const proc = spawn(browser, [
     '--headless=new',
@@ -216,11 +242,9 @@ export async function checkMobile(dist: string, browser: string): Promise<Mobile
     }
   } finally {
     cdp?.close();
-    proc?.kill();
     server.close();
-    // The browser can hold its profile for a moment after exit (Windows).
-    await new Promise((r) => setTimeout(r, 300));
-    rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+    if (proc) await stopBrowser(proc);
+    removeProfile(profile);
   }
   return findings;
 }
