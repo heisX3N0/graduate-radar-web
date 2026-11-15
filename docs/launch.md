@@ -19,7 +19,7 @@ Trainings and scholarships: https://graduate-radar.pages.dev/trainings
 How it works
 We add new openings and mark closed ones as we find them.
 Every listing links to the employer's or provider's own page wherever possible.
-This sheet is the list behind the website. The website updates from it every morning.
+This sheet is the list behind the website.
 
 Stay safe
 Never pay to apply. If anyone asks you for a fee, stop and don't send money.

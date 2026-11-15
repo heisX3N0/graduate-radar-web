@@ -57,11 +57,37 @@ describe('findScheduleClaims: what must be refused', () => {
     file('scripts/og/og.html', '<span class="stamp">Updated Tuesday and Friday</span>');
     expect(findScheduleClaims(root)).toEqual([{ file: 'scripts/og/og.html', line: 1 }]);
   });
+
+  it('fails other wordings: "on Tuesdays", "each Friday", "every morning"', () => {
+    file('src/pages/a.astro', '<p>New openings on Tuesdays.</p>\n<p>Checked each Friday.</p>');
+    file('docs/launch.md', 'The website updates every morning.');
+    expect(findScheduleClaims(root)).toEqual([
+      { file: 'docs/launch.md', line: 1 },
+      { file: 'src/pages/a.astro', line: 1 },
+      { file: 'src/pages/a.astro', line: 2 },
+    ]);
+  });
+
+  it('fails a claim with markup inside it', () => {
+    file('src/components/Hero.astro', '<p>Updated every <strong>Tuesday</strong>.</p>');
+    expect(findScheduleClaims(root)).toEqual([{ file: 'src/components/Hero.astro', line: 1 }]);
+  });
 });
 
 describe('findScheduleClaims: what is allowed', () => {
   it('does not fail a weekday on its own', () => {
     file('src/pages/about.astro', '<p>Interviews hold on Friday. Sat and fried rice.</p>');
+    expect(findScheduleClaims(root)).toEqual([]);
+  });
+
+  it('skips the snapshot, which is sheet data, not our copy', () => {
+    file('src/data/snapshot.json', '{"notes": "Interviews hold every Friday"}');
+    expect(findScheduleClaims(root)).toEqual([]);
+  });
+
+  it('skips build folders inside scanned folders', () => {
+    file('public/dist/x.html', 'Updated every Tuesday');
+    file('src/node_modules/x.js', 'Updated every Tuesday');
     expect(findScheduleClaims(root)).toEqual([]);
   });
 

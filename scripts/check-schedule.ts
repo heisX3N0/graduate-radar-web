@@ -1,12 +1,14 @@
 // Fails when the site or its docs promise an update schedule ("every Tuesday", "Tue/Fri",
-// "twice a week"). Owner decision (15 Nov 2026): no schedule anywhere, so the sweep can
-// move to daily without a copy change. A weekday on its own is fine.
-// Scans repo copy only, never dist/: listing notes from the sheet may name a day and
-// must never fail a daily build.
+// "on Fridays", "twice a week", "every morning"). Owner decision (15 Nov 2026): no
+// schedule anywhere, so the sweep can change frequency without a copy change. A weekday
+// on its own ("Interviews hold on Friday") is fine.
+// Scans our own copy only. Never dist/ or the snapshot: listing notes from the sheet may
+// name a day and must never fail a build or a lint run.
 // Run: node scripts/check-schedule.ts   (part of npm run lint)
-import { existsSync, lstatSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { walk } from './check-dashes.ts';
 
 export interface ScheduleFinding {
   file: string;
@@ -15,24 +17,22 @@ export interface ScheduleFinding {
 
 const SCAN_DIRS = ['src', 'scripts/og', 'public'];
 const SCAN_FILES = ['README.md', 'docs/build-spec.md', 'docs/launch.md'];
-const TEXT_EXT = /\.(astro|ts|tsx|js|mjs|json|md|css|html|txt|xml|svg)$/i;
+// Sheet data, not our copy.
+const SKIP_FILES = new Set(['src/data/snapshot.json']);
 
-const DAY =
-  '(?:monday|mon|tuesday|tues|tue|wednesday|wed|thursday|thurs|thu|friday|fri|saturday|sat|sunday|sun)';
+const NAMES = 'monday|tuesday|wednesday|thursday|friday|saturday|sunday';
+const DAY = `(?:${NAMES}|mon|tues|tue|wed|thurs|thu|fri|sat|sun)`;
 const CLAIMS = [
-  new RegExp(`\\bevery\\s+${DAY}\\b`, 'gi'),
+  new RegExp(`\\b(?:every|each)\\s+${DAY}\\b`, 'gi'),
   new RegExp(`\\b${DAY}s?\\s*(?:and|&|/)\\s*${DAY}s?\\b`, 'gi'),
+  new RegExp(`\\bon\\s+(?:${NAMES})s\\b`, 'gi'),
+  /\bevery\s+(?:morning|evening|night|day|weekday|week)\b/gi,
   /\btwice\s+(?:a\s+week|weekly)\b/gi,
 ];
 
-function walk(dir: string, out: string[]) {
-  if (!existsSync(dir)) return;
-  for (const name of readdirSync(dir)) {
-    const full = join(dir, name);
-    const st = lstatSync(full);
-    if (st.isDirectory()) walk(full, out);
-    else if (st.isFile() && TEXT_EXT.test(name)) out.push(full);
-  }
+/** Tags become spaces (newlines kept), so "every <b>Tuesday</b>" still matches. */
+function withoutTags(text: string): string {
+  return text.replace(/<[^<>]*>/g, (tag) => tag.replace(/[^\n]/g, ' '));
 }
 
 export function findScheduleClaims(root: string): ScheduleFinding[] {
@@ -43,7 +43,8 @@ export function findScheduleClaims(root: string): ScheduleFinding[] {
   const findings: ScheduleFinding[] = [];
   for (const full of files) {
     const rel = relative(root, full).split(sep).join('/');
-    const text = readFileSync(full, 'utf8');
+    if (SKIP_FILES.has(rel)) continue;
+    const text = withoutTags(readFileSync(full, 'utf8'));
     const lines = new Set<number>();
     // Whole-file matching, so a claim wrapped over two lines is still caught; the
     // finding names the line where it starts.

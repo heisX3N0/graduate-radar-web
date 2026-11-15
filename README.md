@@ -1,6 +1,6 @@
 # Graduate Radar web
 
-A free, checked list of graduate trainee programmes, entry-level jobs and free tech trainings for Nigerian graduates. This repo is the public website. The Google Sheet stays the database; the site is rebuilt from it every day.
+A free, checked list of graduate trainee programmes, entry-level jobs and free tech trainings for Nigerian graduates. This repo is the public website. The Google Sheet stays the database; the site is rebuilt from it automatically (see "Deploy").
 
 Status: scaffold (GR-001), the Apps Script feed (GR-002), the data layer (GR-003) and the Cloudflare deploy with a daily rebuild (GR-008). See `BACKLOG.md` for what comes next.
 
