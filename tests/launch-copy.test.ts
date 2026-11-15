@@ -4,9 +4,10 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { siteOrigin } from '../src/lib/site.ts';
 
 const ROOT = join(import.meta.dirname, '..');
-const SITE = 'https://graduate-radar.pages.dev';
+const SITE = siteOrigin(undefined);
 const DRAFTS = ['Start here tab', 'WhatsApp post'] as const;
 
 /** The first ```text block under the "## <heading>" section, or throws. */
@@ -29,13 +30,27 @@ function draft(markdown: string, heading: string): string {
   return text;
 }
 
-const urls = (text: string) => text.match(/https?:\/\/[^\s)*_]+/g) ?? [];
-
-function readLaunch(): string {
-  const file = join(ROOT, 'docs', 'launch.md');
-  if (!existsSync(file)) throw new Error('docs/launch.md is missing');
-  return readFileSync(file, 'utf8');
+/**
+ * Every link WhatsApp or Sheets would make from the text, in order, as absolute URLs.
+ * Bare domains count too ("bit.ly/x" becomes a link in WhatsApp). Trailing WhatsApp
+ * formatting and sentence punctuation (* _ . , ) :) are not part of the link.
+ */
+function links(text: string): URL[] {
+  const found = text.match(/(?:https?:\/\/)?(?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/[^\s]*)?/gi) ?? [];
+  return found.map((raw) => {
+    const trimmed = raw.replace(/[*_.,):]+$/, '');
+    return new URL(/^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`);
+  });
 }
+
+/** True when src/pages builds this path ("/" is index.astro). */
+function builtPage(pathname: string): boolean {
+  const path = pathname.replace(/\/+$/, '') || '/index';
+  return existsSync(join(ROOT, 'src', 'pages', `${path}.astro`));
+}
+
+const launchFile = join(ROOT, 'docs', 'launch.md');
+const launch = existsSync(launchFile) ? readFileSync(launchFile, 'utf8') : '';
 
 describe('draft()', () => {
   it('refuses a missing section, so the checks below cannot pass on nothing', () => {
@@ -54,35 +69,70 @@ describe('draft()', () => {
   });
 });
 
+describe('links()', () => {
+  it('finds bare domains, which WhatsApp also turns into links', () => {
+    expect(links('Old list: bit.ly/gr-sheet then more').map(String)).toEqual([
+      'https://bit.ly/gr-sheet',
+    ]);
+  });
+
+  it('keeps a lookalike host as its own host', () => {
+    const [url] = links('https://graduate-radar.pages.dev.example.com/');
+    expect(url?.origin).toBe('https://graduate-radar.pages.dev.example.com');
+  });
+
+  it('drops WhatsApp bold and sentence punctuation, but keeps underscores inside', () => {
+    expect(links('*https://a.example/x_y*. Next').map(String)).toEqual(['https://a.example/x_y']);
+  });
+
+  it('does not treat ordinary words as links', () => {
+    expect(links("Never pay to apply. If anyone asks, e.g. a recruiter, don't pay.")).toEqual([]);
+  });
+});
+
+describe('builtPage()', () => {
+  it('refuses a page the site does not build', () => {
+    expect(builtPage('/no-such-page')).toBe(false);
+  });
+
+  it('accepts the home page and real pages', () => {
+    expect(builtPage('/')).toBe(true);
+    expect(builtPage('/stay-safe')).toBe(true);
+  });
+});
+
 describe('launch drafts (docs/launch.md)', () => {
+  it('exists', () => {
+    expect(launch, 'docs/launch.md is missing').not.toBe('');
+  });
+
   for (const heading of DRAFTS) {
     describe(heading, () => {
       it('does not link to the Google Sheet or its "Publish to web" view', () => {
-        const text = draft(readLaunch(), heading);
+        const text = draft(launch, heading);
         expect(text).not.toMatch(/docs\.google\.com|pubhtml|spreadsheets/i);
         expect(text).not.toMatch(/publish(ed)? to (the )?web/i);
       });
 
       it('never mentions the private "Found via" field', () => {
-        expect(draft(readLaunch(), heading)).not.toMatch(/found via/i);
+        expect(draft(launch, heading)).not.toMatch(/found via/i);
       });
 
       it('has the website home page as its first link', () => {
-        const first = urls(draft(readLaunch(), heading))[0];
-        expect(first?.replace(/\/$/, '')).toBe(SITE);
+        const [first] = links(draft(launch, heading));
+        expect(first?.origin).toBe(SITE);
+        expect(first?.pathname).toBe('/');
       });
 
       it('links only to pages the site builds', () => {
-        const pages = new Set(['/', '/trainings', '/about', '/stay-safe']);
-        for (const url of urls(draft(readLaunch(), heading))) {
-          expect(url.startsWith(SITE), url).toBe(true);
-          const path = new URL(url).pathname.replace(/(.)\/$/, '$1');
-          expect(pages.has(path), url).toBe(true);
+        for (const url of links(draft(launch, heading))) {
+          expect(url.origin, String(url)).toBe(SITE);
+          expect(builtPage(url.pathname), String(url)).toBe(true);
         }
       });
 
       it('keeps "Never pay to apply"', () => {
-        expect(draft(readLaunch(), heading)).toMatch(/never pay to apply/i);
+        expect(draft(launch, heading)).toMatch(/never pay to apply/i);
       });
     });
   }

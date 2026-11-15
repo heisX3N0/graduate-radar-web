@@ -6,7 +6,7 @@ Why the website must be the first link: WhatsApp builds the preview card from th
 
 ## Start here tab
 
-Paste one line per row, starting in A1, over the current text. These drafts were written without seeing the current tab (Claude never reads the sheet). Keep any line of yours that is still true, except a `Found via` line or the Ctrl+F tip: the website's search replaces the tip.
+Clear the tab's old text first (select it all and press Delete), so no old line or link is left below the new text. Then paste one line per row, starting in A1. These drafts were written without seeing the current tab (Claude never reads the sheet). Keep any line of yours that is still true, except a `Found via` line or the Ctrl+F tip: the website's search replaces the tip.
 
 ```text
 GRADUATE RADAR
