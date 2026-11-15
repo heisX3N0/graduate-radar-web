@@ -11,10 +11,34 @@ export interface FeedApi {
   readTab_: (cfg: unknown) => Record<string, unknown>[];
   day_: (raw: unknown, display: string) => string;
   FEED_TABS: Record<string, { sheet: string; fields: Record<string, string> }>;
+  triggerRebuild: () => void;
+  installRebuildTrigger: () => void;
+}
+
+export interface Trigger {
+  handler: string;
+  everyDays?: number;
+  atHour?: number;
+  nearMinute?: number;
+}
+
+export interface Options {
+  /** Script Properties. */
+  props?: Record<string, string>;
+  /** HTTP status UrlFetchApp returns (default 200). */
+  fetchStatus?: number;
+  /** UrlFetchApp throws a network error (Apps Script includes the URL in it). */
+  fetchThrows?: boolean;
+  /** Triggers that already exist in the project. */
+  triggers?: Trigger[];
 }
 
 export interface Harness {
   feed: FeedApi;
+  /** Every UrlFetchApp call. */
+  fetches: { url: string; method: string }[];
+  /** The project's triggers after the script ran. */
+  triggers: Trigger[];
   /** Web app entry points (doGet, doPost, ...) the script defines. */
   routes: string[];
   opened: string[];
@@ -42,7 +66,9 @@ export function lagosDay(date: Date): string {
   }).format(date);
 }
 
-export function loadFeed(tabs: Record<string, Grid>): Harness {
+export function loadFeed(tabs: Record<string, Grid>, options: Options = {}): Harness {
+  const fetches: Harness['fetches'] = [];
+  const triggers: Trigger[] = [...(options.triggers ?? [])];
   const opened: string[] = [];
   const errors: string[] = [];
   const cache = new Map<string, string>();
@@ -79,6 +105,41 @@ export function loadFeed(tabs: Record<string, Grid>): Harness {
   };
 
   const context = createContext({
+    PropertiesService: {
+      getScriptProperties: () => ({
+        getProperty: (k: string) => options.props?.[k] ?? null,
+      }),
+    },
+    UrlFetchApp: {
+      fetch: (url: string, params: { method?: string } = {}) => {
+        fetches.push({ url, method: params.method ?? 'get' });
+        if (options.fetchThrows) throw new Error(`Exception: Address unavailable: ${url}`);
+        const status = options.fetchStatus ?? 200;
+        return { getResponseCode: () => status, getContentText: () => `status ${status}` };
+      },
+    },
+    ScriptApp: {
+      getProjectTriggers: () =>
+        triggers.map((t) => ({ getHandlerFunction: () => t.handler, _t: t })),
+      deleteTrigger: (wrapped: { _t: Trigger }) => {
+        const i = triggers.indexOf(wrapped._t);
+        if (i !== -1) triggers.splice(i, 1);
+      },
+      newTrigger: (handler: string) => {
+        const t: Trigger = { handler };
+        const builder = {
+          timeBased: () => builder,
+          everyDays: (n: number) => ((t.everyDays = n), builder),
+          atHour: (h: number) => ((t.atHour = h), builder),
+          nearMinute: (m: number) => ((t.nearMinute = m), builder),
+          create: () => {
+            triggers.push(t);
+            return t;
+          },
+        };
+        return builder;
+      },
+    },
     Date, // host Date, so vi.setSystemTime controls "today"
     console: { ...console, error: (msg: string) => errors.push(String(msg)) },
     // Any spreadsheet call other than getSheetByName is recorded, so a test can prove
@@ -130,7 +191,10 @@ export function loadFeed(tabs: Record<string, Grid>): Harness {
   });
 
   const code = readFileSync(new URL('../apps-script/Feed.gs', import.meta.url), 'utf8');
-  const feed = runInContext(`${code}\n;({ doGet, readTab_, day_, FEED_TABS })`, context) as FeedApi;
+  const feed = runInContext(
+    `${code}\n;({ doGet, readTab_, day_, FEED_TABS, triggerRebuild, installRebuildTrigger })`,
+    context,
+  ) as FeedApi;
   const routes = Object.keys(context).filter((k) => /^do[A-Z]/.test(k));
-  return { feed, routes, opened, reads, errors, cache };
+  return { feed, fetches, triggers, routes, opened, reads, errors, cache };
 }

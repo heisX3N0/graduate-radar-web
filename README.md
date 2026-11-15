@@ -2,7 +2,7 @@
 
 A free, checked list of graduate trainee programmes, entry-level jobs and free tech trainings for Nigerian graduates. This repo is the public website. The Google Sheet stays the database; the site is rebuilt from it every day.
 
-Status: scaffold (GR-001), the Apps Script feed (GR-002) and the data layer (GR-003). See `BACKLOG.md` for what comes next.
+Status: scaffold (GR-001), the Apps Script feed (GR-002), the data layer (GR-003) and the Cloudflare deploy with a daily rebuild (GR-008). See `BACKLOG.md` for what comes next.
 
 ## How data flows
 
@@ -13,7 +13,7 @@ Daily 07:30 trigger                     -> Cloudflare Pages deploy hook
 Astro static build                      -> Cloudflare Pages (*.pages.dev)
 ```
 
-Full detail: `docs/build-spec.md` section 4. The deploy and daily trigger (GR-008) are not built yet.
+Full detail: `docs/build-spec.md` section 4. Deploy setup: "Deploy (Cloudflare Pages)" below.
 
 ### In the build
 
@@ -60,6 +60,31 @@ What it sends: only the fields in `FEED_TABS` (never `Found via`, never the priv
 
 Check: open the `/exec` URL in a browser. You should see JSON with `generatedAt`, `jobs` and `trainings`, and no `Found via` links anywhere.
 
+## Deploy (Cloudflare Pages)
+
+The site is static and hosted on Cloudflare Pages (free plan). Cloudflare builds from GitHub: every push to `main` deploys the live site, and every other branch gets a preview URL. Node comes from `.nvmrc`.
+
+### First-time setup (owner; not timed, 11 steps)
+
+1. **Create the project.** Cloudflare dashboard > Workers & Pages > Create > Pages > Connect to Git. Pick GitHub, authorise Cloudflare for `heisX3N0/graduate-radar-web` only, and select it.
+2. **Build settings.** Project name: `graduate-radar` (the live address becomes `https://graduate-radar.pages.dev`; if the name is taken Cloudflare adds a suffix, then set `SITE_URL` in step 3). Production branch: `main`. Framework preset: Astro. Build command: `npm run build`. Build output directory: `dist`. Root directory: blank.
+3. **Environment variables** (same screen, "Environment variables (advanced)"): add `FEED_URL` = the `/exec` URL, type Text. If the address is not `https://graduate-radar.pages.dev`, also add `SITE_URL` = the real address. Save and Deploy.
+4. After the first build finishes, open Settings > Variables and Secrets and check `FEED_URL` is set for both Production and Preview.
+5. **Deploy hook.** Settings > Builds > Deploy hooks > Add deploy hook. Name: `daily-rebuild`. Branch: `main`. Copy the URL it shows (it starts `https://api.cloudflare.com/`). It is a secret: anyone with it can start builds. Never paste it into the repo, a chat or a ticket.
+6. **Give the hook to Apps Script.** Graduate Radar sheet > Extensions > Apps Script > Project Settings (gear) > Script Properties > Add script property: `DEPLOY_HOOK_URL` = the hook URL. Save.
+7. **Update the feed code** (Feed.gs changed in GR-008): paste the new `apps-script/Feed.gs` over the old one, save, then Deploy > Manage deployments > edit > Version: New version > Deploy.
+8. **Test the hook once.** In the editor, pick `triggerRebuild` in the function menu and Run. Expected: the run succeeds, and a new deployment with Source "Deploy hook" appears in Cloudflare within a minute.
+9. **Schedule it.** Pick `installRebuildTrigger` and Run once. Then Triggers (clock icon) should show exactly one trigger: `triggerRebuild`, Day timer, 7am to 8am. Running it again replaces it rather than adding a second.
+10. **Web Analytics.** Cloudflare > the `graduate-radar` Pages project > Metrics > Web Analytics > Enable. Cloudflare adds its page counter to the next deployment; no code change.
+11. **Failed-build emails.** Cloudflare dashboard > Notifications > Add > Pages > deployment failure, for the `graduate-radar` project, production only, to your email. Without this, a build that fails in Cloudflare leaves the site silently out of date (the hook call itself still succeeds, so Apps Script reports nothing).
+
+### When something goes wrong
+
+- **A Cloudflare build fails:** the failed-build email from step 11 arrives; the live site keeps the last good build. Open the build log in Cloudflare (Deployments, the failed one).
+- **The daily rebuild fails** (no hook, wrong hook, network error, or Cloudflare refuses it): `triggerRebuild` throws, so the run shows as Failed in Apps Script > Executions, and Google sends the trigger owner a failure email (Google's default for script-made triggers is a daily summary; not checked on this account). The live site keeps serving the last good build.
+- **The feed is down at build time:** the build uses `src/data/snapshot.json` and logs a `[feed]` warning in the Cloudflare build log; the page's "Data from" date shows the snapshot's date.
+- **The hook URL leaks:** delete it in Cloudflare (Settings > Builds > Deploy hooks), add a new one, and replace `DEPLOY_HOOK_URL` in Script Properties.
+
 ## Setup
 
 Needs Node 24.16 or later on the 24 line (`.nvmrc`, `engines` in package.json).
@@ -96,7 +121,9 @@ npm run build
 
 ## Environment variables
 
-- `FEED_URL`: the Apps Script `/exec` URL. Used by the build and by `npm run snapshot`. Set it in a local `.env` (copy `.env.example`) and, from GR-008, as a Cloudflare Pages build variable. Never commit it.
+- `FEED_URL`: the Apps Script `/exec` URL. Used by the build and by `npm run snapshot`. Set it in a local `.env` (copy `.env.example`) and as a Cloudflare Pages variable (Production and Preview). Never commit it.
+- `SITE_URL` (optional): the site's public address, used for absolute links. Defaults to `https://graduate-radar.pages.dev`; set it in Cloudflare if the address differs or when a custom domain is added.
+- `DEPLOY_HOOK_URL`: not an environment variable of the site. It lives only in the Apps Script project's Script Properties and in the Cloudflare dashboard. Secret.
 
 ## Docs
 

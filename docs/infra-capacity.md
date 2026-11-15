@@ -2,7 +2,7 @@
 
 Graduate Radar runs entirely on free plans until the owner decides otherwise. This doc records where each free limit runs out, what each user action costs, and the principles that keep those costs low. Read it before adding anything that uses a limited resource (a build, an Apps Script execution or URL fetch, a Worker request, a heavy dependency), and use the checklist at the end in the pull request.
 
-Last reviewed: 2026-11-15 (no code yet; every figure below is an estimate from the build spec, `docs/build-spec.md`). Each number says whether it was measured (with the sample) or estimated (from what). Re-check against real usage (see [Measuring](#measuring)) and update this doc in the same PR whenever the infrastructure or a hot path changes.
+Last reviewed: 2026-11-15, after the first Cloudflare builds (GR-008). Figures marked "measured" come from those builds; the rest are estimates from the code and the spec (`docs/build-spec.md`). Each number says whether it was measured (with the sample) or estimated (from what). Re-check against real usage (see [Measuring](#measuring)) and update this doc in the same PR whenever the infrastructure or a hot path changes.
 
 Limits shared with other projects on the same account are in agent-vault's `skills/infra-capacity/shared-quotas.md`; the rows below marked "shared" use what is left after the other projects.
 
@@ -14,9 +14,9 @@ A typical day: 1 scheduled rebuild (1 Pages build, 1 to 2 feed executions, 1 URL
 
 | Service | Free limit | What we use | Breaks at about |
 | --- | --- | --- | --- |
-| Cloudflare Pages builds (shared) | 500 a month per account (Cloudflare Pages limits, 2026-11-15). About 300 left after Aimery's 100 to 200 (shared-quotas.md, Aimery's estimate) | Estimated: 31 a month from the daily rebuild, plus 1 per push to any branch (preview builds count). About 60 to 100 a month in launch week's pace, 40 to 50 a month after | Over 300 a month, which needs about 9 pushes a day every day on top of the schedule. Development pace, not users, decides this |
-| Cloudflare Pages concurrent builds (shared) | 1 at a time per account (same source) | Each build estimated at 1 to 3 minutes (Astro, a few hundred pages; not measured) | Never fails; a build waits in the queue if Aimery is building at the same moment |
-| Cloudflare Pages build time | 20 minutes per build (same source) | Estimated 1 to 3 minutes | Thousands of listings; not a concern at hundreds |
+| Cloudflare Pages builds (shared) | 500 a month per account (Cloudflare Pages limits, 2026-11-15). About 300 left after Aimery's 100 to 200 (shared-quotas.md, Aimery's estimate) | Measured on 15 Nov 2026: 4 builds on day one (3 production builds of one commit, 1 from the GitHub push and 2 with a different source icon, most likely the deploy hook test runs, not confirmed; 1 preview for PR #5), from the Deployments list and the PR's Cloudflare comment. Estimated from the schedule: 31 a month from the daily rebuild, plus 1 per push to any branch (preview builds count). About 60 to 100 a month in launch week's pace, 40 to 50 a month after | Over 300 a month, which needs about 9 pushes a day every day on top of the schedule. Development pace, not users, decides this |
+| Cloudflare Pages concurrent builds (shared) | 1 at a time per account (same source) | Measured: one preview build was done within 41 seconds of its commit (commit 02:04:53 UTC, Cloudflare check finished 02:05:34 UTC; 1 sample, includes queue, install, build and upload) | Never fails; a build waits in the queue if Aimery is building at the same moment |
+| Cloudflare Pages build time | 20 minutes per build (same source) | Measured: under 41 seconds end to end for 1 page and 24 listings (1 sample, above). Grows with listing pages from GR-007 | Thousands of listings; not a concern at hundreds |
 | Cloudflare Pages files per site | 20,000 (same source) | Estimated: 1 HTML file per listing plus about 50 assets and pages. A few hundred listings means under 1,000 files | About 19,000 listings at once (open plus closed within 60 days) |
 | Cloudflare Pages bandwidth and static requests | Unmetered, free (Cloudflare migration guide: static asset requests are free) | Estimated: home page under 150 KB, detail page under 60 KB (spec budgets, not measured) | No free-plan wall; Cloudflare's general fair-use terms apply |
 | Cloudflare Web Analytics | Free; no per-site event limit found (not checked in detail) | 1 beacon per page view | Not known; check the dashboard once real traffic arrives |
@@ -67,7 +67,7 @@ If the project ever needs paid capacity, the order to pay in, each step keeping 
 
 ## Measuring
 
-- Pages builds: Cloudflare dashboard, Workers & Pages, the project, Deployments (count for the month). Works from a phone.
+- Pages builds: Cloudflare dashboard, Workers & Pages, the project, Deployments (count for the month). Works from a phone. GitHub shows a "Cloudflare Pages" check on each commit, but its start and end times are equal (it only marks the finish); a deployment's Details page shows the build duration.
 - Web Analytics: Cloudflare dashboard, Analytics & Logs, Web Analytics. Works from a phone.
 - Apps Script executions and URL fetches: script editor, Executions (left sidebar). Desktop only in practice.
 - GitHub Actions: none expected while the repo is public; check github.com/settings/billing if that changes.
