@@ -275,7 +275,7 @@ describe('ShareButton', () => {
       title: 'Deloitte Academy',
       organisation: 'Deloitte Nigeria',
       deadline: '2026-11-27',
-      url: 'https://graduate-radar.pages.dev/jobs/deloitte-academy-2026',
+      url: 'https://graduateradar.versionphi.com/jobs/deloitte-academy-2026',
     });
     expect(html).toMatch(/href="https:\/\/wa\.me\/\?text=Deloitte%20Academy/);
     expect(html).toContain('Share on WhatsApp');
