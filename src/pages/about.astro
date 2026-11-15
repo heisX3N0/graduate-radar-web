@@ -1,0 +1,121 @@
+---
+// About (trust page). Copy adapted from the sheet's "Start here" tab (owner decision,
+// 15 Nov 2026): no name or company, no "Found via" line, no Ctrl+F tip, no WhatsApp
+// channel until one exists. Includes the one-line privacy note (spec 6.7).
+import Base from '../layouts/Base.astro';
+---
+
+<Base
+  title="About"
+  description="What Graduate Radar is, how openings are found and checked, and how often the list is updated."
+  current="about"
+>
+  <article class="prose">
+    <h1>About Graduate Radar</h1>
+    <p class="lead">
+      A free, checked list of graduate trainee programmes, entry-level jobs and free tech trainings
+      for Nigerian graduates.
+    </p>
+
+    <h2>How it works</h2>
+    <ul>
+      <li>New openings are added every Tuesday and Friday morning, and closed ones are marked.</li>
+      <li>Every listing links to the employer's or provider's own page wherever possible.</li>
+      <li>
+        Listings that look suspicious are checked first and left out if they can't be confirmed.
+      </li>
+    </ul>
+
+    <h2>What you'll find</h2>
+    <ul>
+      <li>
+        <a href="/">Jobs</a>: graduate trainee programmes, graduate internships, entry-level and
+        NYSC roles in Nigeria, plus remote roles open to people in Nigeria.
+      </li>
+      <li>
+        <a href="/trainings">Trainings and scholarships</a>: free or low-cost tech trainings and
+        tech scholarships (software, data, design, product, cloud, cybersecurity, AI).
+      </li>
+    </ul>
+
+    <h2>How to read a listing</h2>
+    <ul>
+      <li>
+        <strong>Closing soon</strong> means it closes within 7 days.
+      </li>
+      <li>
+        <strong>Rolling deadline</strong> means there is no fixed closing date.
+        <strong>Deadline not stated</strong> means the posting didn't say, so apply early.
+      </li>
+      <li>
+        <strong>Who can apply</strong> (degree class, age, NYSC): check these first so you only
+        apply where you qualify.
+      </li>
+      <li>
+        <strong>Checked</strong> is the last date we confirmed the opening was real and still open.
+      </li>
+    </ul>
+
+    <h2>Stay safe</h2>
+    <ul>
+      <li>
+        <strong>Never pay money to apply</strong> for a job or to "secure" a place.
+      </li>
+      <li>Apply only through the Apply link or the organisation's official website.</li>
+      <li>If anyone asks you for a fee, stop and don't send money.</li>
+    </ul>
+    <p>
+      <a href="/stay-safe">How to spot a fake job</a>
+    </p>
+
+    <h2>Good to know</h2>
+    <ul>
+      <li>We don't hire or process applications. We gather openings in one place.</li>
+      <li>
+        Details can change after we check them, so always confirm on the organisation's page before
+        applying.
+      </li>
+    </ul>
+
+    <h2>Privacy</h2>
+    <p>
+      This site uses no cookies and collects no personal data. Cloudflare counts page visits without
+      cookies, so we can see which pages are read.
+    </p>
+  </article>
+</Base>
+
+<style>
+  .prose {
+    display: grid;
+    gap: var(--space-3);
+    max-width: var(--measure);
+    margin-inline: auto;
+    padding-block: var(--space-6);
+  }
+  h1 {
+    font-size: var(--font-size-2xl);
+  }
+  h2 {
+    font-size: var(--font-size-lg);
+    margin-top: var(--space-4);
+    padding-top: var(--space-3);
+    border-top: var(--border-thin) solid var(--color-rule);
+  }
+  .lead {
+    font-size: var(--font-size-md);
+  }
+  ul {
+    display: grid;
+    gap: var(--space-2);
+    padding-left: var(--space-5);
+  }
+  .prose a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-min);
+  }
+  li a {
+    display: inline;
+  }
+</style>

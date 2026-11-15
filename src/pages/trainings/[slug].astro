@@ -1,0 +1,115 @@
+---
+// Training detail (spec 6.1): provider, track, cost, format, duration, job placement,
+// eligibility, deadline, Apply. No JobPosting data: trainings are not jobs.
+import DetailLayout from '../../components/DetailLayout.astro';
+import { getListings, type TrainingListing } from '../../data/feed.ts';
+import Base from '../../layouts/Base.astro';
+import { effectiveStatus, lagosToday } from '../../lib/dates.ts';
+import { similarListings, trainingDescription, trainingTitle } from '../../lib/seo.ts';
+import { absolute } from '../../lib/site.ts';
+
+export async function getStaticPaths() {
+  const { trainings } = await getListings();
+  const today = lagosToday();
+  return trainings.map((listing) => ({
+    params: { slug: listing.slug },
+    props: { listing, today, similar: similarListings(listing, trainings, today, (t) => t.track) },
+  }));
+}
+
+interface Props {
+  listing: TrainingListing;
+  similar: TrainingListing[];
+  today: string;
+}
+const { listing, similar, today } = Astro.props;
+const path = `/trainings/${listing.slug}`;
+const facts = [
+  { label: 'Track', value: listing.track },
+  { label: 'Cost', value: listing.cost },
+  { label: 'Format', value: listing.format },
+  { label: 'Duration', value: listing.duration },
+  { label: 'Job placement', value: listing.jobPlacement },
+].filter((f) => f.value);
+---
+
+<Base
+  title={trainingTitle(listing, today)}
+  description={trainingDescription(listing, today)}
+  current="trainings"
+  path={path}
+  ogType="article"
+  noindex={effectiveStatus(listing, today) === 'Closed'}
+>
+  <DetailLayout
+    section={{ label: 'Trainings', href: '/trainings' }}
+    listing={listing}
+    by={listing.provider}
+    kicker={`${listing.track} · ${listing.cost}`}
+    pageUrl={absolute(Astro.site, path)}
+    today={today}
+    similar={similar.map((t) => ({
+      key: t.key,
+      title: t.title,
+      by: t.provider,
+      href: `/trainings/${t.slug}`,
+      deadline: t.deadline,
+    }))}
+  >
+    <section class="facts" aria-labelledby="about-h">
+      <h2 id="about-h">About this training</h2>
+      <dl>
+        {facts.map((f) => (
+          <div class="facts__row">
+            <dt>{f.label}</dt>
+            <dd>{f.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+    <section class="facts" aria-labelledby="who-h">
+      <h2 id="who-h">Who can apply</h2>
+      <p>
+        {listing.eligibility ||
+          "Requirements not stated. Check the provider's page before you apply."}
+      </p>
+    </section>
+    {listing.notes && (
+      <section class="facts" aria-labelledby="notes-h">
+        <h2 id="notes-h">Notes</h2>
+        <p>{listing.notes}</p>
+      </section>
+    )}
+  </DetailLayout>
+</Base>
+
+<style>
+  .facts {
+    display: grid;
+    gap: var(--space-2);
+  }
+  .facts h2 {
+    font-size: var(--font-size-lg);
+  }
+  dl {
+    margin: 0;
+    border-top: var(--border-thin) solid var(--color-rule);
+  }
+  .facts__row {
+    display: grid;
+    grid-template-columns: minmax(0, var(--label-width)) minmax(0, 1fr);
+    gap: var(--space-3);
+    padding: var(--space-2) 0;
+    border-bottom: var(--border-thin) solid var(--color-rule);
+  }
+  dt {
+    color: var(--color-ink-muted);
+    font-size: var(--font-size-sm);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-caps);
+    padding-top: var(--space-1);
+  }
+  dd {
+    margin: 0;
+  }
+</style>

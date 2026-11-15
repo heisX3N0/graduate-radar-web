@@ -1,0 +1,79 @@
+<!doctype html>
+<!--
+  Source for public/og-default.png, the 1200 x 630 sharing image (WhatsApp, X, Facebook).
+  Regenerate: npm run og (renders this file with headless Edge or Chrome).
+  Colours copy src/styles/tokens.css by hand; this file is not part of the site.
+-->
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        width: 1200px;
+        height: 630px;
+        overflow: hidden;
+        background: #f6f1e7;
+        color: #191714;
+        font-family: Georgia, 'Noto Serif', serif;
+      }
+      .frame {
+        position: absolute;
+        inset: 28px;
+        border: 2px solid #191714;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        padding: 36px 56px 40px;
+        background: #fffcf5;
+      }
+      .mast {
+        text-align: center;
+        font-weight: 700;
+        font-size: 64px;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        padding-bottom: 14px;
+        border-bottom: 6px double #191714;
+      }
+      .head {
+        align-self: center;
+        text-align: center;
+        font-size: 50px;
+        line-height: 1.18;
+        font-weight: 700;
+        margin: 0 20px;
+      }
+      .stamps {
+        display: flex;
+        justify-content: center;
+        gap: 28px;
+        font-family: system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
+        font-weight: 700;
+        font-size: 24px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .stamp {
+        padding: 10px 18px;
+        border: 3px solid currentColor;
+      }
+      .red {
+        color: #a3241b;
+      }
+      .green {
+        color: #17553a;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="frame">
+      <div class="mast">Graduate Radar</div>
+      <p class="head">Checked graduate jobs and free tech trainings for Nigerian graduates</p>
+      <div class="stamps">
+        <span class="stamp green">Updated Tuesday and Friday</span>
+        <span class="stamp red">Never pay to apply</span>
+      </div>
+    </div>
+  </body>
+</html>

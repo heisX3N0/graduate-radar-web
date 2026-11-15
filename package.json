@@ -9,13 +9,15 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "astro build && node scripts/check-dist.ts",
     "preview": "astro preview",
     "check": "astro check",
     "lint": "eslint . && prettier --check . && node scripts/check-dashes.ts && node scripts/check-styles.ts",
     "format": "prettier --write .",
     "test": "vitest run",
-    "snapshot": "node scripts/snapshot.ts"
+    "snapshot": "node scripts/snapshot.ts",
+    "og": "node scripts/og/render.ts",
+    "check:dist": "node scripts/check-dist.ts"
   },
   "dependencies": {
     "astro": "7.4.12",
