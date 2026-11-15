@@ -1,0 +1,7 @@
+dist/
+.astro/
+node_modules/
+.claude/
+package-lock.json
+# Prose docs are checked for dashes, not reformatted.
+*.md
