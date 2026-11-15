@@ -63,6 +63,8 @@ describe('each brand direction', () => {
     (_name, d) => {
       const fgs = new Set(d.pairs.map((p) => p.fg));
       for (const t of ['ink', 'inkMuted', 'onPrimary', 'primary', 'soon']) expect(fgs).toContain(t);
+      // The "Never pay to apply" note: body text on the warning tint.
+      expect(d.pairs).toContainEqual({ fg: 'ink', bg: 'soonBg', use: 'body' });
     },
   );
 

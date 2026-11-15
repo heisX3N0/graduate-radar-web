@@ -41,6 +41,8 @@ const COMMON_PAIRS: Pair[] = [
   { fg: 'primary', bg: 'surface', use: 'action' },
   { fg: 'primary', bg: 'bg', use: 'action' },
   { fg: 'soon', bg: 'soonBg', use: 'badge' },
+  // The "Never pay to apply" note: running text on the warning tint.
+  { fg: 'ink', bg: 'soonBg', use: 'body' },
   { fg: 'soon', bg: 'surface', use: 'badge' },
   { fg: 'ok', bg: 'okBg', use: 'badge' },
   { fg: 'newText', bg: 'newBg', use: 'badge' },
