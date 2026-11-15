@@ -1,7 +1,7 @@
 // Page titles, descriptions, JobPosting structured data (spec 6.5) and similar listings
 // for detail pages. Build time only.
 import type { JobListing, TrainingListing } from '../data/feed.ts';
-import { effectiveStatus, readDeadline, shortDate } from './dates.ts';
+import { effectiveStatus, isRealDay, readDeadline, shortDate } from './dates.ts';
 import { sortListings } from './filters.ts';
 import { eligibilitySummary } from './listing-text.ts';
 
@@ -64,6 +64,9 @@ export function jobPostingJsonLd(
   today: string,
 ): Record<string, unknown> | null {
   if (effectiveStatus(j, today) === 'Closed') return null;
+  // datePosted must be a real date: first seen, else the last check, else no JSON-LD.
+  const posted = [j.firstSeen, j.verifiedOn].find(isRealDay);
+  if (!posted) return null;
   const d = readDeadline(j.deadline, today);
   const description = [j.eligibility, j.notes, "Apply on the organisation's own website."]
     .map((s) => s.trim())
@@ -74,7 +77,7 @@ export function jobPostingJsonLd(
     '@type': 'JobPosting',
     title: j.title,
     description,
-    datePosted: j.firstSeen,
+    datePosted: posted,
     employmentType: EMPLOYMENT[j.type] ?? 'OTHER',
     hiringOrganization: { '@type': 'Organization', name: j.organisation },
     url: `${site.replace(/\/$/, '')}/jobs/${j.slug}`,
@@ -85,12 +88,32 @@ export function jobPostingJsonLd(
     ld['jobLocationType'] = 'TELECOMMUTE';
     ld['applicantLocationRequirements'] = { '@type': 'Country', name: 'Nigeria' };
   } else {
+    const locality = cleanLocality(j.location);
     ld['jobLocation'] = {
       '@type': 'Place',
-      address: { '@type': 'PostalAddress', addressLocality: j.location, addressCountry: 'NG' },
+      address: {
+        '@type': 'PostalAddress',
+        ...(locality ? { addressLocality: locality } : {}),
+        addressCountry: 'NG',
+      },
     };
   }
   return ld;
+}
+
+/**
+ * A place name for structured data: notes in brackets ("(listed as Lagos)", "(Ikeja)")
+ * are dropped, and values that are not a place ("Not stated", "Nigeria (location not
+ * stated)") give '' so only the country is sent.
+ */
+function cleanLocality(location: string): string {
+  const text = location
+    .replace(/\([^)]*\)/g, '')
+    .replace(/\s+,/g, ',')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+  if (!text || /not stated/i.test(location) || /^nigeria$/i.test(text)) return '';
+  return text;
 }
 
 /**

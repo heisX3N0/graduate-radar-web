@@ -44,6 +44,28 @@ describe('jobPostingJsonLd: never for closed listings', () => {
   });
 });
 
+describe('jobPostingJsonLd: always valid dates and places', () => {
+  it('falls back to the checked date when first seen is empty', () => {
+    expect(jobPostingJsonLd(job({ firstSeen: '' }), SITE, TODAY)!['datePosted']).toBe('2026-11-14');
+  });
+
+  it('is null when there is no real date to post it under', () => {
+    expect(jobPostingJsonLd(job({ firstSeen: '', verifiedOn: '' }), SITE, TODAY)).toBeNull();
+  });
+
+  it.each([
+    ['Onitsha, Anambra (listed as Lagos)', 'Onitsha, Anambra'],
+    ['Lagos (Ikeja), then plants nationwide', 'Lagos, then plants nationwide'],
+    ['Nigeria (location not stated)', undefined],
+    ['Not stated', undefined],
+  ])('turns location %j into locality %j', (location, locality) => {
+    const ld = jobPostingJsonLd(job({ location }), SITE, TODAY)!;
+    const address = (ld['jobLocation'] as { address: Record<string, string> }).address;
+    expect(address['addressLocality']).toBe(locality);
+    expect(address['addressCountry']).toBe('NG');
+  });
+});
+
 describe('jobPostingJsonLd: happy path', () => {
   it('has the fields Google asks for, with validThrough from the deadline', () => {
     const ld = jobPostingJsonLd(job(), SITE, TODAY)!;

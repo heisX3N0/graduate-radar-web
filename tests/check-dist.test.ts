@@ -55,6 +55,32 @@ describe('checkDist: what must be refused', () => {
   });
 });
 
+describe('checkDist: no false alarms on ordinary listing text', () => {
+  it.each([['Opening found via the company LinkedIn page'], ['We found it via a friend']])(
+    'passes a note saying %j',
+    (note) => {
+      page('jobs/a.html', `<p>${note}</p>${SAFE}`);
+      expect(checkDist(dist)).toEqual([]);
+    },
+  );
+
+  it.each([['<th>Found via</th>'], ['Found via: https://agg.example.com'], ['"found_via":"x"']])(
+    'still refuses the field form %j',
+    (text) => {
+      page('jobs/a.html', `${text}${SAFE}`);
+      expect(checkDist(dist).map((f) => f.file)).toContain('jobs/a.html');
+    },
+  );
+});
+
+describe('the scan runs on every build, including Cloudflare daily builds', () => {
+  it('npm run build runs check-dist after astro build', async () => {
+    const { readFileSync } = await import('node:fs');
+    const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+    expect(pkg.scripts.build).toMatch(/astro build && node scripts\/check-dist\.ts/);
+  });
+});
+
 describe('checkDist: happy path', () => {
   it('passes a clean site', () => {
     page('index.html', '<p>Graduate Radar</p>');

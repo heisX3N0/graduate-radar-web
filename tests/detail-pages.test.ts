@@ -64,6 +64,21 @@ describe('closed job page', () => {
   });
 });
 
+describe('closed pages and browser re-checks', () => {
+  it('a closed listing page is noindex; an open one is not', async () => {
+    expect(await renderJob(job({ status: 'Closed' }))).toMatch(
+      /<meta name="robots" content="noindex"/,
+    );
+    expect(await renderJob(job())).not.toMatch(/<meta name="robots" content="noindex"/);
+  });
+
+  it('an open page carries a hidden closed banner and its dates, so the browser can close it later', async () => {
+    const html = await renderJob(job());
+    expect(html).toMatch(/data-closed-banner[^>]*hidden|hidden[^>]*data-closed-banner/);
+    expect(html).toMatch(/data-detail[^>]*data-deadline="2026-11-27"/);
+  });
+});
+
 describe('open job page', () => {
   it('has the facts, Apply, Never pay to apply, share, and JobPosting data', async () => {
     const html = await renderJob(job());
@@ -82,7 +97,7 @@ describe('open job page', () => {
     }
     expect(html).toMatch(/href="https:\/\/jobs\.example\.com\/1"/);
     expect(html).toContain('"@type":"JobPosting"');
-    expect(html).not.toContain('This opening has closed');
+    expect(html).toMatch(/<div data-closed-banner[^>]*hidden/);
   });
 
   it('a mailto Apply link opens email', async () => {

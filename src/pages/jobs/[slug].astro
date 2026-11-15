@@ -5,7 +5,7 @@ import DetailLayout from '../../components/DetailLayout.astro';
 import EligibilityChecklist from '../../components/EligibilityChecklist.astro';
 import { getListings, type JobListing } from '../../data/feed.ts';
 import Base from '../../layouts/Base.astro';
-import { lagosToday } from '../../lib/dates.ts';
+import { effectiveStatus, lagosToday } from '../../lib/dates.ts';
 import { jsonForScript } from '../../lib/list-data.ts';
 import { eligibilityItems } from '../../lib/listing-text.ts';
 import { jobDescription, jobPostingJsonLd, jobTitle, similarListings } from '../../lib/seo.ts';
@@ -37,6 +37,7 @@ const place = [listing.location, listing.remote ? 'Remote' : ''].filter(Boolean)
   current="jobs"
   path={path}
   ogType="article"
+  noindex={effectiveStatus(listing, today) === 'Closed'}
   jsonLd={ld ? jsonForScript(ld) : undefined}
 >
   <DetailLayout

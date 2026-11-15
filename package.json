@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "astro build && node scripts/check-dist.ts",
     "preview": "astro preview",
     "check": "astro check",
     "lint": "eslint . && prettier --check . && node scripts/check-dashes.ts && node scripts/check-styles.ts",

@@ -36,17 +36,24 @@ const closed = effectiveStatus(listing, today) === 'Closed';
 const badges = statusBadges(listing, today);
 ---
 
-<article class="detail">
+<article
+  class="detail"
+  data-detail
+  data-deadline={listing.deadline}
+  data-status={listing.status}
+  data-first-seen={listing.firstSeen}
+>
   <Breadcrumb items={[section, { label: listing.title }]} />
-  {closed && (
+  {/* Always rendered: the browser shows it if the deadline passes after the build. */}
+  <div data-closed-banner hidden={!closed}>
     <Banner kind="closed" title="This opening has closed">
       <p>You can no longer apply. Similar openings that are still open are listed below.</p>
     </Banner>
-  )}
+  </div>
   <header class="detail__head">
     <p class="detail__kicker">{kicker}</p>
     {badges.length > 0 && (
-      <ul class="detail__badges" aria-label="Status">
+      <ul class="detail__badges" aria-label="Status" data-detail-badges>
         {badges.map((b) => (
           <li>
             <StatusBadge kind={b.kind} />
@@ -65,7 +72,11 @@ const badges = statusBadges(listing, today);
   <slot />
 
   <div class="detail__actions">
-    {!closed && <ApplyButton href={listing.applyLink} />}
+    {!closed && (
+      <div data-apply>
+        <ApplyButton href={listing.applyLink} />
+      </div>
+    )}
     <SafetyNote />
     <ShareButton
       title={listing.title}
@@ -85,9 +96,15 @@ const badges = statusBadges(listing, today);
   </p>
 </article>
 
+<script>
+  import { initDetailPage } from '../scripts/detail-page.ts';
+  initDetailPage();
+</script>
+
 <style>
   .detail {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-6);
     max-width: var(--measure);
     margin-inline: auto;

@@ -9,14 +9,13 @@ The owner's global rules (`~/.claude/CLAUDE.md`, version 2026-10-22) apply in fu
 - Free-plan limits and what each action costs: `docs/infra-capacity.md`.
 - Public endpoints (the only ones allowed): `docs/public-routes.md`.
 
-## Gates (run all five before every commit)
+## Gates (run all four before every commit)
 
 ```bash
 npm run lint    # eslint, prettier --check, dash check, style check (tokens only)
 npm run check   # astro check (types)
 npm test        # vitest
-npm run build   # astro build
-npm run check:dist  # scan dist/ for private data and "Never pay to apply" (after build)
+npm run build   # astro build, then the dist scan (scripts/check-dist.ts)
 ```
 
 Node 24.16 or later on the 24 line (see `.nvmrc` and `engines`; eslint-plugin-astro needs 24.16+). TypeScript is pinned to 6.0 because typescript-eslint and @astrojs/check do not support TypeScript 7 yet (checked 15 Nov 2026).

@@ -4,7 +4,7 @@
 import DetailLayout from '../../components/DetailLayout.astro';
 import { getListings, type TrainingListing } from '../../data/feed.ts';
 import Base from '../../layouts/Base.astro';
-import { lagosToday } from '../../lib/dates.ts';
+import { effectiveStatus, lagosToday } from '../../lib/dates.ts';
 import { similarListings, trainingDescription, trainingTitle } from '../../lib/seo.ts';
 import { absolute } from '../../lib/site.ts';
 
@@ -39,6 +39,7 @@ const facts = [
   current="trainings"
   path={path}
   ogType="article"
+  noindex={effectiveStatus(listing, today) === 'Closed'}
 >
   <DetailLayout
     section={{ label: 'Trainings', href: '/trainings' }}

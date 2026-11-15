@@ -13,9 +13,13 @@ export interface DistFinding {
 }
 
 const TEXT = /\.(html|js|mjs|json|xml|txt|css|webmanifest)$/i;
+// The field forms only: a label ("Found via:"), a table header cell (">Found via<"), or
+// the field names (foundVia, found_via). A note that just says "found via LinkedIn" is
+// ordinary listing text and must not fail the build.
 const FORBIDDEN: [RegExp, string][] = [
-  [/found\s*via/i, 'the private "Found via" column'],
-  [/\bfound_?via\b/i, 'the private "Found via" field'],
+  [/\bfound\s*via\s*:/i, 'the private "Found via" column'],
+  [/>\s*found\s*via\s*</i, 'the private "Found via" column'],
+  [/\bfoundVia\b|\bfound_via\b/i, 'the private "Found via" field'],
   [/postgrad\s+scholarships/i, 'the private "Postgrad Scholarships" tab'],
 ];
 const DETAIL = /^(jobs|trainings)\/[^/]+\.html$/;
