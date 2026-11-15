@@ -96,7 +96,7 @@ The site is static and hosted on Cloudflare Pages (free plan). Cloudflare builds
 1. **Create the project.** Cloudflare dashboard > Workers & Pages > Create > Pages > Connect to Git. Pick GitHub, authorise Cloudflare for `heisX3N0/graduate-radar-web` only, and select it.
 2. **Build settings.** Project name: `graduate-radar` (Cloudflare also serves it at `https://graduate-radar.pages.dev`; the real address is the custom domain, see "Custom domain" below). Production branch: `main`. Framework preset: Astro. Build command: `npm run build`. Build output directory: `dist`. Root directory: blank.
 3. **Environment variables** (same screen, "Environment variables (advanced)"): add `FEED_URL` = the `/exec` URL, type Text. Leave `SITE_URL` unset: the default is the real address. Save and Deploy.
-4. After the first build finishes, open Settings > Variables and Secrets and check `FEED_URL` is set for both Production and Preview.
+4. After the first build finishes, open Settings > Variables and secrets and check `FEED_URL` is set for both Production and Preview.
 5. **Deploy hook.** Settings > Builds > Deploy hooks > Add deploy hook. Name: `daily-rebuild`. Branch: `main`. Copy the URL it shows (it starts `https://api.cloudflare.com/`). It is a secret: anyone with it can start builds. Never paste it into the repo, a chat or a ticket.
 6. **Give the hook to Apps Script.** Graduate Radar sheet > Extensions > Apps Script > Project Settings (gear) > Script Properties > Add script property: `DEPLOY_HOOK_URL` = the hook URL. Save.
 7. **Update the feed code** (Feed.gs changed in GR-008): paste the new `apps-script/Feed.gs` over the old one, save, then Deploy > Manage deployments > edit > Version: New version > Deploy.
@@ -115,16 +115,26 @@ The site lives at `https://graduateradar.versionphi.com` (GR-012). `versionphi.c
 
 `https://graduate-radar.pages.dev` still works, so old links keep opening, but `public/_headers` sends `X-Robots-Tag: noindex` on every `pages.dev` address (production and branch previews), so search shows only the real domain. No redirect (owner decision, 15 Nov 2026). `npm run build` fails if `_headers` loses that rule, if the rule would also hide the real domain, or if any page still points to `graduate-radar.pages.dev`.
 
-`SITE_URL` must not be set in the Cloudflare project (Settings, Variables and Secrets). If it still holds the old `pages.dev` address, every build, including the daily rebuild, fails the check above.
+`SITE_URL` must not be set in the Cloudflare project (Settings, Variables and secrets). If it still holds the old `pages.dev` address, every build, including the daily rebuild, fails the check above.
 
-Optional (owner): add `https://graduateradar.versionphi.com` as a property in Google Search Console and submit `https://graduateradar.versionphi.com/sitemap.xml`, so Google finds the new domain sooner while the `pages.dev` copies drop out.
+### Google Search Console (owner; done 15 Nov 2026)
+
+So Google finds the new domain sooner while the `pages.dev` copies drop out. Done once, by the owner, in their own Google account.
+
+1. https://search.google.com/search-console, **Add property**. A **URL prefix** property (`https://graduateradar.versionphi.com/`) covers only this site; a **Domain** property (`versionphi.com`) covers every subdomain. Either is verified with a DNS TXT record in Cloudflare's `versionphi.com` zone. Leave the record in place: Google rechecks it, and it does not affect the site or email.
+2. **Sitemaps**: enter the full address `https://graduateradar.versionphi.com/sitemap.xml` and **Submit**. A bare `sitemap.xml` was refused as "Invalid sitemap address" (15 Nov 2026).
+3. **URL inspection** of `https://graduateradar.versionphi.com/`, **Test live URL**. Expected: "URL is available to Google". Then **Request indexing**, once.
+
+What to expect (15 Nov 2026, one try): right after submitting, the sitemap showed "Sitemap could not be read" with 0 pages, while URL inspection already listed the sitemap as where Google discovered the home page ("Discovered, currently not indexed", last crawl N/A). That first error is usual for a new property and clears when Google reads the sitemap again; resubmitting does not speed it up. If the live test ever fails, look in Cloudflare (`versionphi.com` zone, Security, Events) for blocked Googlebot requests.
+
+Do not add `graduate-radar.pages.dev` as a property: it is meant to drop out of Google.
 
 ### When something goes wrong
 
 - **A Cloudflare build fails:** the failed-build email from step 11 arrives; the live site keeps the last good build. Open the build log in Cloudflare (Deployments, the failed one).
 - **The daily rebuild fails** (no hook, wrong hook, network error, or Cloudflare refuses it): `triggerRebuild` throws, so the run shows as Failed in Apps Script > Executions, and Google sends the trigger owner a failure email (Google's default for script-made triggers is a daily summary; not checked on this account). The live site keeps serving the last good build.
 - **The feed is down at build time:** the build uses `src/data/snapshot.json` and logs a `[feed]` warning in the Cloudflare build log; the page's "Data from" date shows the snapshot's date.
-- **Every build fails with "points to the old address graduate-radar.pages.dev":** `SITE_URL` is set to the old address in the Cloudflare project. Delete it (Settings, Variables and Secrets), then retry the deployment.
+- **Every build fails with "points to the old address graduate-radar.pages.dev":** `SITE_URL` is set to the old address in the Cloudflare project. Delete it (Settings, Variables and secrets), then retry the deployment.
 - **The hook URL leaks:** delete it in Cloudflare (Settings > Builds > Deploy hooks), add a new one, and replace `DEPLOY_HOOK_URL` in Script Properties.
 
 ## Launch
