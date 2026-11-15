@@ -51,6 +51,13 @@ export const FeedSchema = z.object({
   trainings: z.array(TrainingSchema),
 });
 
+/** Top-level shape only: rows are checked one by one, so one bad row can be dropped alone. */
+export const FeedShapeSchema = z.object({
+  generatedAt: z.string(),
+  jobs: z.array(z.unknown()),
+  trainings: z.array(z.unknown()),
+});
+
 export type Job = z.infer<typeof JobSchema>;
 export type Training = z.infer<typeof TrainingSchema>;
 export type Feed = z.infer<typeof FeedSchema>;

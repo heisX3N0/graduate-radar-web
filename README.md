@@ -17,14 +17,17 @@ Full detail: `docs/build-spec.md` section 4. The deploy and daily trigger (GR-00
 
 ### In the build
 
-`src/data/feed.ts` (`getListings()`) fetches `FEED_URL` once per build and checks it against the contract in `src/data/schema.ts`. Fields not in the contract are stripped, listings with an Apply link that is not `https`, `http` or `mailto` are dropped, a repeated key keeps its first listing, and every listing gets a stable `slug` (`src/lib/slug.ts`).
+`src/data/feed.ts` (`getListings()`) fetches `FEED_URL` once per build and checks each listing against the contract in `src/data/schema.ts`. Fields not in the contract are stripped. A listing is dropped, with a `[feed]` warning, if it fails the contract, has an Apply link that is not `https`, `http` or `mailto`, or repeats a key; the rest of the feed is still used. Every listing gets a stable `slug` (`src/lib/slug.ts`).
 
-The build uses the committed snapshot (`src/data/snapshot.json`) instead of the feed, with one `[feed]` warning in the build log, when:
+The build uses the committed snapshot (`src/data/snapshot.json`) instead of the feed, with a `[feed]` warning in the build log, when:
 
 - `FEED_URL` is not set;
 - the fetch fails, times out (30 seconds) or answers anything but HTTP 200 with JSON;
-- the JSON does not match the contract (any listing);
-- the feed has no jobs or no trainings, or fewer than half the snapshot's count of either.
+- the JSON does not have the contract's top-level shape (`generatedAt`, `jobs`, `trainings`);
+- after dropping bad listings, the feed has no jobs or no trainings;
+- or either list has fewer than half as many listings as the snapshot has still open today. This last check is skipped, with a warning, when the snapshot is more than 14 days old, so an old snapshot cannot hold the site back after a real drop in openings.
+
+The placeholder page shows the date the data came from, so a site stuck on the snapshot shows an old date.
 
 If the feed fails and the snapshot is empty too, the build stops rather than publish an empty site.
 
@@ -38,7 +41,7 @@ The build cannot update the snapshot itself, so refresh it by hand: in any PR, a
 npm run snapshot
 ```
 
-It reads `FEED_URL` from the environment or `.env`, and refuses to write if the feed fails the contract, has no jobs or trainings, or has fewer than half the current snapshot's count (add `-- --force` to accept a smaller feed on purpose). Commit the new `src/data/snapshot.json`.
+It reads `FEED_URL` from the environment or `.env` and uses the build's own rules: it refuses to write if the feed is unreachable or has the wrong shape, has no jobs or trainings, or has fewer than half the listings still open in the current snapshot (add `-- --force` to accept a smaller feed on purpose; an empty list is never accepted). Bad listings are dropped, as in the build. Commit the new `src/data/snapshot.json`.
 
 ## Data feed (Apps Script)
 

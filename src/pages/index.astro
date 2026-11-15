@@ -10,6 +10,10 @@ const open = (items: { status: string; deadline: string }[]) =>
   items.filter((i) => effectiveStatus(i, today) !== 'Closed').length;
 const openJobs = open(listings.jobs);
 const openTrainings = open(listings.trainings);
+// The day the data was produced, in Lagos. On snapshot fallback this is the snapshot's
+// date, so a stuck site shows an old date instead of hiding it.
+const parsed = new Date(listings.generatedAt);
+const dataDay = Number.isNaN(parsed.getTime()) ? 'unknown' : lagosToday(parsed);
 ---
 
 <html lang="en-GB">
@@ -29,7 +33,7 @@ const openTrainings = open(listings.trainings);
       for Nigerian graduates. The website is on its way.
     </p>
     <p>
-      Open now: {openJobs} jobs and {openTrainings} trainings.
+      Open now: {openJobs} jobs and {openTrainings} trainings. Data from {dataDay}.
     </p>
     <p>
       <strong>Never pay to apply.</strong>

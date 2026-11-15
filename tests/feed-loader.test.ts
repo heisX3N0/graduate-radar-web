@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { loadListings, type FeedFetch } from '../src/data/feed.ts';
+import { loadListings, onceUnlessFailed, type FeedFetch } from '../src/data/feed.ts';
 import { FeedSchema, type Feed } from '../src/data/schema.ts';
 
 const job = (n: number, over: Record<string, unknown> = {}) => ({
@@ -56,12 +56,23 @@ function respond(body: string, status = 200, type = 'application/json'): FeedFet
   return async () => new Response(body, { status, headers: { 'content-type': type } });
 }
 
-async function load(fetchImpl: FeedFetch, snapshot: Feed = SNAPSHOT, feedUrl = 'https://x/exec') {
+// Default "now": one day after the snapshot was taken.
+const NOW = new Date('2026-11-16T07:30:00Z');
+
+async function load(
+  fetchImpl: FeedFetch,
+  snapshot: Feed = SNAPSHOT,
+  feedUrl = 'https://x/exec',
+  now: Date = NOW,
+  timeoutMs?: number,
+) {
   const warnings: string[] = [];
   const result = await loadListings({
     feedUrl,
     fetchImpl,
     snapshot,
+    now,
+    ...(timeoutMs === undefined ? {} : { timeoutMs }),
     warn: (m) => warnings.push(m),
   });
   return { result, warnings };
@@ -92,23 +103,32 @@ describe('loadListings: falls back to the snapshot', () => {
   });
 
   it.each([
-    [
-      'a job has no key',
-      { ...feedOf(10, 4), jobs: [job(1, { key: undefined }), ...feedOf(9, 0).jobs] },
-    ],
-    [
-      'remote is a string',
-      { ...feedOf(10, 4), jobs: [job(1, { remote: 'Yes' }), ...feedOf(9, 0).jobs] },
-    ],
-    [
-      'a status is unknown',
-      { ...feedOf(10, 4), jobs: [job(1, { status: 'Draft' }), ...feedOf(9, 0).jobs] },
-    ],
     ['trainings is missing', { generatedAt: 'x', jobs: feedOf(10, 0).jobs }],
-  ])('when the feed fails the schema (%s)', async (_name, body) => {
+    ['jobs is not a list', { ...feedOf(0, 4), jobs: 'none' }],
+    ['the body is a list', []],
+  ])('when the feed has the wrong shape (%s)', async (_name, body) => {
     const { result, warnings } = await load(respond(JSON.stringify(body)));
     expect(result.source).toBe('snapshot');
     expect(warnings[0]).toMatch(/schema/i);
+  });
+
+  it('when every training is dropped for a bad Apply link (counted after dropping)', async () => {
+    const body = feedOf(10, 4);
+    body.trainings = body.trainings.map((_t, i) => training(i, { applyLink: `www.x.com/${i}` }));
+    const { result, warnings } = await load(respond(JSON.stringify(body)));
+    expect(result.source).toBe('snapshot');
+    expect(result.trainings).toHaveLength(4);
+    expect(warnings.join('\n')).toMatch(/no trainings/);
+  });
+
+  it('when the feed never answers within the timeout', async () => {
+    const hang: FeedFetch = (_url, init) =>
+      new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () => reject(new Error('aborted')));
+      });
+    const { result, warnings } = await load(hang, SNAPSHOT, 'https://x/exec', NOW, 50);
+    expect(result.source).toBe('snapshot');
+    expect(warnings[0]).toContain('fetch failed');
   });
 
   it.each([
@@ -126,6 +146,69 @@ describe('loadListings: falls back to the snapshot', () => {
     await expect(load(respond('oops', 500), feedOf(0, 0) as unknown as Feed)).rejects.toThrow(
       /empty/i,
     );
+  });
+});
+
+describe('loadListings: one bad row never freezes the site', () => {
+  it.each([
+    ['has no key', { key: undefined }],
+    ['has remote as a string', { remote: 'Yes' }],
+    ['has an unknown status', { status: 'Draft' }],
+  ])('drops a job that %s, warns, and uses the rest of the feed', async (_name, over) => {
+    const body = feedOf(10, 4);
+    body.jobs[0] = job(0, over);
+    const { result, warnings } = await load(respond(JSON.stringify(body)));
+    expect(result.source).toBe('feed');
+    expect(result.jobs).toHaveLength(9);
+    expect(warnings.join('\n')).toMatch(/schema/i);
+  });
+});
+
+describe('loadListings: a real drop in listings is not mistaken for a broken feed', () => {
+  it('counts only snapshot listings still open today', async () => {
+    // 7 of the snapshot's 10 jobs have closed by now; the feed honestly has 4.
+    const snapshot = feedOf(10, 4);
+    snapshot.jobs = snapshot.jobs.map((j, i) => (i < 7 ? { ...j, deadline: '2026-11-10' } : j));
+    const { result } = await load(respond(JSON.stringify(feedOf(4, 4))), snapshot as Feed);
+    expect(result.source).toBe('feed');
+  });
+
+  it('stops comparing with a snapshot older than 14 days, and says so', async () => {
+    const later = new Date('2026-12-01T07:30:00Z'); // 16 days after the snapshot
+    const { result, warnings } = await load(
+      respond(JSON.stringify({ ...feedOf(4, 4), generatedAt: later.toISOString() })),
+      SNAPSHOT,
+      'https://x/exec',
+      later,
+    );
+    expect(result.source).toBe('feed');
+    expect(warnings.join('\n')).toMatch(/snapshot is 16 days old/);
+  });
+
+  it('still refuses a feed with no jobs, however old the snapshot', async () => {
+    const later = new Date('2027-01-01T07:30:00Z');
+    const { result } = await load(
+      respond(JSON.stringify(feedOf(0, 4))),
+      SNAPSHOT,
+      'https://x/exec',
+      later,
+    );
+    expect(result.source).toBe('snapshot');
+  });
+});
+
+describe('onceUnlessFailed', () => {
+  it('retries after a failure instead of caching it', async () => {
+    let calls = 0;
+    const get = onceUnlessFailed(async () => {
+      calls += 1;
+      if (calls === 1) throw new Error('first try fails');
+      return calls;
+    });
+    await expect(get()).rejects.toThrow('first try fails');
+    await expect(get()).resolves.toBe(2);
+    await expect(get()).resolves.toBe(2);
+    expect(calls).toBe(2);
   });
 });
 
