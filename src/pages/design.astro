@@ -164,8 +164,8 @@ const updated = Number.isNaN(dataDate.getTime()) ? 'date unknown' : shortDate(la
                     {dl.left && <span class="dl-left">{dl.left}</span>}
                   </p>
                   <p class="elig">{eligibility(j).join(' · ')}</p>
-                  <p class="stamp" aria-label={`Verified on ${shortDate(j.verifiedOn)}`}>
-                    Verified {shortDate(j.verifiedOn)}
+                  <p class="stamp">
+                    {d.id === 'stamped' ? 'Verified' : 'Checked'} {shortDate(j.verifiedOn)}
                   </p>
                 </article>
               );
@@ -505,6 +505,21 @@ const updated = Number.isNaN(dataDate.getTime()) ? 'date unknown' : shortDate(la
   }
   .dir-noticeboard .safety {
     border-left: 4px solid var(--soon);
+  }
+  /* Owner request (15 Nov 2026): B's verified stamp, adapted to A. "Checked", not
+     "Verified" (we check, we do not guarantee); ink green, solid, square, upright and
+     smaller than the red deadline stamp, so urgency stays red and trust stays quiet. */
+  .dir-noticeboard .stamp {
+    display: block;
+    justify-self: start;
+    margin-top: 0.25rem;
+    border: 1.5px solid var(--primary);
+    color: var(--primary);
+    padding: 0.0625rem 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
   }
 
   /* B. Stamped: every listing checked and signed off. */

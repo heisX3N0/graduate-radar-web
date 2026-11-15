@@ -15,6 +15,15 @@ All three start from the same constraints (spec section 3): mid-range Android ph
 | Structure | Square cards, double-ruled masthead, boxed red deadline stamp | Rounded cards with a green edge, dashed "Verified" stamp, ticked checklist | Round cards, soft shadow, big highlighted day count, pill buttons |
 | Main risk | Can feel old-fashioned to some younger readers | Closest to a generic "app" look | Font download on slow data; playful tone next to scam warnings |
 
+### Noticeboard with a "Checked" stamp (owner request, 15 Nov 2026)
+
+The owner liked A and asked whether B's verified stamp would work with it. It is shown on A's cards, adapted:
+
+- It says **"Checked 14 Nov"**, not "Verified": we check listings, we cannot guarantee them, and the sheet's own copy says "checked".
+- Ink green, solid thin border, square corners, upright, 12 px: smaller and quieter than the red deadline stamp, so red stays the only urgent colour.
+- B's ticks on the eligibility list are not brought across: a tick beside "2:1 or above" reads as "you meet this".
+- To resolve in GR-005: the green "New this week" badge looks similar to the stamp; one of them should change shape or colour.
+
 ## Rules every direction meets
 
 - **Contrast, set higher than usual for sunlight** (`src/design/contrast.ts`, checked by `tests/directions.test.ts` on every build): body text at least 7:1 (WCAG AAA), secondary text, buttons, links and badges at least 4.5:1 (WCAG AA). Measured ratios for ink on paper: Noticeboard 15.9:1, Stamped 15.7:1, Bright Start 16.4:1.
