@@ -27,6 +27,8 @@ export interface Options {
   props?: Record<string, string>;
   /** HTTP status UrlFetchApp returns (default 200). */
   fetchStatus?: number;
+  /** UrlFetchApp throws a network error (Apps Script includes the URL in it). */
+  fetchThrows?: boolean;
   /** Triggers that already exist in the project. */
   triggers?: Trigger[];
 }
@@ -111,6 +113,7 @@ export function loadFeed(tabs: Record<string, Grid>, options: Options = {}): Har
     UrlFetchApp: {
       fetch: (url: string, params: { method?: string } = {}) => {
         fetches.push({ url, method: params.method ?? 'get' });
+        if (options.fetchThrows) throw new Error(`Exception: Address unavailable: ${url}`);
         const status = options.fetchStatus ?? 200;
         return { getResponseCode: () => status, getContentText: () => `status ${status}` };
       },

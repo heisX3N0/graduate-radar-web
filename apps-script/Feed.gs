@@ -205,7 +205,16 @@ function triggerRebuild() {
     );
   }
   CacheService.getScriptCache().remove('feed');
-  const res = UrlFetchApp.fetch(url, { method: 'post', muteHttpExceptions: true });
+  let res;
+  try {
+    res = UrlFetchApp.fetch(url, { method: 'post', muteHttpExceptions: true });
+  } catch (e) {
+    // Network-level failures throw, and Apps Script puts the URL in the message.
+    // Rethrow without it so the secret never reaches Executions or the failure email.
+    throw new Error(
+      'Could not reach the Cloudflare deploy hook (network error); no rebuild was started',
+    );
+  }
   const code = res.getResponseCode();
   if (code < 200 || code > 299) {
     throw new Error('Cloudflare deploy hook answered HTTP ' + code + '; no rebuild was started');

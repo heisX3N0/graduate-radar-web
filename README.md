@@ -64,7 +64,7 @@ Check: open the `/exec` URL in a browser. You should see JSON with `generatedAt`
 
 The site is static and hosted on Cloudflare Pages (free plan). Cloudflare builds from GitHub: every push to `main` deploys the live site, and every other branch gets a preview URL. Node comes from `.nvmrc`.
 
-### First-time setup (owner, about 15 minutes)
+### First-time setup (owner; not timed, 11 steps)
 
 1. **Create the project.** Cloudflare dashboard > Workers & Pages > Create > Pages > Connect to Git. Pick GitHub, authorise Cloudflare for `heisX3N0/graduate-radar-web` only, and select it.
 2. **Build settings.** Project name: `graduate-radar` (the live address becomes `https://graduate-radar.pages.dev`; if the name is taken Cloudflare adds a suffix, then set `SITE_URL` in step 3). Production branch: `main`. Framework preset: Astro. Build command: `npm run build`. Build output directory: `dist`. Root directory: blank.
@@ -76,10 +76,12 @@ The site is static and hosted on Cloudflare Pages (free plan). Cloudflare builds
 8. **Test the hook once.** In the editor, pick `triggerRebuild` in the function menu and Run. Expected: the run succeeds, and a new deployment with Source "Deploy hook" appears in Cloudflare within a minute.
 9. **Schedule it.** Pick `installRebuildTrigger` and Run once. Then Triggers (clock icon) should show exactly one trigger: `triggerRebuild`, Day timer, 7am to 8am. Running it again replaces it rather than adding a second.
 10. **Web Analytics.** Cloudflare > the `graduate-radar` Pages project > Metrics > Web Analytics > Enable. Cloudflare adds its page counter to the next deployment; no code change.
+11. **Failed-build emails.** Cloudflare dashboard > Notifications > Add > Pages > deployment failure, for the `graduate-radar` project, production only, to your email. Without this, a build that fails in Cloudflare leaves the site silently out of date (the hook call itself still succeeds, so Apps Script reports nothing).
 
 ### When something goes wrong
 
-- **The daily rebuild fails** (no hook, wrong hook, or Cloudflare refuses it): `triggerRebuild` throws, so the run shows as Failed in Apps Script > Executions, and Google sends the trigger owner a failure email (Google's default for script-made triggers is a daily summary; not checked on this account). The live site keeps serving the last good build.
+- **A Cloudflare build fails:** the failed-build email from step 11 arrives; the live site keeps the last good build. Open the build log in Cloudflare (Deployments, the failed one).
+- **The daily rebuild fails** (no hook, wrong hook, network error, or Cloudflare refuses it): `triggerRebuild` throws, so the run shows as Failed in Apps Script > Executions, and Google sends the trigger owner a failure email (Google's default for script-made triggers is a daily summary; not checked on this account). The live site keeps serving the last good build.
 - **The feed is down at build time:** the build uses `src/data/snapshot.json` and logs a `[feed]` warning in the Cloudflare build log; the page's "Data from" date shows the snapshot's date.
 - **The hook URL leaks:** delete it in Cloudflare (Settings > Builds > Deploy hooks), add a new one, and replace `DEPLOY_HOOK_URL` in Script Properties.
 

@@ -34,6 +34,18 @@ describe('triggerRebuild: what must fail loudly', () => {
     },
   );
 
+  it('keeps the hook URL out of the error when the network call itself throws', () => {
+    const h = load({ props: { DEPLOY_HOOK_URL: HOOK }, fetchThrows: true });
+    let message = '';
+    try {
+      h.feed.triggerRebuild();
+    } catch (e) {
+      message = String(e);
+    }
+    expect(message).toMatch(/could not reach/i);
+    expect(message).not.toContain('test-hook');
+  });
+
   it('never puts the hook URL in the error message (it is a secret)', () => {
     const h = load({ props: { DEPLOY_HOOK_URL: HOOK }, fetchStatus: 500 });
     let message = '';
