@@ -51,7 +51,8 @@ function checkHeaders(dist: string): DistFinding[] {
     return [{ file: '_headers', reason: 'missing (the pages.dev noindex rule)' }];
   const findings: DistFinding[] = [];
   const noindex = headerRules(readFileSync(path, 'utf8')).filter((r) =>
-    r.headers.some((h) => /^x-robots-tag\s*:.*noindex/i.test(h)),
+    // "none" means noindex plus nofollow, so it hides a page too.
+    r.headers.some((h) => /^x-robots-tag\s*:.*\b(?:noindex|none)\b/i.test(h)),
   );
   for (const want of NOINDEX_HOSTS)
     if (!noindex.some((r) => r.pattern === want))

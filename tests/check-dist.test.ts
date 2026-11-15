@@ -90,6 +90,12 @@ describe('checkDist: the site address and the pages.dev noindex rule (GR-012)', 
     );
   });
 
+  it('treats "none" (noindex plus nofollow) the same as noindex', () => {
+    clean();
+    page('_headers', `${HEADERS}\n/*\n  X-Robots-Tag: none\n`);
+    expect(reasons()).toContain('_headers: noindex rule for /* would hide the real site');
+  });
+
   it('does not mind an employer link that happens to be on pages.dev', () => {
     clean();
     page('_headers', HEADERS);

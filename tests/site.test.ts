@@ -14,10 +14,10 @@ describe('the site address', () => {
     expect(DEFAULT_SITE).not.toMatch(/pages\.dev/);
   });
 
-  it('is the same in astro.config.mjs and src/lib/site.ts', () => {
+  it('astro.config.mjs takes it from src/lib/site.ts instead of repeating it', () => {
     const config = readFileSync(join(ROOT, 'astro.config.mjs'), 'utf8');
-    const m = config.match(/process\.env\.SITE_URL \|\| '([^']+)'/);
-    expect(m?.[1]).toBe(DEFAULT_SITE);
+    expect(config).toMatch(/import \{ DEFAULT_SITE \} from '\.\/src\/lib\/site\.ts'/);
+    expect(config).not.toMatch(/https:\/\//);
   });
 
   it('is graduateradar.versionphi.com', () => {

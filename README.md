@@ -115,11 +115,16 @@ The site lives at `https://graduateradar.versionphi.com` (GR-012). `versionphi.c
 
 `https://graduate-radar.pages.dev` still works, so old links keep opening, but `public/_headers` sends `X-Robots-Tag: noindex` on every `pages.dev` address (production and branch previews), so search shows only the real domain. No redirect (owner decision, 15 Nov 2026). `npm run build` fails if `_headers` loses that rule, if the rule would also hide the real domain, or if any page still points to `graduate-radar.pages.dev`.
 
+`SITE_URL` must not be set in the Cloudflare project (Settings, Variables and Secrets). If it still holds the old `pages.dev` address, every build, including the daily rebuild, fails the check above.
+
+Optional (owner): add `https://graduateradar.versionphi.com` as a property in Google Search Console and submit `https://graduateradar.versionphi.com/sitemap.xml`, so Google finds the new domain sooner while the `pages.dev` copies drop out.
+
 ### When something goes wrong
 
 - **A Cloudflare build fails:** the failed-build email from step 11 arrives; the live site keeps the last good build. Open the build log in Cloudflare (Deployments, the failed one).
 - **The daily rebuild fails** (no hook, wrong hook, network error, or Cloudflare refuses it): `triggerRebuild` throws, so the run shows as Failed in Apps Script > Executions, and Google sends the trigger owner a failure email (Google's default for script-made triggers is a daily summary; not checked on this account). The live site keeps serving the last good build.
 - **The feed is down at build time:** the build uses `src/data/snapshot.json` and logs a `[feed]` warning in the Cloudflare build log; the page's "Data from" date shows the snapshot's date.
+- **Every build fails with "points to the old address graduate-radar.pages.dev":** `SITE_URL` is set to the old address in the Cloudflare project. Delete it (Settings, Variables and Secrets), then retry the deployment.
 - **The hook URL leaks:** delete it in Cloudflare (Settings > Builds > Deploy hooks), add a new one, and replace `DEPLOY_HOOK_URL` in Script Properties.
 
 ## Launch
