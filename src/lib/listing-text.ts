@@ -1,7 +1,7 @@
 // Shared wording for listings: cards, detail pages and the share button all use these,
 // so a listing reads the same everywhere. No Node-only APIs (also used in the browser).
 import { isAllowedLink } from '../data/schema.ts';
-import { effectiveStatus, isNewThisWeek, readDeadline, shortDate } from './dates.ts';
+import { effectiveStatus, isNewThisWeek, lagosToday, readDeadline, shortDate } from './dates.ts';
 
 interface HasDeadline {
   status: string;
@@ -104,10 +104,11 @@ export function eligibilitySummary(e: Eligibility): string {
 export function shareUrl(
   listing: { title: string; organisation: string; deadline: string },
   pageUrl: string,
+  today: string = lagosToday(),
 ): string {
-  const closes = shortDate(listing.deadline);
-  const text = [listing.title, listing.organisation, closes ? `Closes ${closes}` : '', pageUrl]
-    .filter(Boolean)
-    .join(' · ');
+  const d = readDeadline(listing.deadline, today);
+  // A past deadline says "Closed", never "Closes" on a date already gone.
+  const when = d.kind !== 'date' ? '' : d.daysLeft < 0 ? 'Closed' : `Closes ${shortDate(d.date)}`;
+  const text = [listing.title, listing.organisation, when, pageUrl].filter(Boolean).join(' · ');
   return `https://wa.me/?text=${encodeURIComponent(text)}`;
 }

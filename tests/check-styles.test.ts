@@ -19,6 +19,27 @@ describe('findHardCoded: what must be refused', () => {
     expect(findHardCoded(style(css)).length).toBeGreaterThan(0);
   });
 
+  it('checks the continuation lines of a wrapped declaration', () => {
+    const css = [
+      '.x {',
+      '  grid-template-columns:',
+      '    repeat(auto-fill, minmax(12rem, 1fr));',
+      '}',
+    ].join('\n');
+    expect(findHardCoded(style(css)).length).toBeGreaterThan(0);
+  });
+
+  it('checks a wrapped value whose lines end in commas', () => {
+    const css = [
+      '.x {',
+      '  box-shadow:',
+      '    0 0 0 var(--space-1),',
+      '    0 2px 4px currentColor;',
+      '}',
+    ].join('\n');
+    expect(findHardCoded(style(css)).length).toBeGreaterThan(0);
+  });
+
   it('reports the line of the problem', () => {
     const found = findHardCoded(style('.x {\n  color: var(--color-ink);\n  padding: 8px;\n}'));
     expect(found).toEqual([expect.objectContaining({ line: 7, text: 'padding: 8px;' })]);

@@ -2,8 +2,12 @@
 // Every page: head basics, masthead, main content, footer. Per-page SEO and sharing
 // tags (Open Graph, JSON-LD) come in GR-007.
 import '../styles/global.css';
+import tokensCss from '../styles/tokens.css?raw';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
+
+// The browser toolbar colour, read from the --color-bg token so it never drifts.
+const themeColor = /--color-bg:\s*(#[0-9a-f]{6})/i.exec(tokensCss)?.[1];
 
 interface Props {
   title: string;
@@ -23,7 +27,7 @@ const fullTitle = title === 'Graduate Radar' ? title : `${title} | Graduate Rada
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     {noindex && <meta name="robots" content="noindex" />}
-    <meta name="theme-color" content="#f6f1e7" />
+    {themeColor && <meta name="theme-color" content={themeColor} />}
   </head>
   <body>
     <a class="skip" href="#main">

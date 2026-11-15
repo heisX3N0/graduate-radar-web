@@ -81,7 +81,7 @@ describe('ApplyButton', () => {
   it('links to the employer site, safely, with a large tap target class', async () => {
     const html = await render(ApplyButton, { href: 'https://jobs.example.com/1' });
     expect(html).toMatch(/<a[^>]+href="https:\/\/jobs\.example\.com\/1"/);
-    expect(html).toMatch(/rel="noopener noreferrer"/);
+    expect(html).toMatch(/rel="noopener"/);
     expect(html).toContain('Apply on the employer&#39;s site');
   });
 
@@ -127,6 +127,35 @@ describe('ListingCard', () => {
     expect(html).toContain('AI');
     expect(html).toContain('Free');
     expect(html).toContain('Rolling deadline');
+  });
+});
+
+describe('Focus and page head', () => {
+  it('ListingCard keeps the link focus ring unless :has() can move it to the card', async () => {
+    const { readFileSync } = await import('node:fs');
+    const src = readFileSync(
+      new URL('../src/components/ListingCard.astro', import.meta.url),
+      'utf8',
+    );
+    // Removing the link outline is only allowed inside @supports selector(:has(*)).
+    const supports = src.indexOf('@supports selector(:has(*))');
+    const removal = src.indexOf('outline: none');
+    expect(removal === -1 || (supports !== -1 && removal > supports)).toBe(true);
+  });
+
+  it('Base takes theme-color from the --color-bg token', async () => {
+    const { readFileSync } = await import('node:fs');
+    const tokens = readFileSync(new URL('../src/styles/tokens.css', import.meta.url), 'utf8');
+    const bg = /--color-bg:\s*(#[0-9a-f]{6})/i.exec(tokens)![1];
+    const src = readFileSync(new URL('../src/layouts/Base.astro', import.meta.url), 'utf8');
+    expect(src).not.toMatch(/#[0-9a-f]{6}/i);
+    expect(bg).toBeDefined();
+  });
+
+  it('ApplyButton keeps noopener but no longer strips the referrer', async () => {
+    const html = await render(ApplyButton, { href: 'https://jobs.example.com/1' });
+    expect(html).toMatch(/rel="noopener"/);
+    expect(html).not.toMatch(/noreferrer/);
   });
 });
 

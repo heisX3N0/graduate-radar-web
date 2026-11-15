@@ -89,12 +89,16 @@ const summary =
   .card__link:hover {
     text-decoration: underline;
   }
-  .card__link:focus-visible {
-    outline: none;
-  }
-  .card:has(.card__link:focus-visible) {
-    outline: var(--focus-ring-width) solid var(--focus-ring-color);
-    outline-offset: var(--focus-ring-offset);
+  /* Where :has() works, ring the whole card instead of the title link. Older browsers
+     (Chrome and Android WebView before 105) keep the link's own ring. */
+  @supports selector(:has(*)) {
+    .card__link:focus-visible {
+      outline: none;
+    }
+    .card:has(.card__link:focus-visible) {
+      outline: var(--focus-ring-width) solid var(--focus-ring-color);
+      outline-offset: var(--focus-ring-offset);
+    }
   }
   .card__by {
     font-weight: var(--weight-semibold);

@@ -137,11 +137,23 @@ describe('shareUrl', () => {
     const url = shareUrl(
       { title: 'Deloitte Academy', organisation: 'Deloitte Nigeria', deadline: '2026-11-27' },
       'https://graduate-radar.pages.dev/jobs/deloitte',
+      TODAY,
     );
     expect(url.startsWith('https://wa.me/?text=')).toBe(true);
     expect(decodeURIComponent(url.slice('https://wa.me/?text='.length))).toBe(
       'Deloitte Academy · Deloitte Nigeria · Closes 27 Nov · https://graduate-radar.pages.dev/jobs/deloitte',
     );
+  });
+
+  it('never says "Closes" for a deadline that has passed', () => {
+    const text = decodeURIComponent(
+      shareUrl(
+        { title: 'T', organisation: 'O', deadline: '2026-11-10' },
+        'https://x.dev/a',
+        '2026-11-20',
+      ).slice('https://wa.me/?text='.length),
+    );
+    expect(text).toBe('T · O · Closed · https://x.dev/a');
   });
 
   it('leaves out the closing date when there is none', () => {

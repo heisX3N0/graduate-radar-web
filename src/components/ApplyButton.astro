@@ -14,7 +14,7 @@ const action = applyAction(Astro.props.href);
     Apply link unavailable. Search for this opening on the organisation's official website.
   </p>
 ) : (
-  <a class="apply" href={action.href} rel="noopener noreferrer">
+  <a class="apply" href={action.href} rel="noopener">
     {action.label}
   </a>
 )}

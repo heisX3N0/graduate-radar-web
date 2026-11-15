@@ -37,7 +37,29 @@ const inDays = (n: number) => {
 };
 
 // A real job as the base, then one example per state the components must handle.
-const realJob: JobListing = jobs.find((j) => j.minClass === '2:1' && j.maxAge !== '') ?? jobs[0]!;
+// If the data has no jobs at all, a built-in example keeps the build from failing.
+const EXAMPLE_JOB: JobListing = {
+  key: 'example|graduate trainee programme|2026',
+  slug: 'example-graduate-trainee-programme-2026',
+  firstSeen: today,
+  organisation: 'Example Company Nigeria',
+  title: 'Graduate Trainee Programme',
+  type: 'Graduate Trainee',
+  field: 'Any discipline',
+  location: 'Lagos',
+  remote: false,
+  eligibility: 'Any discipline',
+  minClass: '2:1',
+  maxAge: '26',
+  nysc: 'Required done',
+  deadline: 'Not stated',
+  applyLink: 'https://example.com/careers',
+  verifiedOn: today,
+  status: 'Open',
+  notes: '',
+};
+const realJob: JobListing =
+  jobs.find((j) => j.minClass === '2:1' && j.maxAge !== '') ?? jobs[0] ?? EXAMPLE_JOB;
 const jobStates: { label: string; listing: JobListing }[] = [
   {
     label: 'Closing soon, new this week',

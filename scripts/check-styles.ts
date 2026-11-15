@@ -26,48 +26,38 @@ const RULES: [RegExp, string][] = [
   ],
 ];
 
-/** Hard-coded values in the <style> blocks of one .astro source. */
+/**
+ * Hard-coded values in the <style> blocks of one .astro source. The CSS is read as
+ * statements, not lines: text ending in "{" is a selector or at-rule (skipped), text
+ * ending in ";" or "}" is a declaration (checked in full), so a value Prettier wraps
+ * over several lines is still checked. Reported line: where the declaration starts.
+ */
 export function findHardCoded(source: string, file = '(inline)'): StyleFinding[] {
-  const lines = source.split('\n');
   const findings: StyleFinding[] = [];
-  let inStyle = false;
-  let inComment = false;
-  lines.forEach((raw, i) => {
-    if (/<style\b/.test(raw)) {
-      inStyle = true;
-      return;
+  const re = /<style\b[^>]*>([\s\S]*?)<\/style>/g;
+  let block: RegExpExecArray | null;
+  while ((block = re.exec(source))) {
+    const css = block[1]!;
+    const firstLine = source.slice(0, block.index + block[0].indexOf('>') + 1).split('\n').length;
+    // Blank out comments but keep newlines, so line numbers stay right.
+    const clean = css.replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, ' '));
+    let start = 0;
+    for (let i = 0; i < clean.length; i++) {
+      const ch = clean[i];
+      if (ch !== '{' && ch !== '}' && ch !== ';') continue;
+      const raw = clean.slice(start, i);
+      const lead = raw.length - raw.trimStart().length;
+      const text = raw.trim().replace(/\s+/g, ' ');
+      const line = firstLine + clean.slice(0, start + lead).split('\n').length - 1;
+      start = i + 1;
+      if (ch === '{' || !text) continue; // selector, at-rule or empty
+      const colon = text.indexOf(':');
+      if (colon <= 0) continue;
+      const value = text.slice(colon + 1);
+      const hit = RULES.find(([rule]) => rule.test(value));
+      if (hit) findings.push({ file, line, text: `${text};`, reason: hit[1] });
     }
-    if (/<\/style>/.test(raw)) {
-      inStyle = false;
-      return;
-    }
-    if (!inStyle) return;
-    let line = raw;
-    if (inComment) {
-      const end = line.indexOf('*/');
-      if (end === -1) return;
-      line = line.slice(end + 2);
-      inComment = false;
-    }
-    line = line.replace(/\/\*.*?\*\//g, '');
-    const start = line.indexOf('/*');
-    if (start !== -1) {
-      line = line.slice(0, start);
-      inComment = true;
-    }
-    const text = line.trim();
-    if (!text || text.startsWith('@media') || text.startsWith('@container')) return;
-    const colon = text.indexOf(':');
-    // Declarations only: "property: value". Selectors such as "a:hover {" are skipped.
-    if (colon <= 0 || text.endsWith('{') || text.endsWith(',')) return;
-    const value = text.slice(colon + 1);
-    for (const [re, reason] of RULES) {
-      if (re.test(value)) {
-        findings.push({ file, line: i + 1, text, reason });
-        break;
-      }
-    }
-  });
+  }
   return findings;
 }
 
