@@ -8,17 +8,6 @@ Owner decisions that apply to every item (15 Nov 2026): `*.pages.dev` address fo
 
 ---
 
-- [ ] **GR-001 Repo, scaffold and project rules** (S)
-  - **Why:** Nothing exists yet: this folder holds only the spec and these drafts, and is not a git repo. Every later item needs the repo, the gates (build, lint, test) and the rules file.
-  - **Do:** Make this folder the repo root (`git init`, `main`), create the public GitHub repo `heisX3N0/graduate-radar-web` and push. Scaffold Astro (latest stable) with TypeScript strict, Vitest, ESLint and Prettier. Add `npm run build`, `npm run lint`, `npm test`, `npm run check` (astro check). Move the spec to `docs/build-spec.md`; add `docs/done.md`, `docs/infra-capacity.md`, `docs/public-routes.md` (lists the feed `/exec` URL as the only public endpoint), `README.md`, and `CLAUDE.md` from spec section 11 plus: the gate commands, the done archive's name, the "Infrastructure cost" pointer to `docs/infra-capacity.md`, and "copy of global rules version 2026-10-22" if a cloud copy is kept. Add a PR template matching the global one. Add a CI workflow (lint, check, test, build) on pull requests, reusing agent-vault's shared workflows where one fits.
-  - **Tests:** CI fails on a deliberate lint error and on a failing test (checked once on a throwaway branch, then removed); a dash check fails on any em or en dash in `src/` and `docs/` (rule as a check, per global guardrails). Happy path: `npm run build` produces an empty Astro site; CI passes on the PR.
-  - **Docs:** README (setup, gates, how data flows), CLAUDE.md, public-routes.md.
-  - **Cost:** per visit: nothing metered (static). Pages builds: none yet (Cloudflare is connected in GR-008). Dev: GitHub Actions minutes 0 (public repo). Users supported: unchanged.
-  - **Depends on:** nothing.
-  - **Open questions for the owner:**
-    1. The new repo has no `main` yet. May the first commit (spec, backlog, docs drafts only) go straight to `main`, with the scaffold itself in the GR-001 PR?
-  - **Owner decisions (2026-11-15):** No automatic PR review on this repo: run `/code-review` on the diff before opening each PR and put its findings in the PR (applies to every item).
-
 - [ ] **GR-002 Apps Script feed** (M)
   - **Why:** The website must only see public listing fields. The spec's feed (section 5.4) is the only path from the sheet to the site, and the first draft had three gaps: any link scheme passed through, real date cells could be misread, and nothing proved private fields stay out.
   - **Do:** Write `apps-script/Feed.gs` from spec 5.4 (field allowlist, header lookup by name, `day_` date normaliser, link scheme allowlist, 60 day rule for closed rows, 10 minute cache, `triggerRebuild`, `installRebuildTrigger`). Keep the row logic in pure functions so it can be tested in Node. The owner pastes it into the sheet's bound script, sets the script time zone to Africa/Lagos, and deploys it as a web app (Execute as Me, Anyone); I guide each step. The owner puts the `/exec` URL in a local `.env` (never committed) for GR-003.
