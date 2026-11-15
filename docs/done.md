@@ -4,6 +4,18 @@ Finished backlog items, newest first. Each entry: ID and title, merge SHA, what 
 
 ---
 
+- [x] **GR-011 Remove the update schedule from the site and docs** (S). Done in 2f7ff8d (copy and check) and 404df75 (review fixes).
+  - **Shipped:** no update schedule anywhere in our copy. Hero: one line plus "Last updated <date>". Footer and About: "We add new openings and mark closed ones as we find them." Empty results: "Try fewer filters, or check back soon." Meta descriptions of `/` and `/trainings` end without a schedule. Sharing image stamp "Checked openings", re-rendered with Chrome (1200 x 630, 49,813 bytes, was 50,507). Both launch drafts without a schedule. README and spec describe "a scheduled Claude sweep" without days or a time. New `scripts/check-schedule.ts` in `npm run lint`: fails on "every/each <day>", "<day> and <day>", "Tue/Fri", "on <day>s", "every morning/day/week", "twice a week", across line breaks and inside markup, in `src/`, `scripts/og/`, `public/`, `docs/launch.md`, `README.md` and `docs/build-spec.md`. 16 new tests (360 in total).
+  - **Verified (15 Nov 2026, one run each):** built home page shows "Last updated 15 Nov" and no "Tuesday"; About has none either; 360 px check and budgets pass (home first load 18.7 KB gzipped).
+  - **Not verified (owner):** the new WhatsApp card on a fresh share.
+  - **Owner decisions (2026-11-15):** option A, no schedule anywhere; the "Last updated" date stays; stamp "Checked openings"; README and spec drop the sweep's days and time; the launch drafts were not yet published.
+  - **Deviations:**
+    1. The check found one mention the item missed: spec section 6.1 described the hero as "updated every Tue & Fri". Changed too, with the About row's "update schedule".
+    2. "Every morning" counts as a schedule claim (review finding): the `Start here` draft's line "The website updates from it every morning" and the README's "rebuilt from it every day" were reworded. The README's data flow diagram still names the daily 07:30 rebuild, which is how the deploy works, not a promise to readers.
+    3. The check skips `src/data/snapshot.json` (sheet data) and never scans `dist/`, so a listing that names a day cannot fail lint or a build.
+    4. `scripts/check-dashes.ts` now exports its file walker, which the schedule check reuses (review finding).
+    5. The new stamp repeats "Checked" from the headline on the sharing image.
+
 - [x] **GR-010 Launch** (S). Done in 15734d8 (drafts), cf553e1 (review fixes), c1c1763 (phone check cleanup).
   - **Shipped:** `docs/launch.md` with the new `Start here` tab text, the WhatsApp post, the owner's launch steps and where the fallback lives. `tests/launch-copy.test.ts` (20 tests) fails if either draft links to the Google Sheet or "Publish to web", mentions `Found via`, drops "Never pay to apply", leads with anything but the site home page, or links to a page the site does not build. Bare domains and lookalike hosts count as links. README "Launch" section. 22 new tests in total, with the 2 below (346).
   - **Fixed on the way:** the 360 px check's test failed 3 times in 8 full test runs on Windows, because the browser still held its temp profile when the check deleted it (EPERM). The check now waits for the browser to exit (at most 5 s), and a profile it cannot delete is a warning, not a failure. 10 of 10 full runs passed after the fix.
