@@ -1,0 +1,633 @@
+---
+// /design: brand directions for the owner to choose from (GR-004). Not linked from the
+// site and not indexed. Each direction renders the same real listings, so the choice is
+// about the look, not the content. After the owner picks one, GR-005 turns it into
+// src/styles/tokens.css and this page becomes the component showcase.
+import bricolageUrl from '@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-wght-normal.woff2?url';
+import { getListings, type JobListing } from '../data/feed.ts';
+import { DIRECTIONS, type Direction } from '../design/directions.ts';
+import { pickSamples } from '../design/samples.ts';
+import {
+  daysLeftLabel,
+  effectiveStatus,
+  isNewThisWeek,
+  lagosToday,
+  readDeadline,
+  shortDate,
+} from '../lib/dates.ts';
+
+const { jobs, generatedAt } = await getListings();
+const today = lagosToday();
+// Real listings that show the cases the design must handle (src/design/samples.ts).
+const { cards, detail } = pickSamples(jobs, today);
+
+function deadlineText(j: JobListing) {
+  const d = readDeadline(j.deadline, today);
+  if (d.kind === 'date')
+    return {
+      main: `Closes ${shortDate(d.date)}`,
+      left: daysLeftLabel(d.daysLeft),
+      days: d.daysLeft,
+    };
+  if (d.kind === 'rolling') return { main: 'Rolling deadline', left: '', days: null };
+  return { main: 'Deadline not stated', left: 'apply early', days: null };
+}
+
+function eligibility(j: JobListing): string[] {
+  const out: string[] = [];
+  if (j.minClass === '2:1' || j.minClass === '2:2') out.push(`${j.minClass} or above`);
+  else if (j.minClass === 'Any') out.push('Any degree class');
+  if (j.maxAge) out.push(`Age ${j.maxAge} or under`);
+  if (j.nysc === 'Required done') out.push('NYSC completed');
+  else if (j.nysc === 'Serving OK') out.push('Corps members can apply');
+  return out.length ? out : ['Requirements not stated'];
+}
+
+function badges(j: JobListing) {
+  const b: { text: string; kind: 'soon' | 'new' | 'remote' }[] = [];
+  if (effectiveStatus(j, today) === 'Closing soon') b.push({ text: 'Closing soon', kind: 'soon' });
+  if (j.remote) b.push({ text: 'Remote', kind: 'remote' });
+  if (isNewThisWeek(j.firstSeen, today)) b.push({ text: 'New this week', kind: 'new' });
+  return b;
+}
+
+const vars = (d: Direction) =>
+  Object.entries(d.tokens)
+    .map(([k, v]) => `--${k}:${v}`)
+    .concat([`--display:${d.display}`, `--body:${d.body}`])
+    .join(';');
+
+const fontFace = `@font-face{font-family:"Bricolage Grotesque Variable";font-style:normal;font-display:swap;font-weight:200 800;src:url(${bricolageUrl}) format("woff2-variations");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}`;
+// The data's date, not the build date: a site stuck on the snapshot shows an old date.
+const dataDate = new Date(generatedAt);
+const updated = Number.isNaN(dataDate.getTime()) ? 'date unknown' : shortDate(lagosToday(dataDate));
+---
+
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Brand directions | Graduate Radar</title>
+    <style set:html={fontFace}></style>
+  </head>
+  <body>
+    <header class="intro">
+      <p class="eyebrow">Graduate Radar · design</p>
+      <h1>Three directions to choose from</h1>
+      <p>
+        Each direction below shows the same real listings from today's feed, framed at phone width
+        (360 px), the way most graduates will see them. They differ in colour, type and structure,
+        not just paint. Pick one by name; the others are deleted and the chosen one becomes the
+        design system (GR-005).
+      </p>
+      <p>
+        All text colours pass a contrast bar set higher than usual for sunlight: 7:1 for body text,
+        4.5:1 for everything else (checked by tests on every build).
+      </p>
+      <nav aria-label="Directions">
+        {DIRECTIONS.map((d, i) => (
+          <a href={`#${d.id}`}>
+            {String.fromCharCode(65 + i)}. {d.name}
+          </a>
+        ))}
+      </nav>
+    </header>
+
+    {DIRECTIONS.map((d, i) => (
+      <section id={d.id} class={`dir dir-${d.id}`} style={vars(d)} aria-labelledby={`${d.id}-h`}>
+        <div class="about">
+          <p class="letter">Direction {String.fromCharCode(65 + i)}</p>
+          <h2 id={`${d.id}-h`}>{d.name}</h2>
+          <p class="idea">{d.idea}</p>
+          <h3>Why it fits</h3>
+          <ul>
+            {d.why.map((w) => (
+              <li>{w}</li>
+            ))}
+          </ul>
+          <h3>Downsides</h3>
+          <ul>
+            {d.downsides.map((w) => (
+              <li>{w}</li>
+            ))}
+          </ul>
+          <h3>Type</h3>
+          <p class="specimen-display">Graduate trainee programmes</p>
+          <p class="specimen-body">
+            Check eligibility first, then apply on the employer's own page.
+          </p>
+          <p class="note">{d.fontNote}</p>
+          <h3>Colour</h3>
+          <ul class="swatches">
+            {Object.entries(d.tokens).map(([k, v]) => (
+              <li>
+                <span class="chip" style={`background:${v}`} />
+                <span>
+                  {k} <code>{v}</code>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div class="phone" aria-label={`${d.name} at phone width`}>
+          <div class="site">
+            <div class="masthead">
+              <p class="wordmark">
+                <span class="mark" aria-hidden="true" />
+                Graduate Radar
+              </p>
+              <p class="dateline">Checked openings for Nigerian graduates · Updated {updated}</p>
+            </div>
+
+            {cards.map((j) => {
+              const dl = deadlineText(j);
+              return (
+                <article class="card">
+                  <p class="kicker">
+                    {j.type} · {j.field}
+                  </p>
+                  {badges(j).length > 0 && (
+                    <ul class="badges">
+                      {badges(j).map((b) => (
+                        <li class={`badge badge-${b.kind}`}>{b.text}</li>
+                      ))}
+                    </ul>
+                  )}
+                  <h3 class="title">{j.title}</h3>
+                  <p class="org">{j.organisation}</p>
+                  <p class="loc">{j.location}</p>
+                  <p class={`deadline ${dl.days !== null && dl.days <= 7 ? 'is-soon' : ''}`}>
+                    {dl.days !== null && <span class="days">{dl.days}</span>}
+                    <span class="dl-main">{dl.main}</span>
+                    {dl.left && <span class="dl-left">{dl.left}</span>}
+                  </p>
+                  <p class="elig">{eligibility(j).join(' · ')}</p>
+                  <p class="stamp">
+                    {d.id === 'stamped' ? 'Verified' : 'Checked'} {shortDate(j.verifiedOn)}
+                  </p>
+                </article>
+              );
+            })}
+
+            <article class="detail">
+              <p class="crumb">Jobs · {detail.type}</p>
+              <h3 class="detail-title">{detail.title}</h3>
+              <p class="org">
+                {detail.organisation} · {detail.location}
+              </p>
+              <p class="deadline is-detail">
+                <span class="dl-main">{deadlineText(detail).main}</span>
+                <span class="dl-left">{deadlineText(detail).left}</span>
+              </p>
+              <ul class="checklist">
+                {eligibility(detail).map((e) => (
+                  <li>{e}</li>
+                ))}
+              </ul>
+              <a class="apply" href={detail.applyLink} rel="noopener">
+                Apply on the employer's site
+              </a>
+              <p class="verified">Checked by Graduate Radar on {shortDate(detail.verifiedOn)}</p>
+              <p class="safety">
+                <strong>Never pay to apply.</strong> Real employers do not charge application fees.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+    ))}
+  </body>
+</html>
+
+<style>
+  :global(*) {
+    box-sizing: border-box;
+  }
+  :global(body) {
+    margin: 0;
+    background: #f2f2f2;
+    color: #1a1a1a;
+    font-family:
+      system-ui,
+      -apple-system,
+      'Segoe UI',
+      Roboto,
+      sans-serif;
+    line-height: 1.5;
+  }
+  .intro {
+    max-width: 60rem;
+    margin: 0 auto;
+    padding: 2rem 1rem 1rem;
+  }
+  .intro h1 {
+    font-size: 1.75rem;
+    line-height: 1.2;
+    margin: 0.25rem 0 0.75rem;
+  }
+  .eyebrow {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #444;
+  }
+  .intro nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+  }
+  .intro nav a {
+    color: #1a1a1a;
+    font-weight: 600;
+    padding: 0.625rem 0;
+  }
+
+  /* Each direction: explanation beside a phone-width frame (stacked on phones). */
+  .dir {
+    background: var(--bg);
+    color: var(--ink);
+    padding: 2rem 1rem;
+    display: grid;
+    gap: 2rem;
+    justify-content: center;
+    grid-template-columns: minmax(0, 360px);
+  }
+  @media (min-width: 960px) {
+    .dir {
+      grid-template-columns: minmax(0, 30rem) 360px;
+      align-items: start;
+    }
+  }
+  .about h2 {
+    font-family: var(--display);
+    font-size: 2rem;
+    line-height: 1.1;
+    margin: 0;
+  }
+  .about h3 {
+    font-size: 1rem;
+    margin: 1.5rem 0 0.25rem;
+  }
+  .about ul {
+    padding-left: 1.25rem;
+    margin: 0;
+  }
+  .about li {
+    margin: 0.25rem 0;
+  }
+  .letter,
+  .note {
+    color: var(--inkMuted);
+    font-size: 0.875rem;
+    margin: 0;
+  }
+  .idea {
+    font-size: 1.125rem;
+    margin: 0.5rem 0 0;
+  }
+  .specimen-display {
+    font-family: var(--display);
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin: 0.25rem 0;
+  }
+  .specimen-body {
+    font-family: var(--body);
+    margin: 0 0 0.25rem;
+  }
+  .swatches {
+    list-style: none;
+    padding: 0 !important;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+    gap: 0.25rem 1rem;
+    font-size: 0.875rem;
+  }
+  .swatches li {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  .chip {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 4px;
+    border: 1px solid rgb(0 0 0 / 0.2);
+    flex: none;
+  }
+  code {
+    font-size: 0.8125rem;
+  }
+
+  /* The phone frame. */
+  .phone {
+    width: 100%;
+    max-width: 360px;
+    border: 1px solid var(--rule);
+    border-radius: 24px;
+    overflow: hidden;
+    background: var(--bg);
+    box-shadow: 0 12px 32px rgb(0 0 0 / 0.12);
+  }
+  .site {
+    font-family: var(--body);
+    padding: 1rem;
+    display: grid;
+    gap: 1rem;
+  }
+  .site p,
+  .site h3,
+  .site ul {
+    margin: 0;
+  }
+  .wordmark {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 1.375rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .dateline {
+    font-size: 0.8125rem;
+    color: var(--inkMuted);
+  }
+  .card,
+  .detail {
+    background: var(--surface);
+    padding: 1rem;
+    display: grid;
+    gap: 0.375rem;
+    position: relative;
+  }
+  .kicker,
+  .crumb {
+    font-size: 0.75rem;
+    color: var(--inkMuted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+  .badges {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+  }
+  .badge {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    padding: 0.125rem 0.5rem;
+  }
+  .badge-soon {
+    background: var(--soonBg);
+    color: var(--soon);
+  }
+  .badge-new {
+    background: var(--okBg);
+    color: var(--ok);
+  }
+  .badge-remote {
+    background: var(--newBg);
+    color: var(--newText);
+  }
+  .title {
+    font-family: var(--display);
+    font-size: 1.1875rem;
+    line-height: 1.25;
+  }
+  .org {
+    font-weight: 600;
+  }
+  .loc,
+  .elig,
+  .verified {
+    color: var(--inkMuted);
+    font-size: 0.9375rem;
+  }
+  .deadline {
+    font-variant-numeric: tabular-nums;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.375rem;
+  }
+  .deadline.is-soon {
+    color: var(--soon);
+  }
+  .dl-main {
+    font-weight: 700;
+  }
+  .days {
+    display: none;
+  }
+  .stamp {
+    display: none;
+  }
+  .detail-title {
+    font-family: var(--display);
+    font-size: 1.625rem;
+    line-height: 1.15;
+  }
+  .checklist {
+    padding-left: 1.25rem;
+  }
+  .apply {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    background: var(--primary);
+    color: var(--onPrimary);
+    font-weight: 700;
+    text-decoration: none;
+    margin-top: 0.5rem;
+    padding: 0.5rem 1rem;
+    text-align: center;
+  }
+  .apply:focus-visible,
+  .intro nav a:focus-visible {
+    outline: 3px solid var(--ink, #1a1a1a);
+    outline-offset: 3px;
+  }
+  .safety {
+    font-size: 0.9375rem;
+    background: var(--soonBg);
+    color: var(--ink);
+    padding: 0.5rem 0.75rem;
+  }
+
+  /* A. Noticeboard: newspaper vacancies page. Square, ruled, serif, red stamp. */
+  .dir-noticeboard .wordmark {
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 3px double var(--ink);
+    padding-bottom: 0.25rem;
+    justify-content: center;
+  }
+  .dir-noticeboard .mark {
+    display: none;
+  }
+  .dir-noticeboard .dateline {
+    text-align: center;
+    font-style: italic;
+  }
+  .dir-noticeboard .card,
+  .dir-noticeboard .detail {
+    border-top: 2px solid var(--ink);
+    border-bottom: 1px solid var(--rule);
+  }
+  .dir-noticeboard .badge {
+    border: 1px solid currentColor;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+  }
+  .dir-noticeboard .title {
+    font-size: 1.25rem;
+  }
+  .dir-noticeboard .deadline {
+    border: 2px solid currentColor;
+    padding: 0.25rem 0.5rem;
+    justify-self: start;
+    text-transform: uppercase;
+    font-size: 0.8125rem;
+    letter-spacing: 0.04em;
+  }
+  .dir-noticeboard .apply {
+    border-radius: 0;
+  }
+  .dir-noticeboard .verified {
+    font-style: italic;
+  }
+  .dir-noticeboard .safety {
+    border-left: 4px solid var(--soon);
+  }
+  /* Owner request (15 Nov 2026): B's verified stamp, adapted to A. "Checked", not
+     "Verified" (we check, we do not guarantee); ink green, solid, square, upright and
+     smaller than the red deadline stamp, so urgency stays red and trust stays quiet. */
+  .dir-noticeboard .stamp {
+    display: block;
+    justify-self: start;
+    margin-top: 0.25rem;
+    border: 1.5px solid var(--primary);
+    color: var(--primary);
+    padding: 0.0625rem 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* B. Stamped: every listing checked and signed off. */
+  .dir-stamped .mark {
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 50%;
+    background: var(--primary);
+    position: relative;
+  }
+  .dir-stamped .mark::after {
+    content: '';
+    position: absolute;
+    left: 0.4rem;
+    top: 0.2rem;
+    width: 0.3rem;
+    height: 0.6rem;
+    border: solid var(--onPrimary);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+  .dir-stamped .card,
+  .dir-stamped .detail {
+    border-radius: 12px;
+    border: 1px solid var(--rule);
+    border-left: 5px solid var(--primary);
+  }
+  .dir-stamped .badge {
+    border-radius: 6px;
+  }
+  .dir-stamped .stamp {
+    display: block;
+    justify-self: start;
+    margin-top: 0.25rem;
+    border: 2px dashed var(--primary);
+    color: var(--primary);
+    border-radius: 6px;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    transform: rotate(-3deg);
+  }
+  .dir-stamped .checklist {
+    list-style: none;
+    padding: 0;
+  }
+  .dir-stamped .checklist li::before {
+    content: '✓';
+    color: var(--primary);
+    font-weight: 700;
+    margin-right: 0.5rem;
+  }
+  .dir-stamped .apply {
+    border-radius: 10px;
+  }
+  .dir-stamped .safety {
+    border-radius: 10px;
+  }
+
+  /* C. Bright Start: warm, young, big numbers. */
+  .dir-brightstart .wordmark {
+    font-weight: 800;
+    font-size: 1.5rem;
+    letter-spacing: -0.02em;
+  }
+  .dir-brightstart .mark {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    background: var(--sun);
+    box-shadow: 0 0 0 4px var(--primarySoft);
+  }
+  .dir-brightstart .card,
+  .dir-brightstart .detail {
+    border-radius: 18px;
+    box-shadow: 0 2px 10px rgb(27 21 48 / 0.08);
+  }
+  .dir-brightstart .title,
+  .dir-brightstart .detail-title {
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .dir-brightstart .badge {
+    border-radius: 999px;
+    padding: 0.125rem 0.625rem;
+  }
+  .dir-brightstart .deadline {
+    color: var(--ink);
+  }
+  .dir-brightstart .days {
+    display: inline-block;
+    font-family: var(--display);
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1;
+    background: linear-gradient(transparent 60%, var(--sun) 60%);
+    padding: 0 0.125rem;
+  }
+  .dir-brightstart .deadline.is-soon .dl-left {
+    color: var(--soon);
+    font-weight: 700;
+  }
+  .dir-brightstart .apply {
+    border-radius: 999px;
+  }
+  .dir-brightstart .safety {
+    border-radius: 14px;
+  }
+</style>
