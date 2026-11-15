@@ -11,7 +11,7 @@ Finished backlog items, newest first. Each entry: ID and title, merge SHA, what 
     - Home: Performance, Accessibility, Best practices and SEO all 100; LCP 0.99 s, TBT 5 ms, CLS 0.000; transfer 32.5 KB.
     - A job page (Deloitte cyber): all 100; LCP 0.96 s, TBT 66 ms, CLS 0.000; transfer 19.4 KB.
     - Trainings: all 100; LCP 0.96 s, TBT 0 ms, CLS 0.001; transfer 30.7 KB.
-  - **Not verified (owner):** real Android phones over mobile data (3 or more), see the PR's manual tests.
+  - **Verified (owner, 15 Nov 2026, the PR's 7 manual tests, one pass per phone):** Pixel 10 (Android 17), iPhone 11 Pro Max (iOS 26), Infinix Hot 30 (Android 13): all fine. Two Android phones, not the 3 the item asked for; the iPhone adds Safari, which no automatic check covers.
   - **Deviations:**
     1. Lighthouse ran on the GR-007 build already live, not on this branch. This branch changes only CSS (one body rule, the breadcrumb, `/design`), so the scores should not move; a re-run after this deploys would confirm it.
     2. Lighthouse's mobile defaults simulate slow 4G, not the slow 3G named in spec section 9 (milestone 6). Slow 3G was not measured.
@@ -22,7 +22,7 @@ Finished backlog items, newest first. Each entry: ID and title, merge SHA, what 
 - [x] **GR-007 Detail pages, trust pages, SEO and sharing** (L). Done in 1675d6c (pages) and 4ffeb57 (review fixes).
   - **Shipped:** `/jobs/<slug>` and `/trainings/<slug>` for every listing in the feed (closed ones: "This opening has closed", no Apply, no JSON-LD, `noindex`, similar open listings); a small browser re-check (448 bytes gzipped) that updates days left and closes the page if the deadline passes after the build; `/about` (from the Start here tab, with the privacy note), `/stay-safe`, `404`; canonical, Open Graph and Twitter tags with absolute URLs; favicon; sharing image `public/og-default.png` (1200 x 630, 50,507 bytes) from `scripts/og/og.html` via `npm run og`; JobPosting JSON-LD on open job pages; `sitemap.xml` and `robots.txt`; `scripts/check-dist.ts`, now part of `npm run build`. 45 new tests (311 in total).
   - **Verified (15 Nov 2026, one run each):** browser pane at 360 x 800 on the MoMo job page: Apply, "Never pay to apply", WhatsApp text in spec format, canonical and image URLs absolute, JobPosting with validThrough, no sideways scroll, all tap targets at least 44 px, breadcrumb one row; About, Stay safe and 404 without overflow; an unknown job address returns the 404 page with status 404; sitemap has 28 addresses (4 pages, 17 jobs, 7 trainings). The dist scan failed (exit 1) on an injected "Found via" and on a detail page without "Never pay to apply", and passed again after a clean build.
-  - **Not verified (owner):** Google's Rich Results test on a live job page, and the WhatsApp preview card from a real share.
+  - **Verified (owner, 15 Nov 2026, one run each):** Google's Rich Results test on the live MoMo job page: 1 valid JobPosting, 4 non-critical warnings, all optional fields the sheet does not have (`baseSalary`, `streetAddress`, `addressRegion`, `postalCode`). WhatsApp preview from a real share of the Smartflow job: image, title, description and domain shown.
   - **Owner decisions (2026-11-15):** `/about` copy from the Start here tab, no name or company, no Found via or Ctrl+F lines.
   - **Deviations:**
     1. The dist scan runs inside `npm run build` (review finding), so Cloudflare's daily builds refuse to deploy private data; CI's separate step was removed.
