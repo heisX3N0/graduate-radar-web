@@ -5,8 +5,9 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { checkMobile, findBrowser } from '../scripts/check-mobile.ts';
+import { spawn } from 'node:child_process';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { checkMobile, findBrowser, removeProfile, stopBrowser } from '../scripts/check-mobile.ts';
 
 const browser = findBrowser();
 let dist: string;
@@ -94,4 +95,22 @@ describe.skipIf(!browser)('checkMobile: happy path', () => {
     page('about.html', '<p>About</p>');
     expect(await checkMobile(dist, browser!)).toEqual([]);
   }, 60_000);
+});
+
+describe('checkMobile: cleanup after the browser', () => {
+  it('a profile folder that cannot be deleted warns instead of failing the check', () => {
+    const locked = () => {
+      throw Object.assign(new Error('EPERM, Permission denied'), { code: 'EPERM' });
+    };
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(() => removeProfile('C:\\Temp\\gr-mobile-x', locked)).not.toThrow();
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('could not delete'));
+    warn.mockRestore();
+  });
+
+  it('waits for the browser process to exit before cleanup', async () => {
+    const proc = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)']);
+    await stopBrowser(proc);
+    expect(proc.exitCode !== null || proc.signalCode !== null).toBe(true);
+  });
 });
