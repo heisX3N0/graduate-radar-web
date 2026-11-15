@@ -1,6 +1,6 @@
 # Graduate Radar backlog
 
-Open work only. Done items move to `docs/done.md` with what shipped, owner decisions (dated) and deviations. The full spec is `docs/build-spec.md` (until GR-001 lands it is `graduate-radar-build-spec.md` in this folder). Free-plan costs come from `docs/infra-capacity.md`.
+Open work only. Done items move to `docs/done.md` with what shipped, owner decisions (dated) and deviations. The full spec is `docs/build-spec.md`. Free-plan costs come from `docs/infra-capacity.md`.
 
 Order: GR-001, GR-002, GR-003, then GR-008 (deploy early, owner decision 15 Nov 2026), then GR-004 to GR-007, GR-009, GR-010. Items stay in ID order below. Sizes: S under half a day, M about a day, L more than a day.
 

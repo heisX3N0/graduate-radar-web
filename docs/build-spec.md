@@ -2,7 +2,7 @@
 
 Owner: Boluwatife Olapade · Written 15 Nov 2026 · Revised 15 Nov 2026 (see section 14) · Target: launch within one week
 
-This doc is the handoff. Read it fully before writing code. It explains what to build, why each choice was made, and what "done" looks like. Where something is marked **Decide**, ask Boluwatife before building that part. Owner decisions made so far are in section 12. Once the repo exists this file lives at `docs/build-spec.md`.
+This doc is the handoff. Read it fully before writing code. It explains what to build, why each choice was made, and what "done" looks like. Where something is marked **Decide**, ask Boluwatife before building that part. Owner decisions made so far are in section 12.
 
 ---
 
