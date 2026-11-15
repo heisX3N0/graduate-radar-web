@@ -69,7 +69,7 @@ Claude sweep (scheduled)     ──► Google Sheet (database, unchanged)
 | Piece | Choice | Rationale | Rejected alternatives |
 |---|---|---|---|
 | Database | Existing Google Sheet | The sweep, review workflow and owner habits already live there. Zero migration. | Supabase/Airtable: unnecessary until accounts exist. |
-| Data feed | Apps Script web app returning JSON | Free; runs as the owner, so the sheet stays private; we control exactly which fields leave the sheet; looks up columns **by header name**, so the owner can move columns safely; the same Apps Script project hosts the Phase 2 scraper later. | "Publish to web" CSV: exposes columns by position, and any column move or added column silently breaks parsing; can't filter out closed or private fields. Sheets API with a key: needs the sheet shared publicly. |
+| Data feed | Apps Script web app returning JSON | Free; runs as the owner, so the sheet stays private; we control exactly which fields leave the sheet; looks up columns **by header name**, so the owner can move columns safely. | "Publish to web" CSV: exposes columns by position, and any column move or added column silently breaks parsing; can't filter out closed or private fields. Sheets API with a key: needs the sheet shared publicly. |
 | Site generator | Astro (latest stable), TypeScript | Ships HTML with almost no JavaScript, which is ideal for cheap phones and slow data. Static pages per listing give SEO and WhatsApp previews. Small interactive "islands" only where needed (filters). | Next.js: heavier JS and more than we need. Plain SPA (React/Vite): blank page until JS loads, poor SEO, no per-listing previews. |
 | Styling | Plain CSS with design tokens (CSS custom properties), scoped Astro component styles | Tokens make the design system portable to future products; no build-time CSS framework to learn or upgrade. | Tailwind: fine, but tokens-in-CSS keeps the design system explicit and framework-free. If Claude Code strongly prefers Tailwind, map tokens into its theme instead. |
 | Interactivity | Vanilla TypeScript (or Preact island if it clearly simplifies) for filters; Fuse.js for fuzzy search | A few hundred rows, so filtering in the browser is instant and needs no server. | Server search (Algolia etc.): overkill, adds cost and accounts. |
@@ -163,7 +163,7 @@ Value conventions written by the sweep:
 
 The feed code lives in `apps-script/Feed.gs` (tested by `tests/feed.test.ts`, which runs the real file against stand-ins for the Apps Script services). It replaced the starting code that was here, so there is only one copy to keep in sync with the bound script.
 
-Create it as the bound script of the Graduate Radar sheet (Extensions > Apps Script). Set the script time zone to Africa/Lagos. This same project will later host the Phase 2 scraper, so keep feed code in its own file (`Feed.gs`).
+Create it as the bound script of the Graduate Radar sheet (Extensions > Apps Script). Set the script time zone to Africa/Lagos. Keep feed code in its own file (`Feed.gs`).
 
 Deploy: Deploy > New deployment > Web app > Execute as **Me** > Who has access **Anyone**. Put the `/exec` URL in Cloudflare Pages as the build environment variable `FEED_URL`. Put the Cloudflare deploy hook URL in Script Properties as `DEPLOY_HOOK_URL`, then run `installRebuildTrigger()` once.
 
@@ -357,7 +357,6 @@ graduate-radar-web/
 - Postgrad scholarships section if requested (data already collected privately).
 - Calendar of recurring programmes once it has months of evidence.
 - Accounts, saved listings and an Aimery-style "tailor my CV to this role" tool (Supabase free tier when needed).
-- Phase 2 Apps Script scraper in the same Apps Script project, reading ATS boards and RSS feeds listed in the `Sources` tab.
 - Event counts (Apply clicks, filters, shares) with a tiny counter, if page views turn out not to be enough.
 - Moving hosting to Workers static assets, if Cloudflare stops adding features to Pages.
 

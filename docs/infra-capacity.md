@@ -2,7 +2,7 @@
 
 Graduate Radar runs entirely on free plans until the owner decides otherwise. This doc records where each free limit runs out, what each user action costs, and the principles that keep those costs low. Read it before adding anything that uses a limited resource (a build, an Apps Script execution or URL fetch, a Worker request, a heavy dependency), and use the checklist at the end in the pull request.
 
-Last reviewed: 2026-11-15, after the first Cloudflare builds (GR-008). Figures marked "measured" come from those builds; the rest are estimates from the code and the spec (`docs/build-spec.md`). Each number says whether it was measured (with the sample) or estimated (from what). Re-check against real usage (see [Measuring](#measuring)) and update this doc in the same PR whenever the infrastructure or a hot path changes.
+Last reviewed: 2026-11-15, after the first Cloudflare builds (GR-008); principle 3 and the Apps Script rows reworded in GR-014. Figures marked "measured" come from those builds; the rest are estimates from the code and the spec (`docs/build-spec.md`). Each number says whether it was measured (with the sample) or estimated (from what). Re-check against real usage (see [Measuring](#measuring)) and update this doc in the same PR whenever the infrastructure or a hot path changes.
 
 Limits shared with other projects on the same account are in agent-vault's `skills/infra-capacity/shared-quotas.md`; the rows below marked "shared" use what is left after the other projects.
 
@@ -20,7 +20,7 @@ A typical day: 1 scheduled rebuild (1 Pages build, 1 to 2 feed executions, 1 URL
 | Cloudflare Pages files per site | 20,000 (same source) | Estimated: 1 HTML file per listing plus about 50 assets and pages. A few hundred listings means under 1,000 files | About 19,000 listings at once (open plus closed within 60 days) |
 | Cloudflare Pages bandwidth and static requests | Unmetered, free (Cloudflare migration guide: static asset requests are free) | Estimated: home page under 150 KB, detail page under 60 KB (spec budgets, not measured) | No free-plan wall; Cloudflare's general fair-use terms apply |
 | Cloudflare Web Analytics | Free; no per-site event limit found (not checked in detail) | 1 beacon per page view | Not known; check the dashboard once real traffic arrives |
-| Apps Script URL fetch | 20,000 a day (gmail.com account; owner confirmed 2026-11-15) (Google Apps Script quotas, 2026-11-15) | Estimated: 1 a day (deploy hook call) | Not reachable by v1. Phase 2 scraper will use this; price it then |
+| Apps Script URL fetch | 20,000 a day (gmail.com account; owner confirmed 2026-11-15) (Google Apps Script quotas, 2026-11-15) | Estimated: 1 a day (deploy hook call) | Not reachable by v1. Other processes on the same Google account share this limit; their use is tracked outside this repo |
 | Apps Script trigger runtime | 90 minutes a day (gmail.com account) (same source) | Estimated: a few seconds a day for `triggerRebuild` | Not reachable by v1 |
 | Apps Script simultaneous executions | 30 per user (same source) | Estimated: 1 to 2 feed calls per build, plus any manual `npm run snapshot` | Only if someone hammers the public `/exec` URL. The 10 minute cache keeps each call cheap; abuse would fail calls, not cost money |
 | GitHub Actions minutes (shared) | 2,000 a month for private repos; public repos are not charged (GitHub billing docs) | 0: the repo is public (owner decision, 15 Nov 2026) | No wall while the repo stays public. If it goes private, every CI minute comes out of the account's shared 2,000 (about 70% used in October) |
@@ -52,13 +52,13 @@ All estimates from the spec; nothing measured yet.
 If the project ever needs paid capacity, the order to pay in, each step keeping the free allowance and charging only above it. Every paid step is an owner decision.
 
 1. Cloudflare Pages builds: first cut development builds (turn off preview builds for branches that do not need them, batch pushes). Paid Workers plan only if that is not enough.
-2. Apps Script: move the sheet to a Workspace account only if the Phase 2 scraper needs the higher URL fetch quota.
+2. Apps Script: move the sheet to a Workspace account only if the account's processes together need the higher URL fetch quota.
 
 ## Principles
 
 1. **Price every user action before building it.** Per action: each limited resource it uses, and what caps anything that grows.
 2. **Spend the scarcest resource only where it earns it.** Pages builds are the scarcest (shared with Aimery). One scheduled build a day; no build per sheet edit; no extra scheduled builds without updating this doc.
-3. **Writes follow user intent, not keystrokes or events.** The website never writes anything. The sheet is the only store, and only the sweep and the owner write to it.
+3. **Writes follow user intent, not keystrokes or events.** The website never writes anything. The sheet is the only store; the owner and private automated processes write to it.
 4. **Reads: never fetch what you already have.** The feed is fetched once per build, never by a visitor's browser.
 5. **Everything stored has a reason and a lifetime.** Closed listings leave the feed 60 days after their last check; `snapshot.json` is replaced on each refresh.
 6. **Keep each request cheap.** Visitors get static files only. No Pages Functions or Workers in v1.

@@ -175,6 +175,21 @@ describe('trust pages and 404', () => {
     expect(html).not.toMatch(/found via/i);
   });
 
+  // GR-014: Checked names where we confirm an opening.
+  it('about defines Checked without the old wording that left out where we confirm it', async () => {
+    const text = (await c.renderToString(About)).replace(/\s+/g, ' ');
+    expect(text).not.toContain('the last date we confirmed the opening was real and still open');
+  });
+
+  it("about defines Checked as confirmed on the employer's or provider's own page, once", async () => {
+    const html = await c.renderToString(About);
+    const text = html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ');
+    const want =
+      "Checked is the last date we confirmed on the employer's or provider's own page that the opening was real and still open.";
+    expect(html).toMatch(/<strong[^>]*>Checked<\/strong>/);
+    expect(text.split(want)).toHaveLength(2);
+  });
+
   it('stay safe covers fees, Gmail-only recruiters and what to do', async () => {
     const html = await c.renderToString(StaySafe);
     expect(html).toContain('Never pay to apply');
