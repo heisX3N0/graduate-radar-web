@@ -8,24 +8,6 @@ Owner decisions that apply to every item (15 Nov 2026): `*.pages.dev` address fo
 
 ---
 
-- [ ] **GR-003 Data layer: feed, snapshot, dates and slugs** (M)
-  - **Why:** Every page reads listings through one module, so validation, the snapshot fallback, Lagos dates and stable slugs must be right once. The first-draft slug rule (`-2` on collision) could move a listing to another URL when rows were reordered.
-  - **Do:** `src/data/feed.ts` (fetch `FEED_URL`, Zod schema, normalise, re-check link schemes, fall back to `snapshot.json` when the fetch fails, the response is invalid, or either list has under half the snapshot's count); `scripts/snapshot.ts` (`npm run snapshot`); first `src/data/snapshot.json` from the live feed; `src/lib/dates.ts` (Lagos today, deadline status, days left, "new this week"); `src/lib/slug.ts` (hash suffix on collision, spec 6.1); `src/lib/filters.ts` (filter and search logic shared by build and browser, used from GR-006).
-  - **Tests:** Negative first:
-    1. Fetch throws, returns 500, or returns HTML: build uses the snapshot and logs one warning.
-    2. Feed JSON fails the schema (missing `key`, wrong type): snapshot used.
-    3. Feed has 0 jobs, or fewer than half the snapshot's jobs: snapshot used (same for trainings, counted separately).
-    4. A listing with a `javascript:` Apply link is dropped at build even if the feed lets it through.
-    5. Deadline yesterday (Lagos) with Status Open: treated as Closed and hidden from lists.
-    6. Lagos day boundary: at 23:30 UTC on 26 Nov, Lagos is 27 Nov, so a 26 Nov deadline is closed.
-    7. `Rolling`, `Not stated` and `''` deadlines never close.
-    8. Two keys that slugify to the same text both get hash suffixes, and their slugs do not change when the input order is reversed or a third listing is added.
-    Happy path: deadline in 5 days shows Closing soon and "5 days left"; slug matches the spec example; first seen 3 days ago is "New this week".
-  - **Docs:** README "How data flows" and "Refreshing the snapshot".
-  - **Cost:** per build: 1 feed fetch (1 Apps Script execution). `npm run snapshot`: 1 execution. Users supported: unchanged.
-  - **Depends on:** GR-002 (a live feed for the first snapshot).
-  - **Open questions for the owner:** none.
-
 - [ ] **GR-004 Brand directions on /design** (M)
   - **Why:** You asked for 2 to 3 real directions to choose from, not a generic template. The choice sets every token, so it comes before the component build.
   - **Do:** Build `/design` (not in nav) showing 2 to 3 distinct directions. Each one has: a colour system (primary, warm "Closing soon" accent, neutrals, semantic colours) checked for WCAG AA and for sunlight readability on cheap screens; a type choice (system stack or one self-hosted variable font, with its weight in KB); a job card and a detail page header in that direction; and a short reason grounded in the audience (trust, phones, WhatsApp arrivals, Nigerian without clichés). Share the preview URL or screenshots at 360 px for you to pick.
