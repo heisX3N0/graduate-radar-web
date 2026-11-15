@@ -27,9 +27,11 @@ const FORBIDDEN: [RegExp, string][] = [
 ];
 const DETAIL = /^(jobs|trainings)\/[^/]+\.html$/;
 const SAFETY = /Never pay to apply/;
-// GR-013: every footer links the WhatsApp channel, and About has its own section for it.
+// GR-013: every page has the site footer (Footer.astro, class "footer"), the footer links
+// the WhatsApp channel, and About has its own section for it. Other <footer> elements
+// (inside a card, say) are not the site footer.
 const CHANNEL_HREF = `href="${CHANNEL_URL}"`;
-const FOOTER = /<footer[\s\S]*?<\/footer>/i;
+const SITE_FOOTER = /<footer\b[^>]*\bclass="footer\b[^"]*"[^>]*>[\s\S]*?<\/footer>/i;
 // GR-012: the site moved to graduateradar.versionphi.com. Our own old address must not
 // appear in canonical links, sharing tags, JSON-LD, the sitemap or robots.txt. Only this
 // project's host is refused: an employer's own *.pages.dev Apply link is fine.
@@ -82,16 +84,23 @@ function files(dir: string, out: string[] = []): string[] {
 export function checkDist(dist: string): DistFinding[] {
   const findings: DistFinding[] = [];
   let details = 0;
+  let hasAbout = false;
   for (const full of files(dist)) {
     const file = relative(dist, full).split(sep).join('/');
     const text = readFileSync(full, 'utf8');
     const hit = FORBIDDEN.find(([re]) => re.test(text));
     if (hit) findings.push({ file, reason: `contains ${hit[1]}` });
-    const footer = text.match(FOOTER)?.[0];
-    if (footer !== undefined && !footer.includes(CHANNEL_HREF))
-      findings.push({ file, reason: 'footer without the WhatsApp channel link' });
-    if (file === 'about.html' && !text.replace(FOOTER, '').includes(CHANNEL_HREF))
-      findings.push({ file, reason: 'no WhatsApp channel section' });
+    if (file.endsWith('.html')) {
+      const footer = text.match(SITE_FOOTER)?.[0];
+      if (footer === undefined) findings.push({ file, reason: 'no site footer' });
+      else if (!footer.includes(CHANNEL_HREF))
+        findings.push({ file, reason: 'footer without the WhatsApp channel link' });
+    }
+    if (file === 'about.html') {
+      hasAbout = true;
+      if (!text.replace(SITE_FOOTER, '').includes(CHANNEL_HREF))
+        findings.push({ file, reason: 'no WhatsApp channel section' });
+    }
     if (OLD_HOST.test(text))
       findings.push({ file, reason: 'points to the old address graduate-radar.pages.dev' });
     if (DETAIL.test(file)) {
@@ -101,6 +110,7 @@ export function checkDist(dist: string): DistFinding[] {
     }
   }
   if (details === 0) findings.push({ file: '(dist)', reason: 'no detail pages were built' });
+  if (!hasAbout) findings.push({ file: 'about.html', reason: 'missing' });
   findings.push(...checkHeaders(dist));
   return findings.sort((a, b) => a.file.localeCompare(b.file));
 }
