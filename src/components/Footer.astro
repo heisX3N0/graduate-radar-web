@@ -1,5 +1,7 @@
 ---
-// Every page ends with the trust basics and a link to Stay safe (acceptance criterion 7).
+// Every page ends with the trust basics and a link to Stay safe (acceptance criterion 7),
+// and the WhatsApp channel (GR-013).
+import { CHANNEL_URL } from '../lib/site.ts';
 ---
 
 <footer class="footer">
@@ -15,6 +17,9 @@
       </li>
       <li>
         <a href="/about">About Graduate Radar</a>
+      </li>
+      <li>
+        <a href={CHANNEL_URL}>Follow Graduate Radar on WhatsApp</a>
       </li>
     </ul>
   </div>

@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { checkDist } from '../scripts/check-dist.ts';
+import { CHANNEL_URL } from '../src/lib/site.ts';
 
 let dist: string;
 beforeEach(() => {
@@ -27,6 +28,40 @@ const HEADERS = [
   '  X-Robots-Tag: noindex',
   '',
 ].join('\n');
+
+describe('checkDist: the WhatsApp channel link (GR-013)', () => {
+  const LINK = `<a href="${CHANNEL_URL}">Follow Graduate Radar on WhatsApp</a>`;
+  const base = () => {
+    page('_headers', HEADERS);
+    page('jobs/a.html', `<h1>A</h1>${SAFE}<footer>${LINK}</footer>`);
+  };
+  const reasons = () => checkDist(dist).map((f) => `${f.file}: ${f.reason}`);
+
+  it('refuses a page whose footer has no channel link', () => {
+    base();
+    page('index.html', '<main>Jobs</main><footer><a href="/about">About</a></footer>');
+    expect(reasons()).toContain('index.html: footer without the WhatsApp channel link');
+  });
+
+  it('refuses a footer link to a different WhatsApp address', () => {
+    base();
+    page('index.html', '<footer><a href="https://whatsapp.com/channel/x">WhatsApp</a></footer>');
+    expect(reasons()).toContain('index.html: footer without the WhatsApp channel link');
+  });
+
+  it('refuses an About page with the link only in its footer', () => {
+    base();
+    page('about.html', `<main><h1>About</h1></main><footer>${LINK}</footer>`);
+    expect(reasons()).toContain('about.html: no WhatsApp channel section');
+  });
+
+  it('passes pages with the link in the footer, and About with its own section', () => {
+    base();
+    page('index.html', `<main>Jobs</main><footer>${LINK}</footer>`);
+    page('about.html', `<main><h2>Follow on WhatsApp</h2>${LINK}</main><footer>${LINK}</footer>`);
+    expect(checkDist(dist)).toEqual([]);
+  });
+});
 
 describe('checkDist: the site address and the pages.dev noindex rule (GR-012)', () => {
   const clean = () => {

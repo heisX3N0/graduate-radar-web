@@ -8,6 +8,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { CHANNEL_URL } from '../src/lib/site.ts';
 
 export interface DistFinding {
   file: string;
@@ -26,6 +27,9 @@ const FORBIDDEN: [RegExp, string][] = [
 ];
 const DETAIL = /^(jobs|trainings)\/[^/]+\.html$/;
 const SAFETY = /Never pay to apply/;
+// GR-013: every footer links the WhatsApp channel, and About has its own section for it.
+const CHANNEL_HREF = `href="${CHANNEL_URL}"`;
+const FOOTER = /<footer[\s\S]*?<\/footer>/i;
 // GR-012: the site moved to graduateradar.versionphi.com. Our own old address must not
 // appear in canonical links, sharing tags, JSON-LD, the sitemap or robots.txt. Only this
 // project's host is refused: an employer's own *.pages.dev Apply link is fine.
@@ -83,6 +87,11 @@ export function checkDist(dist: string): DistFinding[] {
     const text = readFileSync(full, 'utf8');
     const hit = FORBIDDEN.find(([re]) => re.test(text));
     if (hit) findings.push({ file, reason: `contains ${hit[1]}` });
+    const footer = text.match(FOOTER)?.[0];
+    if (footer !== undefined && !footer.includes(CHANNEL_HREF))
+      findings.push({ file, reason: 'footer without the WhatsApp channel link' });
+    if (file === 'about.html' && !text.replace(FOOTER, '').includes(CHANNEL_HREF))
+      findings.push({ file, reason: 'no WhatsApp channel section' });
     if (OLD_HOST.test(text))
       findings.push({ file, reason: 'points to the old address graduate-radar.pages.dev' });
     if (DETAIL.test(file)) {
