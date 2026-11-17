@@ -127,3 +127,8 @@ export function shareUrl(
   const text = [listing.title, listing.organisation, when, pageUrl].filter(Boolean).join(' · ');
   return `https://wa.me/?text=${encodeURIComponent(text)}`;
 }
+
+/** "1 opening", "17 openings", "0 trainings": the count wording in the heading and masthead. */
+export function countText(n: number, noun: string): string {
+  return `${n} ${n === 1 ? noun : `${noun}s`}`;
+}

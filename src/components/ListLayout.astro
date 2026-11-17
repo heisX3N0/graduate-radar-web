@@ -1,13 +1,20 @@
 ---
-// The body of a list page (GR-015): search and the Filters toggle on one row, a result
-// line, then the listing rows in sections (ListSection, passed in the default slot) and
-// an empty state. One column at every width (the desktop layout is GR-017). Every open
-// listing is rendered on the server, so the full list works without JavaScript;
+// The body of a list page. On phones (GR-015): a link to the other list, search and the
+// Filters toggle on one row, a result line, then the listing rows in sections
+// (ListSection, passed in the default slot) and an empty state. From 960 px (GR-017) it is
+// a broadsheet: the link and the filters, always open, in a left rail that stays in view,
+// and the ledger beside it, with the "Never pay to apply" notice above the list. From
+// 1200 px the notice moves to a right rail with three red flags and the WhatsApp channel.
+// Each part is in the page once and placed by grid areas, in reading order (side, list,
+// rail), so screen readers, keyboards and the no-JS page meet it once. Every open listing
+// is rendered on the server, so the full list works without JavaScript;
 // src/scripts/list-page.ts adds search, filters, sort, sections and URL state on top.
 // The page passes its data block (JSON) for the script.
 import EmptyState from './EmptyState.astro';
 import FilterBar from './FilterBar.astro';
 import ResultCount from './ResultCount.astro';
+import SafetyNote from './SafetyNote.astro';
+import { CHANNEL_URL } from '../lib/site.ts';
 
 interface Props {
   count: number;
@@ -17,32 +24,43 @@ interface Props {
   filtersLabel: string;
 }
 const { count, noun, clearHref, dataJson, filtersLabel } = Astro.props;
+// Three of the red flags on Stay safe, each linking there for the rest.
+const flags = [
+  'Any request for money, by transfer, card or airtime',
+  'A recruiter who only uses Gmail, Yahoo or WhatsApp',
+  'Requests for your BVN, bank login, card PIN or OTP',
+];
 ---
 
 <div class="lists" data-list-page>
-  <form
-    class="lists__filters"
-    data-filters
-    role="search"
-    aria-label={filtersLabel}
-    action={clearHref}
-    method="get"
-  >
-    <FilterBar>
-      <slot name="search" />
-      <details class="lists__more" data-more>
-        <summary>
-          Filters <span class="lists__active" data-active></span>
-          <span class="lists__marker" aria-hidden="true">
-            ▸
-          </span>
-        </summary>
-      </details>
-      <div class="lists__more-body">
-        <slot name="filters" />
-      </div>
-    </FilterBar>
-  </form>
+  <div class="lists__side">
+    <p class="lists__other">
+      <slot name="other" />
+    </p>
+    <form
+      class="lists__filters"
+      data-filters
+      role="search"
+      aria-label={filtersLabel}
+      action={clearHref}
+      method="get"
+    >
+      <FilterBar>
+        <slot name="search" />
+        <details class="lists__more" data-more>
+          <summary>
+            Filters <span class="lists__active" data-active></span>
+            <span class="lists__marker" aria-hidden="true">
+              ▸
+            </span>
+          </summary>
+        </details>
+        <div class="lists__more-body">
+          <slot name="filters" />
+        </div>
+      </FilterBar>
+    </form>
+  </div>
   <!-- The result line is for screen readers until a filter or search is in use. -->
   <div class="lists__count visually-hidden" data-count>
     <ResultCount count={count} noun={noun} />
@@ -54,8 +72,26 @@ const { count, noun, clearHref, dataJson, filtersLabel } = Astro.props;
     <slot />
     <ul class="lists__flat" data-flat hidden></ul>
   </div>
-  <div data-empty data-clear hidden>
+  <div class="lists__empty" data-empty data-clear hidden>
     <EmptyState clearHref={clearHref} />
+  </div>
+  <div class="lists__rail" data-rail>
+    <SafetyNote />
+    <div class="lists__rail-more">
+      <section class="flags" aria-labelledby="flags-h">
+        <h2 id="flags-h">Red flags</h2>
+        <ul data-flags>
+          {flags.map((f) => (
+            <li>
+              <a href="/stay-safe">{f}</a>
+            </li>
+          ))}
+        </ul>
+      </section>
+      <p class="lists__channel">
+        <a href={CHANNEL_URL}>Follow Graduate Radar on WhatsApp</a>
+      </p>
+    </div>
   </div>
 </div>
 <script type="application/json" id="list-data" set:html={dataJson} is:inline />
@@ -67,8 +103,22 @@ const { count, noun, clearHref, dataJson, filtersLabel } = Astro.props;
 <style>
   .lists {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-3);
     max-width: var(--measure);
+  }
+  .lists__side {
+    display: grid;
+    gap: var(--space-4);
+  }
+  .lists__other {
+    font-size: var(--font-size-sm);
+  }
+  .lists__other :global(a),
+  .lists__channel a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-min);
   }
   .lists__count {
     display: flex;
@@ -114,6 +164,10 @@ const { count, noun, clearHref, dataJson, filtersLabel } = Astro.props;
     align-items: center;
     min-height: var(--tap-min);
   }
+  /* List rows switch to a location column when the list is wide enough (ListingRow). */
+  .lists__items {
+    container-type: inline-size;
+  }
   .lists__flat {
     list-style: none;
     padding: 0;
@@ -123,5 +177,118 @@ const { count, noun, clearHref, dataJson, filtersLabel } = Astro.props;
   .lists__flat[hidden],
   .lists__flat > :global([hidden]) {
     display: none;
+  }
+  /* Phones and tablets keep the GR-015 page: no rails. */
+  .lists__rail {
+    display: none;
+  }
+  .flags {
+    display: grid;
+    gap: var(--space-1);
+  }
+  .flags h2 {
+    padding-block: var(--space-2);
+    border-bottom: var(--border-thin) solid var(--color-ink);
+    font-family: var(--font-body);
+    font-size: var(--font-size-sm);
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+  }
+  .flags ul {
+    list-style: none;
+    padding: 0;
+    font-size: var(--font-size-sm);
+  }
+  .flags li {
+    border-bottom: var(--border-thin) solid var(--color-rule);
+  }
+  .flags a {
+    display: flex;
+    align-items: center;
+    min-height: var(--tap-min);
+    padding-block: var(--space-1);
+    color: var(--color-ink);
+  }
+  .lists__channel {
+    font-size: var(--font-size-sm);
+    font-weight: var(--weight-semibold);
+  }
+
+  /* From 960 px: filters rail and ledger; the notice sits above the list (GR-017). The
+     side column spans every row and stays in view; the last row takes any spare height,
+     so a tall rail never stretches the rows of a short list. */
+  @media (min-width: 60rem) {
+    .lists {
+      max-width: none;
+      grid-template-columns: var(--rail) minmax(0, 1fr);
+      grid-template-rows: auto auto auto 1fr;
+      grid-template-areas:
+        'side rail'
+        'side count'
+        'side items'
+        'side empty';
+      gap: var(--space-4) var(--space-6);
+    }
+    .lists__side {
+      grid-area: side;
+      align-self: start;
+    }
+    .lists__count {
+      grid-area: count;
+    }
+    .lists__items {
+      grid-area: items;
+    }
+    .lists__empty {
+      grid-area: empty;
+    }
+    .lists__rail {
+      grid-area: rail;
+      display: grid;
+      gap: var(--space-4);
+      align-self: start;
+    }
+    .lists__rail-more {
+      display: none;
+    }
+    /* The filters are always open here: no Filters button. */
+    .lists__more {
+      display: none;
+    }
+    .lists__more-body {
+      display: grid;
+    }
+  }
+
+  /* From 1200 px: a right rail with the notice, red flags and the channel (GR-017). */
+  @media (min-width: 75rem) {
+    .lists {
+      grid-template-columns: var(--rail) minmax(0, 1fr) var(--rail);
+      grid-template-rows: auto auto 1fr;
+      grid-template-areas:
+        'side count rail'
+        'side items rail'
+        'side empty rail';
+    }
+    .lists__rail-more {
+      display: grid;
+      gap: var(--space-4);
+    }
+  }
+
+  /* The rails stay in view only where the screen is tall enough to show them whole
+     (720 px; the filters rail is about 650 px), so nothing is cut off on short laptop
+     screens. */
+  @media (min-width: 60rem) and (min-height: 45rem) {
+    .lists__side {
+      position: sticky;
+      top: var(--space-4);
+    }
+  }
+  @media (min-width: 75rem) and (min-height: 45rem) {
+    .lists__rail {
+      position: sticky;
+      top: var(--space-4);
+    }
   }
 </style>

@@ -52,6 +52,7 @@ const sortOptions = [
   title="Graduate Radar"
   description="A free, checked list of graduate trainee programmes, internships, entry-level and NYSC roles for Nigerian graduates."
   current="jobs"
+  tally={{ count: open.length, noun: 'opening', source: 'employer' }}
 >
   <ListHead
     heading="Graduate jobs"
@@ -60,56 +61,42 @@ const sortOptions = [
     source="employer"
     updated={dataDay}
   />
-  <div class="page">
-    <p class="page__other">
+  <ListLayout
+    count={open.length}
+    noun="opening"
+    clearHref="/"
+    dataJson={dataJson}
+    filtersLabel="Search and filter jobs"
+  >
+    <Fragment slot="other">
       Looking for free tech courses? <a href="/trainings">See trainings and scholarships</a>
-    </p>
-    <ListLayout
-      count={open.length}
-      noun="opening"
-      clearHref="/"
-      dataJson={dataJson}
-      filtersLabel="Search and filter jobs"
-    >
-      <Fragment slot="search">
-        <SearchInput id="q" label="Search jobs" placeholder="Company, role, city or course" />
-      </Fragment>
-      <Fragment slot="filters">
-        <Select id="type" label="Type" options={all('All types', types)} />
-        <Select id="field" label="Field" options={all('All fields', fields)} />
-        <Select id="loc" label="Location" options={all('Anywhere', LOCATIONS)} />
-        <Select id="class" label="Degree class I have" options={classOptions} />
-        <div class="page__chips">
-          <FilterChip label="Remote only" pressed={false} name="remote" />
-        </div>
-        <Select id="sort" label="Sort" options={sortOptions} />
-      </Fragment>
-      {sections.map((s) => (
-        <ListSection id={s.id} label={s.label} urgent={s.urgent} count={s.keys.length}>
-          {s.keys.map((key) => (
-            <li data-key={key}>
-              <ListingRow kind="job" listing={byKey.get(key)!} />
-            </li>
-          ))}
-        </ListSection>
-      ))}
-    </ListLayout>
-  </div>
+    </Fragment>
+    <Fragment slot="search">
+      <SearchInput id="q" label="Search jobs" placeholder="Company, role, city or course" />
+    </Fragment>
+    <Fragment slot="filters">
+      <Select id="type" label="Type" options={all('All types', types)} />
+      <Select id="field" label="Field" options={all('All fields', fields)} />
+      <Select id="loc" label="Location" options={all('Anywhere', LOCATIONS)} />
+      <Select id="class" label="Degree class I have" options={classOptions} />
+      <div class="page__chips">
+        <FilterChip label="Remote only" pressed={false} name="remote" />
+      </div>
+      <Select id="sort" label="Sort" options={sortOptions} />
+    </Fragment>
+    {sections.map((s) => (
+      <ListSection id={s.id} label={s.label} urgent={s.urgent} count={s.keys.length}>
+        {s.keys.map((key) => (
+          <li data-key={key}>
+            <ListingRow kind="job" listing={byKey.get(key)!} />
+          </li>
+        ))}
+      </ListSection>
+    ))}
+  </ListLayout>
 </Base>
 
 <style>
-  .page {
-    display: grid;
-    gap: var(--space-4);
-  }
-  .page__other a {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--tap-min);
-  }
-  .page__other {
-    font-size: var(--font-size-sm);
-  }
   .page__chips {
     display: flex;
     flex-wrap: wrap;

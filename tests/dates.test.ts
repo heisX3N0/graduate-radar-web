@@ -3,6 +3,7 @@ import {
   effectiveStatus,
   isRealDay,
   lagosToday,
+  longDate,
   readDeadline,
   shortDate,
 } from '../src/lib/dates.ts';
@@ -102,5 +103,18 @@ describe('effectiveStatus and labels: happy path', () => {
     expect(readDeadline('Rolling', '2026-11-15')).toEqual({ kind: 'rolling' });
     expect(readDeadline('Not stated', '2026-11-15')).toEqual({ kind: 'not-stated' });
     expect(readDeadline('', '2026-11-15')).toEqual({ kind: 'not-stated' });
+  });
+});
+
+describe('longDate (GR-017 date line)', () => {
+  it('says nothing for a missing or impossible day', () => {
+    expect(longDate('')).toBe('');
+    expect(longDate('2026-02-30')).toBe('');
+    expect(longDate('Rolling')).toBe('');
+  });
+
+  it('names the weekday, day, month and year', () => {
+    expect(longDate('2026-11-17')).toBe('Tuesday 17 November 2026');
+    expect(longDate('2027-01-03')).toBe('Sunday 3 January 2027');
   });
 });

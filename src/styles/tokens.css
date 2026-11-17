@@ -71,8 +71,10 @@
   --tap-min: 44px; /* smallest tap target */
   --tap-comfort: 48px; /* primary actions */
   --measure: 40rem; /* readable line length */
-  --container: 60rem;
-  --sidebar: 16rem;
+  --container: 76rem; /* the page frame (GR-017): wide enough for two rails and the ledger */
+  --rail: 13rem; /* filters rail and right rail on wide screens (GR-017) */
+  --article: 42.5rem; /* detail page article column from 960 px (GR-017) */
+  --place-column: 9rem; /* location column in list rows on wide lists (GR-017) */
   --label-width: 7rem; /* label column in definition lists */
   --date-column: 3.25rem; /* deadline column in list rows */
 

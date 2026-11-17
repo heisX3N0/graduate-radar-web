@@ -225,6 +225,7 @@ A ledger row (GR-015, owner decision 17 Nov 2026): a fixed date column (day and 
 - Home page under ~150 KB transferred on first load (excluding analytics); JavaScript under ~50 KB gzipped.
 - System font stack or one self-hosted variable font with `font-display: swap`. No large hero images.
 - Usable on a 360 px wide screen; tap targets ≥ 44 px; colour contrast WCAG AA; keyboard navigable; visible focus states; form controls labelled.
+- Every page is checked in a headless browser at 360, 768, 1024 and 1280 px (`npm run check:mobile`, GR-017): no sideways scroll, tap targets, and the layout rules in section 7.
 
 ### 6.7 Analytics (Cloudflare Web Analytics only)
 
@@ -241,6 +242,13 @@ Build it first (day 2 morning), then pages from its components only.
 - Colour: one primary (deep green, for Apply and links), one red for urgency and closed (as text and rules, never a tinted fill), ink and paper for everything else (GR-016 removed the tinted badge and callout colours). Light mode for v1; structure tokens so dark mode can be added.
 - Typography: type scale (e.g. 12/14/16/18/20/24/30), line heights, weights. Body 16 px minimum.
 - Spacing scale (4 px base), radii, shadows (subtle), borders, z-index, breakpoints (mobile first; 640 / 960 / 1200).
+
+**Layout per width (GR-017)**
+
+- Under 960 px: one column. The masthead is centred; list pages have the link to the other list, search with a Filters toggle, then the list; detail pages read top to bottom. No rails.
+- From 960 px: a broadsheet frame up to 76rem wide (centred only past that). The masthead puts the wordmark on the left, the nav (Jobs, Trainings, Stay safe; About stays in the footer) on the right, and a date line above the double rule: the data's updated day (never the build day) and, on list pages, the count and where each listing was checked. List pages: a left rail with the other-list link and the filters, open and in view; the ledger beside it, with the Never pay to apply notice above the list. Detail pages: the article at reading width on the left, Apply and Share side by side, and a right rail with the notice and similar openings that stays in view.
+- From 1200 px: list pages add a right rail with the notice, three red flags linking to Stay safe and the WhatsApp channel; the ledger gives a job's location its own right-aligned column.
+- Nothing is laid out as a card grid. Each part is in the page once, placed by grid areas in reading order.
 - Motion: short durations, respect `prefers-reduced-motion`.
 
 **Components (`src/components/`)**

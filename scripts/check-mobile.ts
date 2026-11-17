@@ -1,6 +1,11 @@
-// The 360 px check (spec 6.6): opens every built page in headless Chrome or Edge at
-// 360 x 800 (mobile emulation) and fails if a page scrolls sideways or has a tap target
-// under 44 px, or a list page whose first listing starts below the first screen (GR-015).
+// The page check (spec 6.6): opens every built page in headless Chrome or Edge at 360 x 800
+// (mobile emulation), then at 768, 1024 and 1280 px wide (GR-017), and fails if a page
+// scrolls sideways or has a tap target under 44 px, or a list page whose first listing
+// starts below the first screen (GR-015). It also checks the broadsheet layout (GR-017):
+// listings are never side by side (a card grid); at 1200 px and wider no ledger title
+// column is under 480 px; below 960 px a list page shows no rail; from 960 to 1199 px the
+// "Never pay to apply" notice is above the list; from 960 px the wordmark lines up with
+// the page's left edge, and a detail page's rail stays in view while the article scrolls.
 // Inline text links inside a sentence are exempt (WCAG 2.5.8), as are
 // elements that are hidden or off screen (the skip link).
 // Talks to the browser over the Chrome DevTools Protocol with Node's built-in WebSocket,
@@ -19,8 +24,13 @@ export { findBrowser };
 
 export interface MobileFinding {
   page: string;
+  /** Viewport width in CSS px. */
+  width: number;
   reason: string;
 }
+
+/** The widths every page is checked at: a phone, a tablet, a small and a common laptop. */
+export const WIDTHS = [360, 768, 1024, 1280] as const;
 
 // Runs inside the page. Returns one message per problem. Closed <details> panels (the
 // folded filters) are opened first so the controls inside them are measured too.
@@ -28,10 +38,47 @@ export interface MobileFinding {
 // measured before the panels are opened, as a visitor first sees the page.
 const CHECK = `(() => {
   const out = [];
-  const first = [...document.querySelectorAll('[data-items] [data-key]')].find((e) => e.getBoundingClientRect().height > 0);
+  const W0 = window.innerWidth;
+  const shown = (e) => !!e && e.getClientRects().length > 0 && getComputedStyle(e).visibility !== 'hidden';
+  const rows = [...document.querySelectorAll('[data-items] [data-key]')].filter((e) => e.getBoundingClientRect().height > 0);
+  const first = rows[0];
   if (first) {
     const top = Math.round(first.getBoundingClientRect().top + window.scrollY);
     if (top >= window.innerHeight) out.push('first listing starts at ' + top + 'px, below the first screen (' + window.innerHeight + 'px)');
+    const tops = rows.slice(0, 6).map((e) => Math.round(e.getBoundingClientRect().top));
+    if (new Set(tops).size < tops.length) out.push('listings laid out side by side (a card grid)');
+    if (W0 >= 1200) {
+      const narrow = [...document.querySelectorAll('[data-items] .row__title')].filter(shown).map((e) => Math.round(e.getBoundingClientRect().width)).filter((w) => w < 480);
+      if (narrow.length) out.push('ledger title column ' + Math.min(...narrow) + 'px wide, under 480px');
+    }
+  }
+  const rail = document.querySelector('[data-rail]');
+  if (first && W0 < 960 && shown(rail)) out.push('list page shows a rail below 960px');
+  if (first && rail && W0 >= 960 && W0 < 1200) {
+    const note = document.querySelector('[data-rail] .safety');
+    if (!shown(note) || note.getBoundingClientRect().top > first.getBoundingClientRect().top) out.push('the Never pay to apply notice is not above the list');
+  }
+  if (W0 >= 960) {
+    const mark = document.querySelector('.wordmark');
+    const main = document.querySelector('#main');
+    if (mark && main) {
+      const edge = main.getBoundingClientRect().left + parseFloat(getComputedStyle(main).paddingLeft);
+      const left = mark.getBoundingClientRect().left;
+      if (Math.abs(left - edge) > 1) out.push('wordmark not left aligned (' + Math.round(left) + 'px, page edge ' + Math.round(edge) + 'px)');
+    }
+    const detail = document.querySelector('[data-detail]');
+    if (detail && shown(rail)) {
+      // Scroll as far as the rail could travel inside the article; it must still be in view.
+      const start = rail.getBoundingClientRect().top + window.scrollY;
+      const room = detail.getBoundingClientRect().height - rail.getBoundingClientRect().height;
+      const y = Math.min(room, document.documentElement.scrollHeight - window.innerHeight);
+      if (y > start + 50) {
+        window.scrollTo(0, y);
+        const top = rail.getBoundingClientRect().top;
+        window.scrollTo(0, 0);
+        if (top < 0) out.push('detail rail scrolls out of view (top at ' + Math.round(top) + 'px)');
+      }
+    }
   }
   document.querySelectorAll('details').forEach((d) => { d.open = true; });
   const W = document.documentElement.clientWidth;
@@ -213,7 +260,11 @@ function pages(dist: string, dir = dist, out: string[] = []): string[] {
   return out.sort();
 }
 
-export async function checkMobile(dist: string, browser: string): Promise<MobileFinding[]> {
+export async function checkMobile(
+  dist: string,
+  browser: string,
+  widths: readonly number[] = WIDTHS,
+): Promise<MobileFinding[]> {
   const { origin, server } = await serve(dist);
   const profile = mkdtempSync(join(tmpdir(), 'gr-mobile-'));
   const findings: MobileFinding[] = [];
@@ -232,21 +283,24 @@ export async function checkMobile(dist: string, browser: string): Promise<Mobile
       flatten: true,
     });
     await cdp.send('Page.enable', {}, sessionId);
-    await cdp.send(
-      'Emulation.setDeviceMetricsOverride',
-      { width: 360, height: 800, deviceScaleFactor: 2, mobile: true },
-      sessionId,
-    );
-    for (const page of pages(dist)) {
-      const loaded = cdp.once('Page.loadEventFired', 20_000);
-      await cdp.send('Page.navigate', { url: `${origin}${page}` }, sessionId);
-      await loaded;
-      const res = await cdp.send<{ result: { value: string[] } }>(
-        'Runtime.evaluate',
-        { expression: CHECK, returnByValue: true },
+    for (const width of widths) {
+      // Phone widths emulate a phone; wider ones are a desktop browser window.
+      await cdp.send(
+        'Emulation.setDeviceMetricsOverride',
+        { width, height: 800, deviceScaleFactor: width < 768 ? 2 : 1, mobile: width < 768 },
         sessionId,
       );
-      for (const reason of res.result.value) findings.push({ page, reason });
+      for (const page of pages(dist)) {
+        const loaded = cdp.once('Page.loadEventFired', 20_000);
+        await cdp.send('Page.navigate', { url: `${origin}${page}` }, sessionId);
+        await loaded;
+        const res = await cdp.send<{ result: { value: string[] } }>(
+          'Runtime.evaluate',
+          { expression: CHECK, returnByValue: true },
+          sessionId,
+        );
+        for (const reason of res.result.value) findings.push({ page, width, reason });
+      }
     }
   } finally {
     cdp?.close();
@@ -261,18 +315,21 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const dist = process.argv[2] ?? 'dist';
   const browser = findBrowser();
   if (!browser) {
-    console.error('No Chrome or Edge found for the 360 px check. Set CHROME_PATH.');
+    console.error('No Chrome or Edge found for the page check. Set CHROME_PATH.');
     process.exitCode = 1;
   } else {
     const all = pages(dist);
+    const at = `${WIDTHS.join(', ')} px`;
     const findings = await checkMobile(dist, browser);
-    for (const f of findings) console.error(`${f.page}: ${f.reason}`);
+    for (const f of findings) console.error(`${f.page} at ${f.width} px: ${f.reason}`);
     if (findings.length > 0) {
-      console.error(`360 px check failed: ${findings.length} finding(s) on ${all.length} pages.`);
+      console.error(
+        `Page check failed: ${findings.length} finding(s) on ${all.length} pages at ${at}.`,
+      );
       process.exitCode = 1;
     } else {
       console.log(
-        `360 px check passed: ${all.length} pages, no sideways scroll, all tap targets at least 44 px.`,
+        `Page check passed: ${all.length} pages at ${at}: no sideways scroll, tap targets at least 44 px, broadsheet layout rules met.`,
       );
     }
   }

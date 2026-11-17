@@ -1,15 +1,37 @@
 ---
-// The masthead: the name set like a newspaper title, with a double rule under it,
-// and the main sections.
+// The masthead: the name set like a newspaper title, with a double rule under it, and the
+// main sections (About stays in the footer). On phones the name and nav are centred
+// (GR-015). From 960 px it is a broadsheet masthead (GR-017): the name on the left, the
+// nav on the right, and a date line above the double rule. The date line shows the
+// data's own updated day (the feed's or the snapshot's), never the build day (GR-011),
+// and on a list page the count and where each listing was checked.
+import { getListings } from '../data/feed.ts';
+import { lagosToday, longDate } from '../lib/dates.ts';
+import { countText } from '../lib/listing-text.ts';
+
+export interface Tally {
+  count: number;
+  /** Singular noun for the count: "opening" or "training". */
+  noun: string;
+  /** Whose page each listing was checked on: "employer" or "provider". */
+  source: string;
+}
+
 interface Props {
   current?: 'jobs' | 'trainings' | 'stay-safe' | 'about' | undefined;
+  tally?: Tally | undefined;
 }
-const { current } = Astro.props;
+const { current, tally } = Astro.props;
 const links = [
   { key: 'jobs', href: '/', label: 'Jobs' },
   { key: 'trainings', href: '/trainings', label: 'Trainings' },
   { key: 'stay-safe', href: '/stay-safe', label: 'Stay safe' },
 ] as const;
+
+const { generatedAt } = await getListings();
+const parsed = new Date(generatedAt);
+const updated = Number.isNaN(parsed.getTime()) ? '' : longDate(lagosToday(parsed));
+const counted = tally && countText(tally.count, tally.noun);
 ---
 
 <header class="masthead">
@@ -28,6 +50,17 @@ const links = [
         ))}
       </ul>
     </nav>
+    <div class="dateline" data-dateline>
+      <p>
+        {updated && <>Updated {updated} · </>}Graduate jobs and free trainings for Nigerian
+        graduates
+      </p>
+      {tally && (
+        <p>
+          <span data-total>{counted}</span>, each checked on the {tally.source}'s own page.
+        </p>
+      )}
+    </div>
   </div>
 </header>
 
@@ -76,5 +109,41 @@ const links = [
   }
   nav a:hover {
     text-decoration: underline;
+  }
+  /* Phones keep the GR-015 masthead; the list heading carries the count and date there. */
+  .dateline {
+    display: none;
+  }
+
+  @media (min-width: 60rem) {
+    .masthead__inner {
+      grid-template-columns: auto minmax(0, 1fr);
+      justify-items: start;
+      align-items: center;
+      gap: 0 var(--space-6);
+      padding-top: var(--space-2);
+    }
+    .wordmark {
+      font-size: var(--font-size-2xl);
+    }
+    nav {
+      justify-self: end;
+    }
+    ul {
+      justify-content: flex-end;
+      gap: 0 var(--space-6);
+    }
+    .dateline {
+      grid-column: 1 / -1;
+      justify-self: stretch;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 0 var(--space-6);
+      padding-block: var(--space-2);
+      border-top: var(--border-thin) solid var(--color-ink);
+      font-size: var(--font-size-sm);
+      color: var(--color-ink-muted);
+    }
   }
 </style>

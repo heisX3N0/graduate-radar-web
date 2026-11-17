@@ -16,7 +16,7 @@ npm run lint    # eslint, prettier --check, dash check, style check (tokens only
 npm run check   # astro check (types)
 npm test        # vitest
 npm run build   # astro build, then the dist scan and the page weight budgets
-npm run check:mobile  # every page at 360 px in headless Chrome or Edge (after build)
+npm run check:mobile  # every page at 360, 768, 1024 and 1280 px in headless Chrome or Edge (after build)
 ```
 
 Node 24.16 or later on the 24 line (see `.nvmrc` and `engines`; eslint-plugin-astro needs 24.16+). TypeScript is pinned to 6.0 because typescript-eslint and @astrojs/check do not support TypeScript 7 yet (checked 15 Nov 2026).
