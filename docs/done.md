@@ -15,8 +15,8 @@ Finished backlog items, newest first. Each entry: ID and title, merge SHA, what 
     3. Training rows leave out "Not stated" format or duration, so a row never reads "Not stated · Not stated".
     4. The filters no longer open by default on wide screens (the sidebar is gone until GR-017).
     5. The result line ("4 openings", "Clear filters") shows only when a filter or search is in use; otherwise it stays for screen readers. Zero results now say "No trainings match" on the trainings page.
-    7. #21 was merged with its CI type check failing (a gate run here hid the exit code); eb2ee05 fixes it.
     6. The shared list styles now pass Astro's 4 KB inline limit, so list pages load a second stylesheet (one more request on a first visit; cached after).
+    7. #21 was merged with its CI type check failing (a gate run here hid the exit code); eb2ee05 fixes it.
 
 - [x] **GR-014 Say where "Checked" is confirmed, and who writes to the sheet** (S). Done in 8d43e60.
   - **Shipped:** About now reads "**Checked** is the last date we confirmed on the employer's or provider's own page that the opening was real and still open." `docs/infra-capacity.md` principle 3: "The sheet is the only store; the owner and private automated processes write to it." Five lines made neutral: `docs/build-spec.md` Data feed row, the feed setup paragraph and one bullet in the later list (removed); `docs/infra-capacity.md` Apps Script URL fetch row and upgrade step 2. 2 new tests in `tests/detail-pages.test.ts` (392 in total).
