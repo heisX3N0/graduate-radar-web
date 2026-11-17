@@ -168,7 +168,8 @@ export function initListPage(): void {
 
   // The heading's count was set at build; listings may have closed since.
   const total = document.querySelector<HTMLElement>('[data-total]');
-  if (total) total.textContent = counted(openOnly(data.items, today).length, noun);
+  const allItems: readonly (JobItem | TrainingItem)[] = data.items;
+  if (total) total.textContent = counted(openOnly(allItems, today).length, noun);
 
   const initial = new URLSearchParams(location.search);
   writeControls(initial);
