@@ -1,0 +1,72 @@
+---
+// A group of list rows under a ruled header with its count (GR-015): "Closes today",
+// "Next 7 days", "Later", "Rolling or no date" for jobs; one per track for trainings.
+// The header stays at the top while its rows scroll. Red only when `urgent` (the first
+// two job sections). An empty section renders hidden, so the list script can fill it
+// later (a listing built as "Next 7 days" that closes today moves to "Closes today").
+interface Props {
+  id: string;
+  label: string;
+  urgent: boolean;
+  count: number;
+}
+const { id, label, urgent, count } = Astro.props;
+const headingId = `section-${id.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+---
+
+<section
+  class="section"
+  data-section={id}
+  data-urgent={urgent ? '' : undefined}
+  aria-labelledby={headingId}
+  hidden={count === 0}
+>
+  <h2 class="section__head" id={headingId}>
+    <span>{label}</span>
+    <span class="section__count" data-section-count>
+      {count}
+    </span>
+  </h2>
+  <ul class="section__rows">
+    <slot />
+  </ul>
+</section>
+
+<style>
+  .section[hidden] {
+    display: none;
+  }
+  .section__head {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-header);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-2);
+    padding-block: var(--space-2);
+    background: var(--color-bg);
+    border-top: var(--border-double) solid var(--color-ink);
+    border-bottom: var(--border-thin) solid var(--color-ink);
+    font-family: var(--font-body);
+    font-size: var(--font-size-sm);
+    font-weight: var(--weight-bold);
+    line-height: var(--line-snug);
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+  }
+  .section[data-urgent] .section__head {
+    color: var(--color-soon);
+  }
+  .section__count {
+    font-variant-numeric: tabular-nums;
+  }
+  .section__rows {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .section__rows > :global([hidden]) {
+    display: none;
+  }
+</style>

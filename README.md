@@ -62,10 +62,11 @@ If the feed fails and the snapshot is empty too, the build stops rather than pub
 
 ### Search, filters and shareable links
 
-The server renders every open listing, so the full list works with JavaScript off. `src/scripts/list-page.ts` (10,185 bytes gzipped, measured on the 15 Nov 2026 build) adds search, filters and sort on top. The filter logic in `src/lib/filters.ts` is shared by the build and the browser.
+The server renders every open listing, so the full list works with JavaScript off. `src/scripts/list-page.ts` (10,515 bytes gzipped, measured on the 17 Nov 2026 build) adds search, filters, sort and sections on top. The filter logic in `src/lib/filters.ts` is shared by the build and the browser.
 
 - Typo-tolerant search over title, organisation, field, location and eligibility ("Deloite" finds Deloitte).
-- Filters for type, field, location, remote, closing soon and the degree class you hold. Trainings filter by track, cost, format and job placement.
+- Filters for type, field, location, remote and the degree class you hold. Trainings filter by track, cost, format and job placement.
+- Listings sit in sections: jobs by deadline ("Closes today", "Next 7 days", "Later", "Rolling or no date"), trainings by track. The browser regroups them after every change and on load with today's date in Lagos. Newest is one flat list.
 - Filter state lives in the URL, so a filtered view can be shared on WhatsApp. Unknown or malformed values are ignored, so any link loads. Search text never leaves the page.
 
 ### Search engines and sharing

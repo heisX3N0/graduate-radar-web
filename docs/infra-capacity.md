@@ -45,7 +45,7 @@ All estimates from the spec; nothing measured yet.
 
 | Overhead | Cost today | Fix | Backlog ID |
 | --- | --- | --- | --- |
-| List pages send listing text twice: in the cards and in the JSON block the search uses | Measured 15 Nov 2026, jobs page, 17 jobs: JSON block 2,298 bytes gzipped of a 6,252 byte page. Estimated about 40 KB gzipped at 300 listings, a real share of the 150 KB home page budget | Read search text from the card DOM, or trim eligibility text in the JSON; do it before the list passes about 150 listings | GR-006 review (deferred) |
+| List pages send listing text twice: in the rows and in the JSON block the search uses | Measured 17 Nov 2026 (GR-015 rows), jobs page, 17 jobs from the snapshot: JSON block 2,297 bytes gzipped of a 6,240 byte page (15 Nov, with cards: 2,298 of 6,252). Estimated about 40 KB gzipped at 300 listings, a real share of the 150 KB home page budget | Read search text from the card DOM, or trim eligibility text in the JSON; do it before the list passes about 150 listings | GR-006 review (deferred) |
 
 ## Upgrade order
 

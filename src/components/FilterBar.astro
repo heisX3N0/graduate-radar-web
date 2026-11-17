@@ -1,6 +1,7 @@
 ---
-// Holds the search box, filters and sort. A wrapping row on phones; a sidebar column from
-// 960 px. With a label it is a named region; without one (for example inside a labelled
+// Holds the search box, the Filters toggle and the filters (GR-015): the first child
+// (search) and a <details> toggle share the top row; everything else takes a full row
+// below. With a label it is a named region; without one (for example inside a labelled
 // search form) it is a plain container, so the page does not get two landmarks with the
 // same name.
 interface Props {
@@ -16,24 +17,20 @@ const Tag = label ? 'section' : 'div';
 
 <style>
   .filters {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
     gap: var(--space-3);
-    padding: var(--space-4);
-    background: var(--color-surface);
+    padding-block: var(--space-3);
     border-top: var(--border-thin) solid var(--color-rule);
-    border-bottom: var(--border-thin) solid var(--color-rule);
   }
   .filters > :global(*) {
-    flex: 1 1 auto;
+    grid-column: 1 / -1;
   }
-  @media (min-width: 60rem) {
-    .filters {
-      flex-direction: column;
-      flex-wrap: nowrap;
-      align-items: stretch;
-      width: var(--sidebar);
-    }
+  .filters > :global(:first-child) {
+    grid-column: 1;
+  }
+  .filters > :global(details) {
+    grid-column: 2;
   }
 </style>

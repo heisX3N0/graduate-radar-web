@@ -1,6 +1,7 @@
 // The 360 px check (spec 6.6): opens every built page in headless Chrome or Edge at
 // 360 x 800 (mobile emulation) and fails if a page scrolls sideways or has a tap target
-// under 44 px. Inline text links inside a sentence are exempt (WCAG 2.5.8), as are
+// under 44 px, or a list page whose first listing starts below the first screen (GR-015).
+// Inline text links inside a sentence are exempt (WCAG 2.5.8), as are
 // elements that are hidden or off screen (the skip link).
 // Talks to the browser over the Chrome DevTools Protocol with Node's built-in WebSocket,
 // so there is no extra dependency.
@@ -23,10 +24,17 @@ export interface MobileFinding {
 
 // Runs inside the page. Returns one message per problem. Closed <details> panels (the
 // folded filters) are opened first so the controls inside them are measured too.
+// On a list page the first listing must start on the first screen (GR-015); that is
+// measured before the panels are opened, as a visitor first sees the page.
 const CHECK = `(() => {
+  const out = [];
+  const first = [...document.querySelectorAll('[data-items] [data-key]')].find((e) => e.getBoundingClientRect().height > 0);
+  if (first) {
+    const top = Math.round(first.getBoundingClientRect().top + window.scrollY);
+    if (top >= window.innerHeight) out.push('first listing starts at ' + top + 'px, below the first screen (' + window.innerHeight + 'px)');
+  }
   document.querySelectorAll('details').forEach((d) => { d.open = true; });
   const W = document.documentElement.clientWidth;
-  const out = [];
   const sw = document.documentElement.scrollWidth;
   if (sw > W + 1) {
     // Name the innermost elements that stick out, so the cause is easy to find.

@@ -30,11 +30,13 @@ Named generically so they can move into a shared package for later products.
 | --- | --- | --- |
 | Header | Masthead: serif wordmark, double rule, main nav (current page marked) | as used |
 | Footer | Never pay to apply, update schedule, Stay safe and About links | as used |
-| Hero | One line on what this is, schedule, last updated (the data's date) | with date |
+| ListHead | List page heading set like a newspaper section, and one line: count, where each listing was checked, last updated (the data's date) | with date |
 | StatusBadge | Filled label: Closing soon, Remote, New this week | all three |
 | StatusStamp | Outlined "Checked 14 Nov"; never "Verified"; nothing for a bad date | with and without date |
 | DeadlineChip | Boxed deadline: red within 7 days, muted when closed | 6 states |
-| ListingCard | Job or training; whole card links to the detail page; no Apply button | 6 job states, 1 training |
+| ListingRow | Ledger row on list pages: date column, title, organisation and place, eligibility; whole row links to the detail page; no badges, stamp or boxed deadline | today, next 7 days, later, rolling, no date, training |
+| ListSection | Ruled section header with a count that stays at the top while its rows scroll; red only when urgent; hidden when empty | all four job sections, one track |
+| ListingCard | Similar openings on detail pages (the list pages use rows); whole card links to the detail page; no Apply button | 6 job states, 1 training |
 | EligibilityChecklist | Labelled list, no ticks | stated, not stated |
 | ApplyButton | Web or email; refuses any other link | web, email, refused |
 | ShareButton | WhatsApp link: title, organisation, closing date, page | as used |
@@ -44,7 +46,7 @@ Named generically so they can move into a shared package for later products.
 | SearchInput | Labelled search box | empty |
 | Select | Labelled native select | value chosen |
 | FilterChip | Toggle with `aria-pressed` | on, off |
-| FilterBar | Wrapping row on phones, sidebar from 960 px | as used |
+| FilterBar | Search and the Filters toggle on one row; the filters open below; one column at every width (GR-017 brings the desktop rail) | as used |
 | ResultCount | "17 openings", polite live region | 0, 1, many |
 | EmptyState | No matches, with Clear filters | as used |
 | Base layout | Head, skip link, Header, main, Footer | every page |
@@ -54,10 +56,11 @@ Not built: SkeletonCard. Lists render on the server and filter in place, so noth
 Rules the components follow:
 
 - **Badges are filled, stamps are outlined.** Filled badges are facts about a listing; outlined stamps (Checked, deadline) are marks made by Graduate Radar. This keeps "New this week" from looking like the Checked stamp.
-- **No Apply on cards** (owner decision): people read eligibility on the detail page first.
+- **No Apply in lists** (owner decision): people read eligibility on the detail page first.
+- **Rows, not cards, on list pages** (owner decision 17 Nov 2026): the section header says how soon a listing closes, so a row carries no badge, stamp or boxed deadline. Red is for the first two section headers only.
 - **No ticks on eligibility**: a tick beside "2:1 or above" reads as "you meet this".
 - **Tap targets** at least 44 px; Apply at least 48 px.
-- **Focus:** every focusable element shows a 3 px ink ring when reached by keyboard; a focused card rings the whole card.
+- **Focus:** every focusable element shows a 3 px ink ring when reached by keyboard; a focused row or card rings the whole row or card.
 - **Wording** for deadlines, badges, eligibility, Apply and sharing comes from `src/lib/listing-text.ts`, so it reads the same everywhere.
 
 ## Checks done on 15 Nov 2026 (`/design`, browser pane at 360 x 800, one run each)

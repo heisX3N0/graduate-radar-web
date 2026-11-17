@@ -100,6 +100,9 @@ export function eligibilityItems(e: Eligibility): { label: string; value: string
   return items;
 }
 
+/** What a list row or card says when no requirement is stated. */
+export const NO_REQUIREMENTS = 'Requirements not stated';
+
 /** One line for a card: class, age and NYSC. */
 export function eligibilitySummary(e: Eligibility): string {
   const parts: string[] = [];
@@ -108,7 +111,7 @@ export function eligibilitySummary(e: Eligibility): string {
   if (e.maxAge) parts.push(`Age ${e.maxAge} or under`);
   if (e.nysc === 'Required done') parts.push('NYSC completed');
   else if (e.nysc === 'Serving OK') parts.push('Corps members can apply');
-  return parts.length > 0 ? parts.join(' · ') : 'Requirements not stated';
+  return parts.length > 0 ? parts.join(' · ') : NO_REQUIREMENTS;
 }
 
 /** WhatsApp share link: "title · organisation · Closes 27 Nov · page URL" (spec 6.5). */

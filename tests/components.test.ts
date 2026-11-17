@@ -10,6 +10,7 @@ import EmptyState from '../src/components/EmptyState.astro';
 import FilterChip from '../src/components/FilterChip.astro';
 import Footer from '../src/components/Footer.astro';
 import ListingCard from '../src/components/ListingCard.astro';
+import ListingRow from '../src/components/ListingRow.astro';
 import ResultCount from '../src/components/ResultCount.astro';
 import SafetyNote from '../src/components/SafetyNote.astro';
 import SearchInput from '../src/components/SearchInput.astro';
@@ -127,6 +128,84 @@ describe('ListingCard', () => {
     expect(html).toContain('AI');
     expect(html).toContain('Free');
     expect(html).toContain('Rolling deadline');
+  });
+});
+
+describe('ListingRow (GR-015): what must not be there', () => {
+  it('has no badge, stamp, boxed deadline, "New this week" or Apply button', async () => {
+    const fresh = { ...job, firstSeen: TODAY, remote: true };
+    const html = await render(ListingRow, { listing: fresh, kind: 'job' });
+    expect(html).not.toMatch(/class="badge|data-badge|class="stamp|data-deadline-chip/);
+    expect(html).not.toMatch(/New this week|Checked \d|Closing soon|Apply on|Apply by/);
+  });
+
+  it('says "No date" for a missing or unreadable deadline, never a day', async () => {
+    for (const deadline of ['Not stated', '', '2026-02-30', 'soon']) {
+      const html = await render(ListingRow, { listing: { ...job, deadline }, kind: 'job' });
+      expect(html).toMatch(/class="row__word"[^>]*>\s*No date/);
+      expect(html).not.toMatch(/row__day/);
+    }
+  });
+
+  it('shows "Requirements not stated" in the muted style, not as a requirement', async () => {
+    const bare = { ...job, minClass: 'Not stated', maxAge: '', nysc: 'Not stated' };
+    const html = await render(ListingRow, { listing: bare, kind: 'job' });
+    expect(html).toMatch(/class="row__elig row__elig--none"[^>]*>\s*Requirements not stated/);
+    const t = await render(ListingRow, {
+      listing: { ...training, eligibility: '', format: '', duration: '' },
+      kind: 'training',
+    });
+    expect(t).toMatch(/row__elig--none[^>]*>\s*Requirements not stated/);
+    const unstated = await render(ListingRow, {
+      listing: { ...training, format: 'Not stated', duration: 'not stated' },
+      kind: 'training',
+    });
+    expect(unstated).not.toMatch(/Not stated ·|· Not stated/i);
+    expect(unstated).toContain('>Anyone<');
+  });
+});
+
+describe('ListingRow (GR-015)', () => {
+  it('links the whole row to the detail page, title first, then the date', async () => {
+    const html = await render(ListingRow, { listing: job, kind: 'job' });
+    expect(html).toMatch(/<a class="row__link" href="\/jobs\/deloitte-academy-2026"/);
+    const order = ['Deloitte Academy', 'Deloitte Nigeria · Lagos', '2:1 or above', '>19<', '>Nov<'];
+    const positions = order.map((t) => html.indexOf(t));
+    expect(positions.every((p) => p >= 0)).toBe(true);
+    expect([...positions].sort((a, b) => a - b)).toEqual(positions);
+    expect(html).toMatch(/class="visually-hidden"[^>]*>Closes</);
+  });
+
+  it('adds Remote to the place line once', async () => {
+    const remote = await render(ListingRow, { listing: { ...job, remote: true }, kind: 'job' });
+    expect(remote).toContain('Deloitte Nigeria · Lagos · Remote');
+    const said = await render(ListingRow, {
+      listing: { ...job, remote: true, location: 'Remote (Nigeria)' },
+      kind: 'job',
+    });
+    expect(said).toContain('Deloitte Nigeria · Remote (Nigeria)');
+    expect(said).not.toContain('· Remote ·');
+  });
+
+  it('shows a training with provider, then format, duration and eligibility, and "Rolling"', async () => {
+    const html = await render(ListingRow, { listing: training, kind: 'training' });
+    expect(html).toMatch(/href="\/trainings\/google-ai-2026"/);
+    expect(html).toContain('Google');
+    expect(html).toContain('Online · 4 weeks · Anyone');
+    expect(html).toMatch(/class="row__word"[^>]*>\s*Rolling/);
+  });
+
+  it('rings the whole row only where :has() works, else keeps the link ring', async () => {
+    const { readFileSync } = await import('node:fs');
+    const src = readFileSync(
+      new URL('../src/components/ListingRow.astro', import.meta.url),
+      'utf8',
+    );
+    const supports = src.indexOf('@supports selector(:has(*))');
+    const removal = src.indexOf('outline: none');
+    expect(supports).toBeGreaterThan(-1);
+    expect(removal).toBeGreaterThan(supports);
+    expect(src).toMatch(/\.row:has\(\.row__link:focus-visible\)/);
   });
 });
 

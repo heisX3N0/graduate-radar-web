@@ -11,9 +11,11 @@ import EligibilityChecklist from '../components/EligibilityChecklist.astro';
 import EmptyState from '../components/EmptyState.astro';
 import FilterBar from '../components/FilterBar.astro';
 import FilterChip from '../components/FilterChip.astro';
-import Hero from '../components/Hero.astro';
+import ListHead from '../components/ListHead.astro';
 import { absolute } from '../lib/site.ts';
 import ListingCard from '../components/ListingCard.astro';
+import ListingRow from '../components/ListingRow.astro';
+import ListSection from '../components/ListSection.astro';
 import ResultCount from '../components/ResultCount.astro';
 import SafetyNote from '../components/SafetyNote.astro';
 import SearchInput from '../components/SearchInput.astro';
@@ -164,8 +166,14 @@ const sortOptions = [
     </section>
 
     <section class="ds__section" aria-labelledby="hero-h">
-      <h2 id="hero-h">Hero</h2>
-      <Hero updated={dataDay} />
+      <h2 id="hero-h">List page heading</h2>
+      <ListHead
+        heading="Graduate jobs"
+        count={jobs.length}
+        noun="opening"
+        source="employer"
+        updated={dataDay}
+      />
     </section>
 
     <section class="ds__section" aria-labelledby="badge-h">
@@ -201,8 +209,9 @@ const sortOptions = [
     <section class="ds__section" aria-labelledby="card-h">
       <h2 id="card-h">Listing card</h2>
       <p class="ds__note">
-        The whole card links to the detail page. No Apply button on cards (owner decision). Lists
-        hide closed listings; the closed card is shown for completeness.
+        Used for similar openings on detail pages. The list pages use rows (below). The whole card
+        links to the detail page. No Apply button on cards (owner decision). The closed card is
+        shown for completeness.
       </p>
       <div class="ds__cards">
         {jobStates.map((s) => (
@@ -217,6 +226,66 @@ const sortOptions = [
             <ListingCard kind="training" listing={realTraining} today={today} />
           </div>
         )}
+      </div>
+    </section>
+
+    <section class="ds__section" aria-labelledby="row-h">
+      <h2 id="row-h">List rows and sections</h2>
+      <p class="ds__note">
+        List pages group rows under ruled section headers with a count. Red only on "Closes today"
+        and "Next 7 days". A row has no badges, stamp or boxed deadline; the whole row links to the
+        detail page. Newest is one flat list with no headers. An empty section is hidden.
+      </p>
+      <div class="ds__list">
+        <ListSection id="ds-today" label="Closes today" urgent count={1}>
+          <li>
+            <ListingRow kind="job" listing={{ ...realJob, deadline: today }} />
+          </li>
+        </ListSection>
+        <ListSection id="ds-week" label="Next 7 days" urgent count={1}>
+          <li>
+            <ListingRow kind="job" listing={{ ...realJob, deadline: inDays(4) }} />
+          </li>
+        </ListSection>
+        <ListSection id="ds-later" label="Later" urgent={false} count={1}>
+          <li>
+            <ListingRow kind="job" listing={{ ...realJob, deadline: inDays(20) }} />
+          </li>
+        </ListSection>
+        <ListSection id="ds-open" label="Rolling or no date" urgent={false} count={2}>
+          <li>
+            <ListingRow kind="job" listing={{ ...realJob, deadline: 'Rolling' }} />
+          </li>
+          <li>
+            <ListingRow
+              kind="job"
+              listing={{
+                ...realJob,
+                remote: true,
+                deadline: 'Not stated',
+                minClass: 'Not stated',
+                maxAge: '',
+                nysc: 'Not stated',
+              }}
+            />
+          </li>
+        </ListSection>
+        {realTraining && (
+          <ListSection id="ds-track" label={realTraining.track} urgent={false} count={1}>
+            <li>
+              <ListingRow kind="training" listing={realTraining} />
+            </li>
+          </ListSection>
+        )}
+        <span class="ds__label">Newest: one flat list, no section headers</span>
+        <ul class="ds__flat">
+          <li>
+            <ListingRow kind="job" listing={{ ...realJob, deadline: inDays(20) }} />
+          </li>
+          <li>
+            <ListingRow kind="job" listing={{ ...realJob, deadline: 'Rolling' }} />
+          </li>
+        </ul>
       </div>
     </section>
 
@@ -258,7 +327,7 @@ const sortOptions = [
         <Select id="ds-sort" label="Sort" options={sortOptions} value="soon" />
         <div class="ds__row">
           <FilterChip label="Remote" pressed={false} />
-          <FilterChip label="Closing soon" pressed={true} />
+          <FilterChip label="Job placement" pressed={true} />
           <FilterChip label="2:2 or any" pressed={false} />
         </div>
       </FilterBar>
@@ -372,6 +441,17 @@ const sortOptions = [
   }
   .ds__cards .ds__labelled {
     justify-items: stretch;
+  }
+  .ds__list {
+    display: grid;
+    gap: var(--space-4);
+    max-width: var(--measure);
+  }
+  .ds__flat {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    border-top: var(--border-double) solid var(--color-ink);
   }
   code {
     font-size: var(--font-size-sm);
