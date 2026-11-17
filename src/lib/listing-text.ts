@@ -1,6 +1,13 @@
-// Shared wording for listings: cards, detail pages and the share button all use these,
+// Shared wording for listings: list rows, detail pages and the share button all use these,
 // so a listing reads the same everywhere. No Node-only APIs (also used in the browser).
-import { effectiveStatus, isNewThisWeek, lagosToday, readDeadline, shortDate } from './dates.ts';
+import {
+  CLOSING_SOON_DAYS,
+  effectiveStatus,
+  lagosToday,
+  readDeadline,
+  shortDate,
+  weekday,
+} from './dates.ts';
 import { isAllowedLink } from './links.ts';
 
 interface HasDeadline {
@@ -19,60 +26,47 @@ export function applyAction(href: string): ApplyAction {
   return { kind: 'web', href: h, label: "Apply on the employer's site" };
 }
 
-export interface DeadlineDisplay {
-  kind: 'date' | 'rolling' | 'not-stated' | 'closed';
+/** The Closes row of a detail page's facts table (GR-016). */
+export interface ClosesFact {
   text: string;
-  sub: string;
-  /** Closing within 7 days (shown in red). */
+  /** Shown in red: closing within 7 days, or closed. */
   urgent: boolean;
+  closed: boolean;
 }
 
-export function deadlineDisplay(listing: HasDeadline, today: string): DeadlineDisplay {
-  const d = readDeadline(listing.deadline, today);
-  if (effectiveStatus(listing, today) === 'Closed') {
-    const sub = d.kind === 'date' && d.daysLeft < 0 ? `Deadline was ${shortDate(d.date)}` : '';
-    return { kind: 'closed', text: 'Closed', sub, urgent: false };
-  }
-  if (d.kind === 'date') {
-    if (d.daysLeft === 0) return { kind: 'date', text: 'Closes today', sub: '', urgent: true };
-    const sub = d.daysLeft === 1 ? '1 day left' : `${d.daysLeft} days left`;
-    return { kind: 'date', text: `Closes ${shortDate(d.date)}`, sub, urgent: d.daysLeft <= 7 };
-  }
-  if (d.kind === 'rolling')
-    return { kind: 'rolling', text: 'Rolling deadline', sub: '', urgent: false };
-  return { kind: 'not-stated', text: 'Deadline not stated', sub: 'Apply early', urgent: false };
-}
-
-export type BadgeKind = 'soon' | 'remote' | 'new';
-export const BADGE_TEXT: Record<BadgeKind, string> = {
-  soon: 'Closing soon',
-  remote: 'Remote',
-  new: 'New this week',
-};
-
-/** Badges for a card, in a fixed order. Closed listings get none. */
-export function statusBadges(
-  listing: HasDeadline & { firstSeen: string; remote?: boolean },
-  today: string,
-): { kind: BadgeKind; text: string }[] {
-  const status = effectiveStatus(listing, today);
-  if (status === 'Closed') return [];
-  const kinds: BadgeKind[] = [];
-  if (status === 'Closing soon') kinds.push('soon');
-  if (listing.remote) kinds.push('remote');
-  if (isNewThisWeek(listing.firstSeen, today)) kinds.push('new');
-  return kinds.map((kind) => ({ kind, text: BADGE_TEXT[kind] }));
+function dayText(day: string): string {
+  return `${weekday(day)} ${shortDate(day)}`;
 }
 
 /**
- * What a card should show today: its deadline wording and badges. The browser uses
- * this to refresh cards rendered at build time, so labels stay right between builds.
+ * "Fri 27 Nov, 12 days left"; "Sun 15 Nov, last day"; "Rolling"; "Deadline not stated";
+ * "Closed, deadline was Tue 10 Nov". The browser uses this to bring the row up to date
+ * between builds.
  */
-export function cardState(
-  listing: HasDeadline & { firstSeen: string; remote?: boolean },
-  today: string,
-): { deadline: DeadlineDisplay; badges: { kind: BadgeKind; text: string }[] } {
-  return { deadline: deadlineDisplay(listing, today), badges: statusBadges(listing, today) };
+export function closesFact(listing: HasDeadline, today: string): ClosesFact {
+  const d = readDeadline(listing.deadline, today);
+  if (effectiveStatus(listing, today) === 'Closed') {
+    const text =
+      d.kind === 'date' && d.daysLeft < 0 ? `Closed, deadline was ${dayText(d.date)}` : 'Closed';
+    return { text, urgent: true, closed: true };
+  }
+  if (d.kind === 'date') {
+    const left =
+      d.daysLeft === 0 ? 'last day' : d.daysLeft === 1 ? '1 day left' : `${d.daysLeft} days left`;
+    return {
+      text: `${dayText(d.date)}, ${left}`,
+      urgent: d.daysLeft <= CLOSING_SOON_DAYS,
+      closed: false,
+    };
+  }
+  if (d.kind === 'rolling') return { text: 'Rolling', urgent: false, closed: false };
+  return { text: 'Deadline not stated', urgent: false, closed: false };
+}
+
+/** The Checked row: "14 Nov, on the employer's own page", or '' for a bad date (row left out). */
+export function checkedFact(verifiedOn: string, source: 'employer' | 'provider'): string {
+  const day = shortDate(verifiedOn);
+  return day ? `${day}, on the ${source}'s own page` : '';
 }
 
 interface Eligibility {
@@ -98,6 +92,13 @@ export function eligibilityItems(e: Eligibility): { label: string; value: string
   else if (e.nysc === 'Serving OK') items.push({ label: 'NYSC', value: 'Corps members can apply' });
   if (e.eligibility.trim()) items.push({ label: 'Other', value: e.eligibility.trim() });
   return items;
+}
+
+/** Where a job is: its location, plus "Remote" once when the location does not say it. */
+export function placeText(location: string, remote: boolean): string {
+  const parts = [location.trim()];
+  if (remote && !/remote/i.test(location)) parts.push('Remote');
+  return parts.filter(Boolean).join(' · ');
 }
 
 /** What a list row or card says when no requirement is stated. */

@@ -6,7 +6,7 @@
 // (owner decision: people read eligibility first).
 import type { JobListing, TrainingListing } from '../data/feed.ts';
 import { isRealDay, MONTHS } from '../lib/dates.ts';
-import { eligibilitySummary, NO_REQUIREMENTS as NONE } from '../lib/listing-text.ts';
+import { eligibilitySummary, NO_REQUIREMENTS as NONE, placeText } from '../lib/listing-text.ts';
 
 type Props = { kind: 'job'; listing: JobListing } | { kind: 'training'; listing: TrainingListing };
 
@@ -22,9 +22,7 @@ let by: string;
 let summary: string;
 if (props.kind === 'job') {
   const j = props.listing;
-  const place = [j.location];
-  if (j.remote && !/remote/i.test(j.location)) place.push('Remote');
-  by = [j.organisation, ...place].filter(Boolean).join(' · ');
+  by = [j.organisation, placeText(j.location, j.remote)].filter(Boolean).join(' · ');
   summary = eligibilitySummary(j);
 } else {
   const t = props.listing;

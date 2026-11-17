@@ -15,20 +15,31 @@ const colours = Object.fromEntries(
 const PAIRS: Pair[] = [
   { fg: 'color-ink', bg: 'color-bg', use: 'body' },
   { fg: 'color-ink', bg: 'color-surface', use: 'body' },
-  { fg: 'color-ink', bg: 'color-soon-bg', use: 'body' }, // safety note
-  { fg: 'color-ink', bg: 'color-neutral-bg', use: 'body' }, // remote badge, info banner
+  { fg: 'color-ink', bg: 'color-neutral-bg', use: 'body' }, // footer
   { fg: 'color-ink-muted', bg: 'color-bg', use: 'secondary' },
   { fg: 'color-ink-muted', bg: 'color-surface', use: 'secondary' },
   { fg: 'color-on-primary', bg: 'color-primary', use: 'action' },
   { fg: 'color-primary', bg: 'color-surface', use: 'action' },
   { fg: 'color-primary', bg: 'color-bg', use: 'action' },
-  { fg: 'color-soon', bg: 'color-soon-bg', use: 'badge' },
-  { fg: 'color-soon', bg: 'color-surface', use: 'badge' },
-  { fg: 'color-new', bg: 'color-new-bg', use: 'badge' },
-  { fg: 'color-ok', bg: 'color-ok-bg', use: 'badge' },
+  // Red text on paper (GR-016): urgent Closes facts, section headers, notice titles.
+  { fg: 'color-soon', bg: 'color-bg', use: 'secondary' },
+  { fg: 'color-soon', bg: 'color-surface', use: 'secondary' },
 ];
 
 describe('tokens.css', () => {
+  it('no longer defines the tint tokens (GR-016)', () => {
+    for (const name of [
+      'color-new',
+      'color-new-bg',
+      'color-soon-bg',
+      'color-ok',
+      'color-ok-bg',
+      'color-primary-soft',
+    ]) {
+      expect(css, name).not.toMatch(new RegExp(`--${name}\\s*:`));
+    }
+  });
+
   it('defines every colour the pairs use, as #rrggbb', () => {
     for (const p of PAIRS) {
       expect(colours, p.fg).toHaveProperty(p.fg);

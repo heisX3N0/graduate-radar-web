@@ -1,5 +1,6 @@
 // Fails when a component or layout style uses a hard-coded colour, size or spacing
-// instead of a design token from src/styles/tokens.css (repo CLAUDE.md).
+// instead of a design token from src/styles/tokens.css (repo CLAUDE.md), or refers to a
+// token that tokens.css does not define (GR-016).
 // Run: node scripts/check-styles.ts   (part of npm run lint)
 //
 // Checked: declarations inside <style> blocks of .astro files in src/components and
@@ -61,6 +62,61 @@ export function findHardCoded(source: string, file = '(inline)'): StyleFinding[]
   return findings;
 }
 
+/** CSS and HTML comments blanked out, newlines kept, so line numbers stay right. */
+function withoutComments(source: string): string {
+  return source.replace(/\/\*[\s\S]*?\*\/|<!--[\s\S]*?-->/g, (c) => c.replace(/[^\n]/g, ' '));
+}
+
+/** Custom properties a stylesheet declares (`--name:`). */
+export function declaredTokens(css: string): Set<string> {
+  return new Set(
+    [...withoutComments(css).matchAll(/(?<![\w-])--([a-z0-9-]+)\s*:/gi)].map((m) => m[1]!),
+  );
+}
+
+/**
+ * References to a custom property that neither tokens.css (`known`) nor the file itself
+ * declares (GR-016), so a removed token cannot linger in a component. Checks the whole
+ * source, so <style> blocks, style attributes and global CSS are all covered. A name built
+ * at run time (`--space-${n}`) is skipped: only complete names followed by ")" or ","
+ * are read.
+ */
+export function findUnknownTokens(
+  source: string,
+  file: string,
+  known: ReadonlySet<string>,
+): StyleFinding[] {
+  const text = withoutComments(source);
+  const own = declaredTokens(text);
+  const findings: StyleFinding[] = [];
+  for (const m of text.matchAll(/var\(\s*--([a-z0-9-]+)\s*[,)]/gi)) {
+    const name = m[1]!;
+    if (known.has(name) || own.has(name)) continue;
+    const line = source.slice(0, m.index).split('\n').length;
+    findings.push({
+      file,
+      line,
+      text: source.split('\n')[line - 1]!.trim(),
+      reason: `unknown token --${name}`,
+    });
+  }
+  return findings;
+}
+
+/** Unknown token references in src/components, src/layouts, src/pages and global.css. */
+export function scanTokens(root = fileURLToPath(new URL('..', import.meta.url))): StyleFinding[] {
+  const known = declaredTokens(readFileSync(join(root, 'src', 'styles', 'tokens.css'), 'utf8'));
+  const files = [
+    ...astroFiles(join(root, 'src', 'components')),
+    ...astroFiles(join(root, 'src', 'layouts')),
+    ...astroFiles(join(root, 'src', 'pages')),
+    join(root, 'src', 'styles', 'global.css'),
+  ];
+  return files.flatMap((f) =>
+    findUnknownTokens(readFileSync(f, 'utf8'), relative(root, f).split(sep).join('/'), known),
+  );
+}
+
 function astroFiles(dir: string, out: string[] = []): string[] {
   let names: string[];
   try {
@@ -90,7 +146,7 @@ export function scanComponents(
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  const findings = scanComponents();
+  const findings = [...scanComponents(), ...scanTokens()];
   for (const f of findings)
     console.error(
       `${f.file}:${f.line}: ${f.reason}: ${f.text} (use a token from src/styles/tokens.css)`,

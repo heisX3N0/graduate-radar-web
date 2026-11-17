@@ -1,24 +1,31 @@
 ---
-// Trust copy that appears on every detail page (spec acceptance criterion 7).
+// Trust copy that appears on every detail page (spec acceptance criterion 7). Set as a
+// public notice (GR-016): a double rule above, a single rule below, no fill and no side
+// stripe.
 ---
 
 <aside class="safety" aria-label="Stay safe">
-  <p>
-    <strong>Never pay to apply.</strong> Real employers do not charge application or "processing"
-    fees.
-  </p>
+  <p class="safety__title">Never pay to apply.</p>
+  <p>Real employers do not charge application or "processing" fees.</p>
   <a href="/stay-safe">How to spot a fake job</a>
 </aside>
 
 <style>
   .safety {
     display: grid;
-    justify-items: start;
-    padding: var(--space-3) var(--space-4) var(--space-1);
-    background: var(--color-soon-bg);
+    justify-items: center;
+    gap: var(--space-1);
+    padding-top: var(--space-3);
+    border-top: var(--border-double) double var(--color-ink);
+    border-bottom: var(--border-thin) solid var(--color-ink);
     color: var(--color-ink);
-    border-left: var(--border-accent) solid var(--color-soon);
-    font-size: var(--font-size-body);
+    text-align: center;
+  }
+  .safety__title {
+    font-family: var(--font-display);
+    font-size: var(--font-size-lg);
+    font-weight: var(--weight-bold);
+    line-height: var(--line-snug);
   }
   .safety a {
     display: inline-flex;

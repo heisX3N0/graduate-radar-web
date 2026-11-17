@@ -1,19 +1,18 @@
 ---
-// /design: the Graduate Radar design system (direction A, Noticeboard, with the Checked
-// stamp; owner decision 15 Nov 2026). Every token and every component in every state.
+// /design: the Graduate Radar design system (direction A, Noticeboard; owner decision
+// 15 Nov 2026; rows, facts table and ruled notices from GR-015 and GR-016). Every token and every component in every state.
 // Not linked from the site and not indexed.
 import tokensCss from '../styles/tokens.css?raw';
 import ApplyButton from '../components/ApplyButton.astro';
 import Banner from '../components/Banner.astro';
 import Breadcrumb from '../components/Breadcrumb.astro';
-import DeadlineChip from '../components/DeadlineChip.astro';
 import EligibilityChecklist from '../components/EligibilityChecklist.astro';
 import EmptyState from '../components/EmptyState.astro';
+import FactsTable from '../components/FactsTable.astro';
 import FilterBar from '../components/FilterBar.astro';
 import FilterChip from '../components/FilterChip.astro';
 import ListHead from '../components/ListHead.astro';
 import { absolute } from '../lib/site.ts';
-import ListingCard from '../components/ListingCard.astro';
 import ListingRow from '../components/ListingRow.astro';
 import ListSection from '../components/ListSection.astro';
 import ResultCount from '../components/ResultCount.astro';
@@ -21,12 +20,10 @@ import SafetyNote from '../components/SafetyNote.astro';
 import SearchInput from '../components/SearchInput.astro';
 import Select from '../components/Select.astro';
 import ShareButton from '../components/ShareButton.astro';
-import StatusBadge from '../components/StatusBadge.astro';
-import StatusStamp from '../components/StatusStamp.astro';
 import { getListings, type JobListing, type TrainingListing } from '../data/feed.ts';
 import Base from '../layouts/Base.astro';
 import { lagosToday, shortDate } from '../lib/dates.ts';
-import { eligibilityItems } from '../lib/listing-text.ts';
+import { checkedFact, closesFact, eligibilityItems, placeText } from '../lib/listing-text.ts';
 
 const { jobs, trainings, generatedAt } = await getListings();
 const today = lagosToday();
@@ -65,7 +62,7 @@ const realJob: JobListing =
   jobs.find((j) => j.minClass === '2:1' && j.maxAge !== '') ?? jobs[0] ?? EXAMPLE_JOB;
 const jobStates: { label: string; listing: JobListing }[] = [
   {
-    label: 'Closing soon, new this week',
+    label: 'Closing within 7 days',
     listing: { ...realJob, deadline: inDays(4), firstSeen: inDays(-1) },
   },
   {
@@ -176,56 +173,32 @@ const sortOptions = [
       />
     </section>
 
-    <section class="ds__section" aria-labelledby="badge-h">
-      <h2 id="badge-h">Badges and stamps</h2>
+    <section class="ds__section" aria-labelledby="facts-h">
+      <h2 id="facts-h">Facts table</h2>
       <p class="ds__note">
-        Badges are filled (facts about a listing). Stamps are outlined (marks made by Graduate
-        Radar). Red is for urgency only.
+        The top of a detail page: Closes, Where, Checked. No badges, boxed deadline or stamp. Closes
+        is red within 7 days and when closed. A missing or impossible Checked date leaves the row
+        out.
       </p>
-      <div class="ds__row">
-        <StatusBadge kind="soon" />
-        <StatusBadge kind="new" />
-        <StatusBadge kind="remote" />
-      </div>
-      <div class="ds__row">
-        <StatusStamp date={realJob.verifiedOn} />
-        <span class="ds__label">StatusStamp with no date renders nothing:</span>
-        <StatusStamp date="" />
-      </div>
-    </section>
-
-    <section class="ds__section" aria-labelledby="deadline-h">
-      <h2 id="deadline-h">Deadline</h2>
       <div class="ds__stack">
         {jobStates.map((s) => (
-          <div class="ds__labelled">
+          <div class="ds__labelled ds__wide">
             <span class="ds__label">{s.label}</span>
-            <DeadlineChip listing={s.listing} today={today} />
+            <FactsTable
+              closes={closesFact(s.listing, today)}
+              where={placeText(s.listing.location, s.listing.remote)}
+              checked={checkedFact(s.listing.verifiedOn, 'employer')}
+            />
           </div>
         ))}
-      </div>
-    </section>
-
-    <section class="ds__section" aria-labelledby="card-h">
-      <h2 id="card-h">Listing card</h2>
-      <p class="ds__note">
-        Used for similar openings on detail pages. The list pages use rows (below). The whole card
-        links to the detail page. No Apply button on cards (owner decision). The closed card is
-        shown for completeness.
-      </p>
-      <div class="ds__cards">
-        {jobStates.map((s) => (
-          <div class="ds__labelled">
-            <span class="ds__label">{s.label}</span>
-            <ListingCard kind="job" listing={s.listing} today={today} />
-          </div>
-        ))}
-        {realTraining && (
-          <div class="ds__labelled">
-            <span class="ds__label">Training</span>
-            <ListingCard kind="training" listing={realTraining} today={today} />
-          </div>
-        )}
+        <div class="ds__labelled ds__wide">
+          <span class="ds__label">No Checked date</span>
+          <FactsTable
+            closes={closesFact(realJob, today)}
+            where={realJob.location}
+            checked={checkedFact('', 'employer')}
+          />
+        </div>
       </div>
     </section>
 
@@ -434,12 +407,7 @@ const sortOptions = [
     gap: var(--space-1);
     justify-items: start;
   }
-  .ds__cards {
-    display: grid;
-    gap: var(--space-4);
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
-  }
-  .ds__cards .ds__labelled {
+  .ds__wide {
     justify-items: stretch;
   }
   .ds__list {

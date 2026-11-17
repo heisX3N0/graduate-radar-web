@@ -4,20 +4,16 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import ApplyButton from '../src/components/ApplyButton.astro';
 import Banner from '../src/components/Banner.astro';
 import Breadcrumb from '../src/components/Breadcrumb.astro';
-import DeadlineChip from '../src/components/DeadlineChip.astro';
 import EligibilityChecklist from '../src/components/EligibilityChecklist.astro';
 import EmptyState from '../src/components/EmptyState.astro';
 import FilterChip from '../src/components/FilterChip.astro';
 import Footer from '../src/components/Footer.astro';
-import ListingCard from '../src/components/ListingCard.astro';
 import ListingRow from '../src/components/ListingRow.astro';
 import ResultCount from '../src/components/ResultCount.astro';
 import SafetyNote from '../src/components/SafetyNote.astro';
 import SearchInput from '../src/components/SearchInput.astro';
 import Select from '../src/components/Select.astro';
 import ShareButton from '../src/components/ShareButton.astro';
-import StatusBadge from '../src/components/StatusBadge.astro';
-import StatusStamp from '../src/components/StatusStamp.astro';
 import type { JobListing, TrainingListing } from '../src/data/feed.ts';
 
 const TODAY = '2026-11-15';
@@ -90,44 +86,6 @@ describe('ApplyButton', () => {
     const html = await render(ApplyButton, { href: 'mailto:careers@x.com' });
     expect(html).toMatch(/href="mailto:careers@x\.com"/);
     expect(html).toContain('Apply by email');
-  });
-});
-
-describe('ListingCard', () => {
-  it('has no Apply button (owner decision: apply from the detail page)', async () => {
-    const html = await render(ListingCard, { listing: job, kind: 'job', today: TODAY });
-    expect(html).not.toMatch(/Apply on|Apply by/);
-  });
-
-  it('links the whole card to the detail page', async () => {
-    const html = await render(ListingCard, { listing: job, kind: 'job', today: TODAY });
-    expect(html).toMatch(/href="\/jobs\/deloitte-academy-2026"/);
-  });
-
-  it('shows the job facts in spec order, with the checked stamp', async () => {
-    const html = await render(ListingCard, { listing: job, kind: 'job', today: TODAY });
-    const order = [
-      'Closing soon',
-      'Deloitte Academy',
-      'Deloitte Nigeria',
-      'Graduate Trainee',
-      'Lagos',
-      'Closes 19 Nov',
-      '2:1 or above',
-      'Checked 14 Nov',
-    ];
-    const positions = order.map((t) => html.indexOf(t));
-    expect(positions.every((p) => p >= 0)).toBe(true);
-    expect([...positions].sort((a, b) => a - b)).toEqual(positions);
-  });
-
-  it('renders a training with provider, track and cost', async () => {
-    const html = await render(ListingCard, { listing: training, kind: 'training', today: TODAY });
-    expect(html).toMatch(/href="\/trainings\/google-ai-2026"/);
-    expect(html).toContain('Google');
-    expect(html).toContain('AI');
-    expect(html).toContain('Free');
-    expect(html).toContain('Rolling deadline');
   });
 });
 
@@ -210,18 +168,6 @@ describe('ListingRow (GR-015)', () => {
 });
 
 describe('Focus and page head', () => {
-  it('ListingCard keeps the link focus ring unless :has() can move it to the card', async () => {
-    const { readFileSync } = await import('node:fs');
-    const src = readFileSync(
-      new URL('../src/components/ListingCard.astro', import.meta.url),
-      'utf8',
-    );
-    // Removing the link outline is only allowed inside @supports selector(:has(*)).
-    const supports = src.indexOf('@supports selector(:has(*))');
-    const removal = src.indexOf('outline: none');
-    expect(removal === -1 || (supports !== -1 && removal > supports)).toBe(true);
-  });
-
   it('Base takes theme-color from the --color-bg token', async () => {
     const { readFileSync } = await import('node:fs');
     const tokens = readFileSync(new URL('../src/styles/tokens.css', import.meta.url), 'utf8');
@@ -235,47 +181,6 @@ describe('Focus and page head', () => {
     const html = await render(ApplyButton, { href: 'https://jobs.example.com/1' });
     expect(html).toMatch(/rel="noopener"/);
     expect(html).not.toMatch(/noreferrer/);
-  });
-});
-
-describe('StatusStamp and StatusBadge', () => {
-  it.each(['', 'yesterday', '2026-11-31'])('StatusStamp renders nothing for %j', async (date) => {
-    expect((await render(StatusStamp, { date })).trim()).toBe('');
-  });
-
-  it('StatusStamp says Checked, never Verified', async () => {
-    const html = await render(StatusStamp, { date: '2026-11-14' });
-    expect(html).toContain('Checked 14 Nov');
-    expect(html).not.toContain('Verified');
-  });
-
-  it('StatusBadge uses filled badges, so they cannot be mistaken for the outlined stamp', async () => {
-    const html = await render(StatusBadge, { kind: 'new' });
-    expect(html).toContain('New this week');
-    expect(html).toMatch(/class="[^"]*badge--new/);
-  });
-});
-
-describe('DeadlineChip text', () => {
-  it('keeps a space between the date and the days left, for screen readers', async () => {
-    const html = await render(DeadlineChip, { listing: job, today: TODAY });
-    const text = html
-      .replace(/<[^>]+>/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
-    expect(text).toContain('Closes 19 Nov 4 days left');
-  });
-});
-
-describe('DeadlineChip', () => {
-  it('marks a near deadline as urgent and a past one as closed', async () => {
-    expect(await render(DeadlineChip, { listing: job, today: TODAY })).toMatch(/deadline--urgent/);
-    const closed = await render(DeadlineChip, {
-      listing: { ...job, deadline: '2026-11-10' },
-      today: TODAY,
-    });
-    expect(closed).toMatch(/deadline--closed/);
-    expect(closed).toContain('Closed');
   });
 });
 
