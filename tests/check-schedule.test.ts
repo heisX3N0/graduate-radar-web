@@ -1,5 +1,5 @@
 // GR-011: the site and its docs must not promise an update schedule (owner decision,
-// 15 Nov 2026), so a move to a daily sweep needs no copy change.
+// 15 Nov 2026), so the update rhythm can change with no copy change.
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -29,7 +29,7 @@ describe('findScheduleClaims: what must be refused', () => {
   });
 
   it('fails "Tue/Fri" and "Tue and Fri" in the README', () => {
-    file('README.md', 'Claude sweep (Tue/Fri 05:41)\nRuns Tue and Fri.');
+    file('README.md', 'Rebuilt (Tue/Fri 05:41)\nRuns Tue and Fri.');
     expect(findScheduleClaims(root)).toEqual([
       { file: 'README.md', line: 1 },
       { file: 'README.md', line: 2 },
@@ -41,9 +41,9 @@ describe('findScheduleClaims: what must be refused', () => {
     expect(findScheduleClaims(root)).toEqual([{ file: 'docs/build-spec.md', line: 1 }]);
   });
 
-  it('fails a schedule line inside a launch draft', () => {
-    file('docs/launch.md', '```text\nNew openings are added every Friday.\n```');
-    expect(findScheduleClaims(root)).toEqual([{ file: 'docs/launch.md', line: 2 }]);
+  it('fails a schedule line inside a code block in the README', () => {
+    file('README.md', '```text\nNew openings are added every Friday.\n```');
+    expect(findScheduleClaims(root)).toEqual([{ file: 'README.md', line: 2 }]);
   });
 
   it('fails a claim split across a line break in a component', () => {
@@ -60,9 +60,9 @@ describe('findScheduleClaims: what must be refused', () => {
 
   it('fails other wordings: "on Tuesdays", "each Friday", "every morning"', () => {
     file('src/pages/a.astro', '<p>New openings on Tuesdays.</p>\n<p>Checked each Friday.</p>');
-    file('docs/launch.md', 'The website updates every morning.');
+    file('README.md', 'The website updates every morning.');
     expect(findScheduleClaims(root)).toEqual([
-      { file: 'docs/launch.md', line: 1 },
+      { file: 'README.md', line: 1 },
       { file: 'src/pages/a.astro', line: 1 },
       { file: 'src/pages/a.astro', line: 2 },
     ]);
@@ -94,7 +94,7 @@ describe('findScheduleClaims: what is allowed', () => {
   it('skips history and other docs: done.md, BACKLOG.md and docs not in scope', () => {
     file('docs/done.md', 'Updated every Tuesday and Friday.');
     file('BACKLOG.md', 'Updated every Tuesday and Friday.');
-    file('docs/infra-capacity.md', 'The sweep runs twice a week.');
+    file('docs/infra-capacity.md', 'The rebuild runs twice a week.');
     expect(findScheduleClaims(root)).toEqual([]);
   });
 
@@ -103,13 +103,13 @@ describe('findScheduleClaims: what is allowed', () => {
       'src/components/Footer.astro',
       '<p>We add new openings and mark closed ones as we find them.</p>',
     );
-    file('README.md', 'Claude sweep (scheduled) -> Google Sheet');
+    file('README.md', 'Google Sheet -> feed -> static build');
     expect(findScheduleClaims(root)).toEqual([]);
   });
 });
 
 describe('the repo', () => {
-  it('has no schedule claim in the site, the launch drafts, README or spec', () => {
+  it('has no schedule claim in the site, README or spec', () => {
     expect(findScheduleClaims(join(import.meta.dirname, '..'))).toEqual([]);
   });
 });

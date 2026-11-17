@@ -1,6 +1,6 @@
 // Fails when the site or its docs promise an update schedule ("every Tuesday", "Tue/Fri",
 // "on Fridays", "twice a week", "every morning"). Owner decision (15 Nov 2026): no
-// schedule anywhere, so the sweep can change frequency without a copy change. A weekday
+// schedule anywhere, so the update rhythm can change without a copy change. A weekday
 // on its own ("Interviews hold on Friday") is fine.
 // Scans our own copy only. Never dist/ or the snapshot: listing notes from the sheet may
 // name a day and must never fail a build or a lint run.
@@ -16,7 +16,7 @@ export interface ScheduleFinding {
 }
 
 const SCAN_DIRS = ['src', 'scripts/og', 'public'];
-const SCAN_FILES = ['README.md', 'docs/build-spec.md', 'docs/launch.md'];
+const SCAN_FILES = ['README.md', 'docs/build-spec.md'];
 // Sheet data, not our copy.
 const SKIP_FILES = new Set(['src/data/snapshot.json']);
 

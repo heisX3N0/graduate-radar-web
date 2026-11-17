@@ -1,152 +1,99 @@
 # Graduate Radar web
 
-A free, checked list of graduate trainee programmes, entry-level jobs and free tech trainings for Nigerian graduates. This repo is the public website. The Google Sheet stays the database; the site is rebuilt from it automatically (see "Deploy").
+A free, checked list of graduate trainee programmes, entry-level jobs and free tech trainings for Nigerian graduates: **https://graduateradar.versionphi.com**
 
-Status: scaffold (GR-001), the Apps Script feed (GR-002), the data layer (GR-003) and the Cloudflare deploy with a daily rebuild (GR-008). See `BACKLOG.md` for what comes next.
+Most visitors are on mid-range Android phones, on slow or expensive mobile data, and arrive from a WhatsApp link. They are also the people fake "pay to apply" jobs target. Those facts drive every decision below: static pages, a small JavaScript budget, a link preview that reads well in WhatsApp, and trust copy on every listing.
 
-## How data flows
+The whole system runs on free plans, with no server code in the request path.
+
+## Architecture
 
 ```
-Claude sweep (scheduled)                -> Google Sheet (database)
-Apps Script web app (feed)              -> JSON of public listing fields only
-Daily 07:30 trigger                     -> Cloudflare Pages deploy hook
-Astro static build                      -> Cloudflare Pages (graduateradar.versionphi.com)
+Google Sheet (private, the database)
+      │  read by header name
+      ▼
+Apps Script web app ("the feed")   JSON of allow-listed public fields only
+      │  fetched once per build
+      ▼
+Astro static build                 validates, falls back to a committed snapshot
+      │
+      ▼
+Cloudflare Pages (CDN)             static HTML, CSS and a small script
+
+Scheduled trigger in Apps Script ──► Cloudflare deploy hook ──► rebuild
 ```
 
-Full detail: `docs/build-spec.md` section 4. Deploy setup: "Deploy (Cloudflare Pages)" below.
+- **The sheet stays the database.** Listings are curated in a private Google Sheet. The website never reads the sheet directly and never writes anything.
+- **The feed is the only public data route** (`apps-script/Feed.gs`, listed in `docs/public-routes.md`). It looks columns up by header name, so columns can move freely, and it sends only the fields named in an allow-list. A new column never reaches the website until someone adds it to the list on purpose.
+- **The build does the work once.** Each build fetches the feed once, checks every listing against a schema (`src/data/schema.ts`) and renders one page per listing. Visitors only ever download static files.
+- **Freshness comes from two places.** A scheduled rebuild picks up new rows and drops closed ones, and the browser re-checks deadlines against today's date in Lagos, so a listing that closed since the last build disappears without a rebuild.
 
-### In the build
+## Design decisions and trade-offs
 
-`src/data/feed.ts` (`getListings()`) fetches `FEED_URL` once per build and checks each listing against the contract in `src/data/schema.ts`. Fields not in the contract are stripped. A listing is dropped, with a `[feed]` warning, if it fails the contract, has an Apply link that is not `https`, `http` or `mailto`, or repeats a key; the rest of the feed is still used. Every listing gets a stable `slug` (`src/lib/slug.ts`).
+| Decision | Why | Trade-off accepted |
+| --- | --- | --- |
+| Google Sheet as the database, read through an Apps Script web app | The curation workflow already lives in the sheet. The web app runs as the sheet's owner, so the sheet stays private, and it controls exactly which fields leave it | Apps Script quotas and cold starts. Only the build calls it, never a visitor |
+| Static site (Astro) instead of a single-page app or server rendering | Pages arrive as finished HTML, so they show on a cheap phone before any JavaScript runs. One page per listing gives search engines and WhatsApp previews something real to read | New data needs a rebuild, so the build count is the budget to watch (see `docs/infra-capacity.md`) |
+| Search and filters in the browser (Fuse.js) | A few hundred listings filter instantly on the phone, with no search server and no extra account | All listing text ships with the list page. The size is measured and the budget is enforced |
+| Committed snapshot as a fallback | A feed outage, a bad deploy of the feed or a half-empty sheet must not publish an empty or broken site | The snapshot has to be refreshed by hand (`npm run snapshot`) |
+| Deadlines evaluated in Africa/Lagos, at build time and again in the browser | "Closes today" has to mean today in Nigeria, whatever time zone the build server uses | Date logic in one module (`src/lib/dates.ts`), shared by both sides |
+| Cookie-free analytics, page views only | No cookie banner and one line of privacy copy. Detail-page views are enough to show which listings people open | Apply clicks, filters and shares are not tracked |
+| Plain CSS with design tokens | The design system stays portable to later products and needs no CSS framework upgrade | Components must use tokens; a lint check enforces it |
 
-The build uses the committed snapshot (`src/data/snapshot.json`) instead of the feed, with a `[feed]` warning in the build log, when:
+### The feed and the snapshot
 
-- `FEED_URL` is not set;
-- the fetch fails, times out (30 seconds) or answers anything but HTTP 200 with JSON;
-- the JSON does not have the contract's top-level shape (`generatedAt`, `jobs`, `trainings`);
-- after dropping bad listings, the feed has no jobs or no trainings;
-- or either list has fewer than half as many listings as the snapshot has still open today. This last check is skipped, with a warning, when the snapshot is more than 14 days old, so an old snapshot cannot hold the site back after a real drop in openings.
+`src/data/feed.ts` drops a listing, with a `[feed]` warning in the build log, if it fails the contract, repeats a key, or has an Apply link that is not `https`, `http` or `mailto` (checked again at build even though the feed filters them). Fields outside the contract are stripped.
 
-The placeholder page shows the date the data came from, so a site stuck on the snapshot shows an old date.
+The build uses the committed snapshot (`src/data/snapshot.json`) instead of the feed when:
 
-If the feed fails and the snapshot is empty too, the build stops rather than publish an empty site.
+- `FEED_URL` is not set (local development);
+- the fetch fails, times out after 30 seconds, or does not return JSON with HTTP 200;
+- the JSON does not have the contract's top-level shape;
+- after dropping bad listings, there are no jobs or no trainings;
+- either list has fewer than half as many listings as the snapshot still has open today. This guard is skipped once the snapshot is more than 14 days old, so an old snapshot cannot hold back a real drop in openings.
 
-Dates: `src/lib/dates.ts` holds all deadline logic, in Lagos time. A date deadline before today closes a listing whatever the sheet says; a deadline 7 days away or fewer shows "Closing soon"; `Rolling` and `Not stated` never close on their own; "New this week" means first seen 0 to 6 days ago.
+If the feed fails and the snapshot is empty too, the build stops rather than publish an empty site. The page shows the date its data came from, so a site running on the snapshot is visible.
 
-### Refreshing the snapshot
+### Listings and dates
 
-The build cannot update the snapshot itself, so refresh it by hand: in any PR, and at least monthly.
+- A dated deadline before today closes a listing, whatever its status in the sheet. Seven days or fewer shows "Closing soon". `Rolling` and `Not stated` never close on their own.
+- Every listing gets a stable slug from its key (`src/lib/slug.ts`). When two keys collide, each gets a short hash of its full key rather than a counter, so reordering rows never moves a listing to a new address.
+- Closed listings keep their page for 60 days with "This opening has closed", no Apply button and links to similar open listings, so a link shared in a group chat does not end in a 404.
 
-```bash
-npm run snapshot
-```
+### Search, filters and shareable links
 
-It reads `FEED_URL` from the environment or `.env` and uses the build's own rules: it refuses to write if the feed is unreachable or has the wrong shape, has no jobs or trainings, or has fewer than half the listings still open in the current snapshot (add `-- --force` to accept a smaller feed on purpose; an empty list is never accepted). Bad listings are dropped, as in the build. Commit the new `src/data/snapshot.json`.
+The server renders every open listing, so the full list works with JavaScript off. `src/scripts/list-page.ts` (10,185 bytes gzipped, measured on the 15 Nov 2026 build) adds search, filters and sort on top. The filter logic in `src/lib/filters.ts` is shared by the build and the browser.
 
-## Search and filters (`/` and `/trainings`)
+- Typo-tolerant search over title, organisation, field, location and eligibility ("Deloite" finds Deloitte).
+- Filters for type, field, location, remote, closing soon and the degree class you hold. Trainings filter by track, cost, format and job placement.
+- Filter state lives in the URL, so a filtered view can be shared on WhatsApp. Unknown or malformed values are ignored, so any link loads. Search text never leaves the page.
 
-The server renders every open listing (closed and past-deadline listings are never in the HTML), so the full list works with JavaScript off. `src/scripts/list-page.ts` (10,185 bytes gzipped, measured on the 15 Nov 2026 build; budget 50 KB) adds search, filters and sort on top, and re-checks deadlines against today in Lagos so a listing that closed since the last build disappears.
+### Search engines and sharing
 
-- **Logic:** `src/lib/filters.ts`, shared by the build and the browser (imports only `dates.ts` and Fuse.js, so no Zod reaches the browser).
-- **Search:** Fuse.js (`fuse.js/basic`), threshold 0.35, over title, organisation or provider, field or track, location, degree class and eligibility. Typo-tolerant ("Deloite" finds Deloitte).
-- **Jobs filters:** Type, Field, Location (Lagos, Abuja, Port Harcourt, Other Nigeria, Remote; "listed as Lagos" notes are ignored), Remote only, Closing soon (7 days or fewer), Degree class I have (2:1 or above shows everything; 2:2 hides 2:1-only listings; "Third class or pass" shows only listings that accept any class or do not state one; owner decision 15 Nov 2026).
-- **Trainings filters:** Track, Cost (Free, Free + stipend, Scholarship, Low-cost), Format (Online, In person, Hybrid, Not stated), Job placement, Closing soon.
-- **Sort:** closing soonest (dated deadlines first, earliest first, then the rest newest first) or newest.
-- **URL:** `q`, `type`, `field`, `loc`, `remote=1`, `soon=1`, `class=21|22|any`, `sort=new` (jobs); `q`, `track`, `cost`, `format`, `place=1`, `soon=1`, `sort=new` (trainings). Defaults are left out; unknown or malformed values are ignored, so any link loads. The search text only ever goes into this page's own URL; the page makes no network requests for search.
-- **Phones:** search is always visible; the other filters fold under "Filters and sort", which opens on desktop and when a shared link has filters set, and shows how many are on.
+- Every page has a unique title and description, a canonical link, and Open Graph tags with absolute URLs, so a WhatsApp share shows a proper preview card.
+- Open job pages carry schema.org `JobPosting` data. Closed listings and trainings never do.
+- `sitemap.xml` lists the main pages and every open listing.
+- `public/_headers` sends `noindex` on every `*.pages.dev` address, including branch previews, so only the real domain appears in search.
 
-## Detail pages, SEO and sharing
+## Guardrails as code
 
-- **Pages:** `/jobs/<slug>` and `/trainings/<slug>` for every listing in the feed, including Closed ones checked in the last 60 days, so a shared link to a closed listing shows "This opening has closed" (no Apply button, links to similar open listings) instead of a 404. After 60 days the listing leaves the feed and its address gets the 404 page. Also `/about`, `/stay-safe` and `404`.
-- **Every page:** unique title and description, canonical link, Open Graph and Twitter tags with absolute URLs (from `SITE_URL`, default `https://graduateradar.versionphi.com`; `src/lib/site.ts` and `astro.config.mjs`, which a test keeps in step), and one sharing image, `public/og-default.png` (1200 x 630, 49.8 KB). Edit `scripts/og/og.html` and run `npm run og` to regenerate it (needs Edge or Chrome installed).
-- **JobPosting data** (schema.org JSON-LD) on open job pages only: never on closed or past-deadline listings, never on trainings. `validThrough` comes from the deadline when it is a date; remote jobs are marked telecommute, open to applicants in Nigeria. Google may still rank listings low because applications happen on the employer's site.
-- **Sharing:** the WhatsApp button opens `https://wa.me/?text=` with "title · organisation · Closes 27 Nov · page URL" ("Closed" for a past deadline).
-- **WhatsApp channel:** every footer and a "Follow on WhatsApp" section on About link the Graduate Radar Nigeria channel (`CHANNEL_URL` in `src/lib/site.ts`, the `www.whatsapp.com/channel/` form). `npm run build` fails if a footer or About loses the link.
-- **sitemap.xml** lists the main pages and every open listing; **robots.txt** allows everything and points to the sitemap. `/design` and `404` carry `noindex`.
-- **`npm run check:dist`** (CI runs it after the build) scans `dist/` and fails if any file contains "Found via" or the private "Postgrad Scholarships" tab name, if a detail page lacks "Never pay to apply", or if no detail pages were built.
+Each rule that matters is a check that fails the build or the lint, not a line in a document.
 
-## Budgets and phone checks (spec 6.6)
+| Check | Fails when |
+| --- | --- |
+| `scripts/check-dist.ts` (in `npm run build`) | any built file contains a private field or private tab name; a detail page lacks "Never pay to apply"; a page lacks the site footer or the WhatsApp channel link; the `noindex` rule for `pages.dev` is missing or would also hide the real domain; no detail pages were built |
+| `scripts/check-budgets.ts` (in `npm run build`) | any page ships more than 50 KB of JavaScript or a first load over 150 KB, gzipped. The home page was 18.8 KB on 15 Nov 2026 |
+| `scripts/check-mobile.ts` (`npm run check:mobile`) | at 360 x 800 in headless Chrome or Edge, any page scrolls sideways or has a tap target under 44 px |
+| `scripts/check-styles.ts` (in `npm run lint`) | a component hard-codes a colour, size or spacing instead of a token from `src/styles/tokens.css` |
+| `scripts/check-dashes.ts` (in `npm run lint`) | an em or en dash appears in source or docs (house style) |
+| `scripts/check-schedule.ts` (in `npm run lint`) | the site or its docs promise how often the list changes, so the update rhythm can change without a copy change |
+| `tests/feed.test.ts` | the feed sends a field outside its allow-list, a private tab, or a non-web Apply link. It runs the real `Feed.gs` against stand-ins for the Apps Script services |
 
-- **Page weight** (`scripts/check-budgets.ts`, part of `npm run build`): every built page must stay within 50 KB of JavaScript and a 150 KB first load (HTML plus its CSS and JS), gzipped. Cloudflare's analytics script is added at serve time and is not counted. On 15 Nov 2026 the home page was 18.8 KB (HTML 7.3, CSS 1.4, JS 10.0).
-- **360 px** (`scripts/check-mobile.ts`, `npm run check:mobile`, run in CI after the build): opens every built page in headless Chrome or Edge at 360 x 800 and fails on sideways scroll or a tap target under 44 px (inline text links in a sentence are exempt). Needs Chrome or Edge installed, or `CHROME_PATH`.
-- **Lighthouse** is run by hand on the live site (it is not a CI step): mobile defaults, 3 runs per page, median reported in `docs/done.md`.
+CI runs lint, types, tests, build and the 360 px check on every pull request.
 
-## Data feed (Apps Script)
+## Run it locally
 
-`apps-script/Feed.gs` turns the sheet's two public tabs into JSON. It runs inside the sheet's own Apps Script project; the repo copy exists so it can be tested (`tests/feed.test.ts`). Change it here first, run the tests, then paste it into the script editor so the two stay the same.
-
-What it sends: only the fields in `FEED_TABS` (never `Found via`, never the private tabs), rows that are Open or Closing soon plus Closed rows checked in the last 60 days, Apply links that start with `https://`, `http://` or `mailto:`, and dates as `yyyy-MM-dd` (or `Rolling`, `Not stated`, or empty for anything that is not a real date). It keeps the first row of a repeated `Key`, and sends nothing for a tab where a column name appears twice; both are logged in the script's Executions page.
-
-### Deploying or updating the feed (owner)
-
-1. Open the Graduate Radar sheet, then Extensions > Apps Script.
-2. Project Settings (gear icon): set Time zone to `(GMT+01:00) Lagos`.
-3. Editor: add a file named `Feed` (Script type). Paste the whole of `apps-script/Feed.gs` into it and save.
-4. First time only: Deploy > New deployment > type Web app. Description "Graduate Radar feed". Execute as: Me. Who has access: Anyone. Deploy, then approve the access prompt (it asks to read your spreadsheets and connect to an external service; the second is for the daily rebuild in GR-008).
-5. Copy the Web app URL (ends in `/exec`). Put it in a local `.env` as `FEED_URL=...` (see `.env.example`). Never commit it.
-6. Later updates: paste the new code, save, then Deploy > Manage deployments > edit (pencil) > Version: New version > Deploy. The `/exec` URL stays the same.
-
-Check: open the `/exec` URL in a browser. You should see JSON with `generatedAt`, `jobs` and `trainings`, and no `Found via` links anywhere.
-
-## Deploy (Cloudflare Pages)
-
-The site is static and hosted on Cloudflare Pages (free plan). Cloudflare builds from GitHub: every push to `main` deploys the live site, and every other branch gets a preview URL. Node comes from `.nvmrc`.
-
-### First-time setup (owner; not timed, 11 steps)
-
-1. **Create the project.** Cloudflare dashboard > Workers & Pages > Create > Pages > Connect to Git. Pick GitHub, authorise Cloudflare for `heisX3N0/graduate-radar-web` only, and select it.
-2. **Build settings.** Project name: `graduate-radar` (Cloudflare also serves it at `https://graduate-radar.pages.dev`; the real address is the custom domain, see "Custom domain" below). Production branch: `main`. Framework preset: Astro. Build command: `npm run build`. Build output directory: `dist`. Root directory: blank.
-3. **Environment variables** (same screen, "Environment variables (advanced)"): add `FEED_URL` = the `/exec` URL, type Text. Leave `SITE_URL` unset: the default is the real address. Save and Deploy.
-4. After the first build finishes, open Settings > Variables and secrets and check `FEED_URL` is set for both Production and Preview.
-5. **Deploy hook.** Settings > Builds > Deploy hooks > Add deploy hook. Name: `daily-rebuild`. Branch: `main`. Copy the URL it shows (it starts `https://api.cloudflare.com/`). It is a secret: anyone with it can start builds. Never paste it into the repo, a chat or a ticket.
-6. **Give the hook to Apps Script.** Graduate Radar sheet > Extensions > Apps Script > Project Settings (gear) > Script Properties > Add script property: `DEPLOY_HOOK_URL` = the hook URL. Save.
-7. **Update the feed code** (Feed.gs changed in GR-008): paste the new `apps-script/Feed.gs` over the old one, save, then Deploy > Manage deployments > edit > Version: New version > Deploy.
-8. **Test the hook once.** In the editor, pick `triggerRebuild` in the function menu and Run. Expected: the run succeeds, and a new deployment with Source "Deploy hook" appears in Cloudflare within a minute.
-9. **Schedule it.** Pick `installRebuildTrigger` and Run once. Then Triggers (clock icon) should show exactly one trigger: `triggerRebuild`, Day timer, 7am to 8am. Running it again replaces it rather than adding a second.
-10. **Web Analytics.** Cloudflare > the `graduate-radar` Pages project > Metrics > Web Analytics > Enable. Cloudflare adds its page counter to the next deployment; no code change.
-11. **Failed-build emails.** Cloudflare dashboard > Notifications > Add > Pages > deployment failure, for the `graduate-radar` project, production only, to your email. Without this, a build that fails in Cloudflare leaves the site silently out of date (the hook call itself still succeeds, so Apps Script reports nothing).
-
-### Custom domain (owner; done 15 Nov 2026)
-
-The site lives at `https://graduateradar.versionphi.com` (GR-012). `versionphi.com` is a zone on the same Cloudflare account, so Cloudflare added the DNS record and certificate itself.
-
-1. Workers & Pages, select `graduate-radar`, then the **Custom domains** tab.
-2. **Set up a custom domain**, enter `graduateradar.versionphi.com`, continue and confirm the DNS record.
-3. Wait until the domain shows **Active** with **SSL enabled**.
-
-`https://graduate-radar.pages.dev` still works, so old links keep opening, but `public/_headers` sends `X-Robots-Tag: noindex` on every `pages.dev` address (production and branch previews), so search shows only the real domain. No redirect (owner decision, 15 Nov 2026). `npm run build` fails if `_headers` loses that rule, if the rule would also hide the real domain, or if any page still points to `graduate-radar.pages.dev`.
-
-`SITE_URL` must not be set in the Cloudflare project (Settings, Variables and secrets). If it still holds the old `pages.dev` address, every build, including the daily rebuild, fails the check above.
-
-### Google Search Console (owner; done 15 Nov 2026)
-
-So Google finds the new domain sooner while the `pages.dev` copies drop out. Done once, by the owner, in their own Google account.
-
-1. https://search.google.com/search-console, **Add property**. A **URL prefix** property (`https://graduateradar.versionphi.com/`) covers only this site; a **Domain** property (`versionphi.com`) covers every subdomain. Either is verified with a DNS TXT record in Cloudflare's `versionphi.com` zone. Leave the record in place: Google rechecks it, and it does not affect the site or email.
-2. **Sitemaps**: enter the full address `https://graduateradar.versionphi.com/sitemap.xml` and **Submit**. A bare `sitemap.xml` was refused as "Invalid sitemap address" (15 Nov 2026).
-3. **URL inspection** of `https://graduateradar.versionphi.com/`, **Test live URL**. Expected: "URL is available to Google". Then **Request indexing**, once.
-
-What to expect (15 Nov 2026, one try): right after submitting, the sitemap showed "Sitemap could not be read" with 0 pages, while URL inspection already listed the sitemap as where Google discovered the home page ("Discovered, currently not indexed", last crawl N/A). That first error is usual for a new property and clears when Google reads the sitemap again; resubmitting does not speed it up. If the live test ever fails, look in Cloudflare (`versionphi.com` zone, Security, Events) for blocked Googlebot requests.
-
-Do not add `graduate-radar.pages.dev` as a property: it is meant to drop out of Google.
-
-### When something goes wrong
-
-- **A Cloudflare build fails:** the failed-build email from step 11 arrives; the live site keeps the last good build. Open the build log in Cloudflare (Deployments, the failed one).
-- **The daily rebuild fails** (no hook, wrong hook, network error, or Cloudflare refuses it): `triggerRebuild` throws, so the run shows as Failed in Apps Script > Executions, and Google sends the trigger owner a failure email (Google's default for script-made triggers is a daily summary; not checked on this account). The live site keeps serving the last good build.
-- **The feed is down at build time:** the build uses `src/data/snapshot.json` and logs a `[feed]` warning in the Cloudflare build log; the page's "Data from" date shows the snapshot's date.
-- **Every build fails with "points to the old address graduate-radar.pages.dev":** `SITE_URL` is set to the old address in the Cloudflare project. Delete it (Settings, Variables and secrets), then retry the deployment.
-- **The hook URL leaks:** delete it in Cloudflare (Settings > Builds > Deploy hooks), add a new one, and replace `DEPLOY_HOOK_URL` in Script Properties.
-
-## Launch
-
-The website replaces the sheet's "Publish to web" view as the link we share. `docs/launch.md` holds the drafts the owner publishes by hand (the sheet's `Start here` tab and the WhatsApp post) and the owner's launch steps; `tests/launch-copy.test.ts` checks that both drafts lead with the website and never link to the Sheet.
-
-**Fallback:** the "Publish to web" view stays live (owner decision, 15 Nov 2026). It is managed in the sheet under File, Share, Publish to web, and its address is deliberately not in this repo. Anyone with the old link still sees the old view, which may show columns the website never sends (such as `Found via`).
-
-## Setup
-
-Needs Node 24.16 or later on the 24 line (`.nvmrc`, `engines` in package.json).
+Needs Node 24.16 or later on the 24 line (`.nvmrc`).
 
 ```bash
 npm install
@@ -156,9 +103,9 @@ npm install
 npm run dev
 ```
 
-## Gates
+With no `FEED_URL` set, the site builds from the committed snapshot, so no credentials are needed. To build from a live feed, copy `.env.example` to `.env` and set `FEED_URL`.
 
-Run all four before every commit. CI runs the same on every pull request.
+The gates, run before every commit:
 
 ```bash
 npm run lint
@@ -176,19 +123,29 @@ npm test
 npm run build
 ```
 
-`npm run lint` runs ESLint, Prettier (check only) and the dash check (`scripts/check-dashes.ts`), which fails on any em or en dash in source, docs or root files, and the style check (`scripts/check-styles.ts`), which fails on any hard-coded colour, size or spacing in a component or layout style (use `src/styles/tokens.css`), and the schedule check (`scripts/check-schedule.ts`), which fails on any claim about which days or how often the list is updated (patterns in the script) in the site, the sharing image, the launch drafts, this README or the spec. The site promises no schedule (owner decision, 15 Nov 2026), so the sweep can change frequency without a copy change. It never scans `dist/`, because listing notes from the sheet may name a day.
+```bash
+npm run check:mobile
+```
 
-## Environment variables
+## Repo map
 
-- `FEED_URL`: the Apps Script `/exec` URL. Used by the build and by `npm run snapshot`. Set it in a local `.env` (copy `.env.example`) and as a Cloudflare Pages variable (Production and Preview). Never commit it.
-- `SITE_URL` (optional): the site's public address, used for absolute links. Defaults to `https://graduateradar.versionphi.com`. Leave it unset in Cloudflare; set it only to build for a different address.
-- `DEPLOY_HOOK_URL`: not an environment variable of the site. It lives only in the Apps Script project's Script Properties and in the Cloudflare dashboard. Secret.
+```
+apps-script/Feed.gs     the feed (tested here, deployed to Apps Script)
+src/data/               feed loader, schema, committed snapshot
+src/lib/                dates, filters, slugs, SEO, site constants
+src/scripts/            browser scripts: list search, filters and sort; detail-page deadline re-check
+src/components/         design system components (shown on /design)
+src/styles/tokens.css   design tokens
+scripts/                build checks, snapshot refresh, sharing image
+tests/                  Vitest unit and integration tests
+docs/                   spec, capacity model, public routes, design notes
+```
 
 ## Docs
 
-- `docs/build-spec.md`: the spec.
-- `BACKLOG.md`: open work. `docs/done.md`: what shipped.
-- `docs/infra-capacity.md`: free-plan limits and what each action costs.
+- `docs/build-spec.md`: the spec, with the reasoning and rejected alternatives for each choice.
+- `docs/infra-capacity.md`: each free-plan limit, what every action costs, and where the system would break first.
 - `docs/public-routes.md`: the only public endpoints.
-- `docs/launch.md`: launch drafts (Start here tab, WhatsApp post) and the fallback.
-- `CLAUDE.md`: rules for Claude Code in this repo.
+- `docs/design.md`: the design system.
+- `BACKLOG.md` and `docs/done.md`: open and shipped work.
+- `CLAUDE.md`: working rules for AI-assisted development in this repo.
