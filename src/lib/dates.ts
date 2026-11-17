@@ -5,8 +5,6 @@
 export const TZ = 'Africa/Lagos';
 /** A deadline this many days away or fewer shows "Closing soon". */
 export const CLOSING_SOON_DAYS = 7;
-/** A listing first seen fewer than this many days ago is "New this week". */
-export const NEW_DAYS = 7;
 
 export type ListingStatus = 'Open' | 'Closing soon' | 'Closed';
 
@@ -65,13 +63,6 @@ export function effectiveStatus(
   return listing.status === 'Closing soon' ? 'Closing soon' : 'Open';
 }
 
-/** "New this week": first seen between today and NEW_DAYS - 1 days ago. */
-export function isNewThisWeek(firstSeen: string, today: string): boolean {
-  if (!isRealDay(firstSeen)) return false;
-  const age = daysBetween(firstSeen, today);
-  return age >= 0 && age < NEW_DAYS;
-}
-
 export const MONTHS = [
   'Jan',
   'Feb',
@@ -94,8 +85,10 @@ export function shortDate(day: string): string {
   return `${Number(d)} ${MONTHS[Number(m) - 1]}`;
 }
 
-/** Plain-words label for days left on an open listing. */
-export function daysLeftLabel(daysLeft: number): string {
-  if (daysLeft <= 0) return 'Closes today';
-  return daysLeft === 1 ? '1 day left' : `${daysLeft} days left`;
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+/** "Fri" for a real `yyyy-MM-dd` day; '' for anything else. */
+export function weekday(day: string): string {
+  if (!isRealDay(day)) return '';
+  return WEEKDAYS[new Date(`${day}T00:00:00Z`).getUTCDay()]!;
 }

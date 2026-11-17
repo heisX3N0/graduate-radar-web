@@ -1,7 +1,12 @@
 // Components may only use design tokens: no hard-coded colours, sizes or spacing
 // (repo CLAUDE.md). scripts/check-styles.ts turns that rule into a check.
 import { describe, expect, it } from 'vitest';
-import { findHardCoded, scanComponents } from '../scripts/check-styles.ts';
+import {
+  findHardCoded,
+  findUnknownTokens,
+  scanComponents,
+  scanTokens,
+} from '../scripts/check-styles.ts';
 
 const style = (body: string) => `---\n---\n<p class="x">x</p>\n<style>\n${body}\n</style>\n`;
 
@@ -71,5 +76,44 @@ describe('findHardCoded: what is allowed', () => {
 describe('the real components', () => {
   it('use tokens only', () => {
     expect(scanComponents()).toEqual([]);
+  });
+});
+
+describe('findUnknownTokens (GR-016)', () => {
+  const known = new Set(['color-ink', 'space-2']);
+
+  it('fails a reference to a token tokens.css does not define', () => {
+    const src = '<style>\n.a { color: var(--color-new); }\n.b { gap: var(--space-2); }\n</style>';
+    expect(findUnknownTokens(src, 'x.astro', known)).toEqual([
+      expect.objectContaining({ file: 'x.astro', line: 2, reason: 'unknown token --color-new' }),
+    ]);
+  });
+
+  it('fails one used as a fallback or inside calc too', () => {
+    const src = '<style>.a { margin: calc(-1 * var(--space-9, var(--color-ok-bg))); }</style>';
+    expect(findUnknownTokens(src, 'x.astro', known).map((f) => f.reason)).toEqual([
+      'unknown token --space-9',
+      'unknown token --color-ok-bg',
+    ]);
+  });
+
+  it('ignores comments both ways: no failure for a commented-out reference, no cover from a commented declaration', () => {
+    const commented =
+      '<style>\n/* was: background: var(--color-soon-bg); */\n.a { color: var(--color-ink); }\n</style>';
+    expect(findUnknownTokens(commented, 'x.astro', known)).toEqual([]);
+    const hidden = '<style>\n/* --color-new: #000; */\n.a { color: var(--color-new); }\n</style>';
+    expect(findUnknownTokens(hidden, 'x.astro', known)).toEqual([
+      expect.objectContaining({ line: 3, reason: 'unknown token --color-new' }),
+    ]);
+  });
+
+  it('allows a custom property the same file declares', () => {
+    const src =
+      '<style>.a { --local: 1rem; padding: var(--local); color: var(--color-ink); }</style>';
+    expect(findUnknownTokens(src, 'x.astro', known)).toEqual([]);
+  });
+
+  it('every component, layout, page and global.css uses only defined tokens', () => {
+    expect(scanTokens()).toEqual([]);
   });
 });

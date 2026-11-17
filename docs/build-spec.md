@@ -177,7 +177,7 @@ Note: the sheet is on a consumer Google account, not Workspace, so no admin can 
 |---|---|---|
 | `/` | Jobs home | A short section heading ("Graduate jobs") and one line: the count, "each checked on the employer's own page", and the data's last updated date (no update schedule, owner decision 15 Nov 2026). Link to trainings. Search and the Filters toggle on one row. Job rows in deadline sections (6.2, 6.3). No "Closing this week" strip: the first two sections show the same thing (GR-015). |
 | `/trainings` | Trainings home | Same pattern for trainings ("Free tech trainings", "each checked on the provider's own page"), with rows in track sections. Filters: track, cost, format, job placement. |
-| `/jobs/[slug]` | Job detail | Title, organisation, type, location/remote, deadline (with "X days left"), eligibility broken into a checklist (degree class, max age, NYSC, other text), notes, **Apply** button, "Verified on" date, "Never pay to apply" note, Share to WhatsApp button, back link. Closed listings show a clear "This opening has closed" banner, no Apply button, and links to similar open listings. |
+| `/jobs/[slug]` | Job detail | Title, organisation, type, then a ruled facts table (GR-016): Closes ("Fri 27 Nov, 12 days left", red within 7 days; "Rolling" or "Deadline not stated" otherwise), Where (location, with "Remote"), Checked ("14 Nov, on the employer's own page", left out for a missing or impossible date). No badges, boxed deadline or stamp. Then eligibility broken into a checklist (degree class, max age, NYSC, other text), notes, **Apply** button, "Never pay to apply" notice (ruled, no fill), Share to WhatsApp button, back link. Closed listings show a clear "This opening has closed" banner, no Apply button, and links to similar open listings. |
 | `/trainings/[slug]` | Training detail | Same pattern: provider, track, cost, format, duration, job placement, eligibility, deadline, Apply. |
 | `/about` | Trust page | Who runs it, how listings are found and checked, "we don't hire or process applications". |
 | `/stay-safe` | Scam guidance | Never pay to apply; red flags (Gmail-only recruiters, fees, too-good pay); how to verify an employer; what to do if asked for money. |
@@ -188,7 +188,7 @@ Note: the sheet is on a consumer Google account, not Workspace, so no admin can 
 
 ### 6.2 List row
 
-A ledger row (GR-015, owner decision 17 Nov 2026): a fixed date column (day and month, or "Rolling" or "No date"), then the title (the row's link), then organisation and place on one line ("Remote" added when the location does not say it), then the eligibility summary (jobs: min class · max age · NYSC) or format · duration · eligibility (trainings), at most 2 lines. "Requirements not stated" in muted italic. Rows are separated by hairline rules: no boxes, no badges, no Checked stamp, no boxed deadline ("Checked" is said once at the top of the page; each date stays on the detail page). The whole row links to the detail page. No Apply button in lists: Apply is on the detail page only, so people read eligibility first (owner decision, 15 Nov 2026). Similar openings on detail pages still use the listing card until GR-016.
+A ledger row (GR-015, owner decision 17 Nov 2026): a fixed date column (day and month, or "Rolling" or "No date"), then the title (the row's link), then organisation and place on one line ("Remote" added when the location does not say it), then the eligibility summary (jobs: min class · max age · NYSC) or format · duration · eligibility (trainings), at most 2 lines. "Requirements not stated" in muted italic. Rows are separated by hairline rules: no boxes, no badges, no Checked stamp, no boxed deadline ("Checked" is said once at the top of the page; each date stays on the detail page). The whole row links to the detail page. No Apply button in lists: Apply is on the detail page only, so people read eligibility first (owner decision, 15 Nov 2026). Similar openings on detail pages use the same rows (GR-016).
 
 ### 6.3 Search and filters
 
@@ -208,7 +208,7 @@ A ledger row (GR-015, owner decision 17 Nov 2026): a fixed date column (day and 
 - If `deadline` is a date before today, treat as Closed regardless of `status`.
 - If `deadline` is within 7 days, show "Closing soon" regardless of `status`.
 - `Rolling` and `Not stated` never auto-close.
-- "New this week": `firstSeen` within 7 days.
+- "New this week" is not shown (dropped in GR-015 and GR-016).
 - Lists hide Closed items; detail pages for Closed items still render with the banner.
 
 ### 6.5 SEO and sharing
@@ -238,14 +238,14 @@ Build it first (day 2 morning), then pages from its components only.
 
 **Tokens (CSS custom properties in `src/styles/tokens.css`)**
 
-- Colour: one primary (suggested deep green, with tints/shades), one warm accent for "Closing soon", neutral grey scale, semantic colours (success, warning, danger, info). Light mode for v1; structure tokens so dark mode can be added.
+- Colour: one primary (deep green, for Apply and links), one red for urgency and closed (as text and rules, never a tinted fill), ink and paper for everything else (GR-016 removed the tinted badge and callout colours). Light mode for v1; structure tokens so dark mode can be added.
 - Typography: type scale (e.g. 12/14/16/18/20/24/30), line heights, weights. Body 16 px minimum.
 - Spacing scale (4 px base), radii, shadows (subtle), borders, z-index, breakpoints (mobile first; 640 / 960 / 1200).
 - Motion: short durations, respect `prefers-reduced-motion`.
 
 **Components (`src/components/`)**
 
-Header, Footer, ListHead (list page heading and one-line lede), SearchInput, FilterBar (search and the Filters toggle on one row, filters below), FilterChip, Select, ResultCount, ListingRow and ListSection (list pages), ListingCard (similar openings on detail pages), StatusBadge, DeadlineChip, EligibilityChecklist, ApplyButton (handles `mailto:`), ShareButton, SafetyNote, EmptyState, Banner (info/warning/closed), Breadcrumb, SkeletonCard (if any client loading is used).
+Header, Footer, ListHead (list page heading and one-line lede), SearchInput, FilterBar (search and the Filters toggle on one row, filters below), FilterChip, Select, ResultCount, ListingRow and ListSection (list pages and similar openings), FactsTable (detail pages: Closes, Where, Checked), EligibilityChecklist, ApplyButton (handles `mailto:`), ShareButton, SafetyNote (ruled notice), EmptyState, Banner (info/warning/closed, ruled notices without fills), Breadcrumb, SkeletonCard (if any client loading is used).
 
 Document every component and state on `/design`. Name things so they can be extracted into a shared package later for other Version Phi or community products.
 

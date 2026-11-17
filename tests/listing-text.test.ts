@@ -2,12 +2,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   applyAction,
-  cardState,
-  deadlineDisplay,
+  checkedFact,
+  closesFact,
   eligibilityItems,
   eligibilitySummary,
   shareUrl,
-  statusBadges,
 } from '../src/lib/listing-text.ts';
 
 const TODAY = '2026-11-15';
@@ -36,18 +35,6 @@ describe('browser safety', () => {
   });
 });
 
-describe('cardState: what a card shows today, recomputed in the browser', () => {
-  it('drops New this week once a listing is 7 days old, and updates days left', () => {
-    const s = cardState({ ...base, firstSeen: '2026-11-08', deadline: '2026-11-19' }, TODAY);
-    expect(s.badges.map((b) => b.kind)).toEqual(['soon']);
-    expect(s.deadline).toMatchObject({ text: 'Closes 19 Nov', sub: '4 days left', urgent: true });
-  });
-
-  it('marks a listing closed once its deadline passes', () => {
-    expect(cardState({ ...base, deadline: '2026-11-14' }, TODAY).deadline.kind).toBe('closed');
-  });
-});
-
 describe('applyAction: what must be refused', () => {
   it.each(['javascript:alert(1)', 'data:text/html,x', 'ftp://x.com', 'www.x.com', '', 'mailto:'])(
     'refuses %j',
@@ -72,66 +59,68 @@ describe('applyAction: happy path', () => {
   });
 });
 
-describe('deadlineDisplay', () => {
-  it('marks 7 days or fewer as urgent', () => {
-    expect(deadlineDisplay({ ...base, deadline: '2026-11-19' }, TODAY)).toEqual({
-      kind: 'date',
-      text: 'Closes 19 Nov',
-      sub: '4 days left',
+describe('closesFact: what must be refused (GR-016)', () => {
+  it('never says a past deadline is still open, and is red', () => {
+    expect(closesFact({ ...base, deadline: '2026-11-10' }, TODAY)).toEqual({
+      text: 'Closed, deadline was Tue 10 Nov',
       urgent: true,
+      closed: true,
     });
   });
 
-  it('is calm for a far deadline', () => {
-    expect(deadlineDisplay(base, TODAY)).toMatchObject({ text: 'Closes 27 Nov', urgent: false });
-  });
-
-  it('says "Closes today" on the deadline day', () => {
-    expect(deadlineDisplay({ ...base, deadline: TODAY }, TODAY)).toMatchObject({
-      text: 'Closes today',
-      sub: '',
-      urgent: true,
-    });
-  });
-
-  it('shows Closed for a past deadline, whatever the sheet says', () => {
-    expect(deadlineDisplay({ ...base, deadline: '2026-11-10' }, TODAY)).toEqual({
-      kind: 'closed',
+  it('says Closed for a listing the sheet marked Closed, even with a future date', () => {
+    expect(closesFact({ ...base, status: 'Closed' }, TODAY)).toEqual({
       text: 'Closed',
-      sub: 'Deadline was 10 Nov',
-      urgent: false,
+      urgent: true,
+      closed: true,
     });
   });
 
-  it('shows Closed for a listing the sheet marked Closed', () => {
-    expect(deadlineDisplay({ ...base, status: 'Closed' }, TODAY)).toMatchObject({ kind: 'closed' });
-  });
-
-  it('reads Rolling and Not stated plainly', () => {
-    expect(deadlineDisplay({ ...base, deadline: 'Rolling' }, TODAY)).toMatchObject({
-      text: 'Rolling deadline',
+  it('never shows a day for Rolling, Not stated or an impossible date, and is not red', () => {
+    expect(closesFact({ ...base, deadline: 'Rolling' }, TODAY)).toEqual({
+      text: 'Rolling',
       urgent: false,
+      closed: false,
     });
-    expect(deadlineDisplay({ ...base, deadline: 'Not stated' }, TODAY)).toMatchObject({
-      text: 'Deadline not stated',
-      sub: 'Apply early',
+    for (const deadline of ['Not stated', '', '2026-02-30', 'soon']) {
+      expect(closesFact({ ...base, deadline }, TODAY)).toEqual({
+        text: 'Deadline not stated',
+        urgent: false,
+        closed: false,
+      });
+    }
+  });
+});
+
+describe('closesFact: happy path (GR-016)', () => {
+  it('gives the weekday, date and days left, red within 7 days and ink after', () => {
+    expect(closesFact({ ...base, deadline: '2026-11-15' }, TODAY)).toMatchObject({
+      text: 'Sun 15 Nov, last day',
+      urgent: true,
+    });
+    expect(closesFact({ ...base, deadline: '2026-11-16' }, TODAY)).toMatchObject({
+      text: 'Mon 16 Nov, 1 day left',
+      urgent: true,
+    });
+    expect(closesFact({ ...base, deadline: '2026-11-22' }, TODAY).urgent).toBe(true);
+    expect(closesFact({ ...base, deadline: '2026-11-23' }, TODAY)).toEqual({
+      text: 'Mon 23 Nov, 8 days left',
+      urgent: false,
+      closed: false,
     });
   });
 });
 
-describe('statusBadges', () => {
-  it('never badges a closed listing', () => {
-    expect(statusBadges({ ...base, deadline: '2026-11-10', remote: true }, TODAY)).toEqual([]);
+describe('checkedFact (GR-016)', () => {
+  it('says nothing for a missing or impossible date (never "Invalid Date")', () => {
+    for (const d of ['', 'yesterday', '2026-02-30', '2026-13-01']) {
+      expect(checkedFact(d, 'employer')).toBe('');
+    }
   });
 
-  it('shows Closing soon, Remote and New this week in that order', () => {
-    expect(
-      statusBadges({ ...base, deadline: '2026-11-19', remote: true }, TODAY).map((b) => b.kind),
-    ).toEqual(['soon', 'remote', 'new']);
-  });
-
-  it('shows nothing for an ordinary listing first seen long ago', () => {
-    expect(statusBadges({ ...base, firstSeen: '2026-10-01' }, TODAY)).toEqual([]);
+  it("names the date and the employer's or provider's own page", () => {
+    expect(checkedFact('2026-11-14', 'employer')).toBe("14 Nov, on the employer's own page");
+    expect(checkedFact('2026-11-14', 'provider')).toBe("14 Nov, on the provider's own page");
   });
 });
 

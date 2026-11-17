@@ -22,18 +22,12 @@
   --color-ink-muted: #57514a;
   --color-rule: #cfc5b3;
 
-  /* Colour: action (Apply, links, the Checked stamp) */
+  /* Colour: action (Apply, links) */
   --color-primary: #17553a;
   --color-on-primary: #ffffff;
-  --color-primary-soft: #e3eee6;
 
   /* Colour: meaning */
-  --color-soon: #a3241b; /* closing soon, closed, warnings: red is urgency only */
-  --color-soon-bg: #fbe6e1;
-  --color-ok: #1f5c38;
-  --color-ok-bg: #e4f0e7;
-  --color-new: #1d3f6e; /* new this week, information */
-  --color-new-bg: #e3eaf5;
+  --color-soon: #a3241b; /* closing soon, closed, warnings: red is urgency only, as text */
 
   /* Type: phone fonts only (0 KB downloaded) */
   --font-display: Georgia, 'Noto Serif', 'Droid Serif', 'Times New Roman', serif;
@@ -69,7 +63,6 @@
   --radius-none: 0;
   --radius-sm: 2px;
   --border-thin: 1px;
-  --border-stamp: 1.5px;
   --border-strong: 2px;
   --border-double: 3px;
   --border-accent: 4px;

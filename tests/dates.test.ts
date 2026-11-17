@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  daysLeftLabel,
   effectiveStatus,
-  isNewThisWeek,
   isRealDay,
   lagosToday,
   readDeadline,
@@ -85,7 +83,6 @@ describe('effectiveStatus and labels: happy path', () => {
     expect(effectiveStatus({ status: 'Open', deadline: '2026-11-20' }, today)).toBe('Closing soon');
     const d = readDeadline('2026-11-20', today);
     expect(d).toEqual({ kind: 'date', date: '2026-11-20', daysLeft: 5 });
-    expect(daysLeftLabel(5)).toBe('5 days left');
   });
 
   it('counts 7 days as closing soon and 8 as open', () => {
@@ -101,28 +98,9 @@ describe('effectiveStatus and labels: happy path', () => {
     );
   });
 
-  it('labels today and one day in plain words', () => {
-    expect(daysLeftLabel(0)).toBe('Closes today');
-    expect(daysLeftLabel(1)).toBe('1 day left');
-  });
-
   it('reads Rolling and Not stated deadlines', () => {
     expect(readDeadline('Rolling', '2026-11-15')).toEqual({ kind: 'rolling' });
     expect(readDeadline('Not stated', '2026-11-15')).toEqual({ kind: 'not-stated' });
     expect(readDeadline('', '2026-11-15')).toEqual({ kind: 'not-stated' });
-  });
-});
-
-describe('isNewThisWeek', () => {
-  it('is new when first seen 3 days ago, not when 7 or more', () => {
-    expect(isNewThisWeek('2026-11-12', '2026-11-15')).toBe(true);
-    expect(isNewThisWeek('2026-11-09', '2026-11-15')).toBe(true);
-    expect(isNewThisWeek('2026-11-08', '2026-11-15')).toBe(false);
-  });
-
-  it('is not new for an empty, impossible or future first-seen date', () => {
-    expect(isNewThisWeek('', '2026-11-15')).toBe(false);
-    expect(isNewThisWeek('2026-11-31', '2026-12-01')).toBe(false);
-    expect(isNewThisWeek('2026-11-20', '2026-11-15')).toBe(false);
   });
 });

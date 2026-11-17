@@ -1,0 +1,63 @@
+---
+// The facts at the top of a detail page (GR-016), ruled like a ledger: Closes (red within
+// 7 days or when closed), Where, and Checked (left out when the date is missing or
+// impossible). Replaces the badges, the boxed deadline and the Checked stamp. The detail
+// script keeps the Closes row up to date between builds ([data-closes]).
+import type { ClosesFact } from '../lib/listing-text.ts';
+
+interface Props {
+  closes: ClosesFact;
+  where: string;
+  /** '' leaves the Checked row out. */
+  checked: string;
+}
+const { closes, where, checked } = Astro.props;
+---
+
+<dl class="facts-table">
+  <div class="facts-table__row">
+    <dt>Closes</dt>
+    <dd data-closes data-urgent={closes.urgent ? '' : undefined}>
+      {closes.text}
+    </dd>
+  </div>
+  <div class="facts-table__row">
+    <dt>Where</dt>
+    <dd>{where || 'Not stated'}</dd>
+  </div>
+  {checked && (
+    <div class="facts-table__row">
+      <dt>Checked</dt>
+      <dd>{checked}</dd>
+    </div>
+  )}
+</dl>
+
+<style>
+  .facts-table {
+    margin: 0;
+    border-top: var(--border-strong) solid var(--color-ink);
+  }
+  .facts-table__row {
+    display: grid;
+    grid-template-columns: minmax(0, var(--label-width)) minmax(0, 1fr);
+    gap: var(--space-3);
+    padding-block: var(--space-2);
+    border-bottom: var(--border-thin) solid var(--color-rule);
+  }
+  dt {
+    padding-top: var(--space-1);
+    font-size: var(--font-size-sm);
+    font-weight: var(--weight-bold);
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    color: var(--color-ink-muted);
+  }
+  dd {
+    margin: 0;
+  }
+  dd[data-urgent] {
+    color: var(--color-soon);
+    font-weight: var(--weight-bold);
+  }
+</style>

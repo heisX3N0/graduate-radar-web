@@ -7,7 +7,7 @@ import { getListings, type JobListing } from '../../data/feed.ts';
 import Base from '../../layouts/Base.astro';
 import { effectiveStatus, lagosToday } from '../../lib/dates.ts';
 import { jsonForScript } from '../../lib/list-data.ts';
-import { eligibilityItems } from '../../lib/listing-text.ts';
+import { eligibilityItems, placeText } from '../../lib/listing-text.ts';
 import { jobDescription, jobPostingJsonLd, jobTitle, similarListings } from '../../lib/seo.ts';
 import { absolute, siteOrigin } from '../../lib/site.ts';
 
@@ -28,7 +28,7 @@ interface Props {
 const { listing, similar, today } = Astro.props;
 const path = `/jobs/${listing.slug}`;
 const ld = jobPostingJsonLd(listing, siteOrigin(Astro.site), today);
-const place = [listing.location, listing.remote ? 'Remote' : ''].filter(Boolean).join(' · ');
+const place = placeText(listing.location, listing.remote);
 ---
 
 <Base
@@ -47,18 +47,10 @@ const place = [listing.location, listing.remote ? 'Remote' : ''].filter(Boolean)
     kicker={`${listing.type} · ${listing.field}`}
     pageUrl={absolute(Astro.site, path)}
     today={today}
-    similar={similar.map((j) => ({
-      key: j.key,
-      title: j.title,
-      by: j.organisation,
-      href: `/jobs/${j.slug}`,
-      deadline: j.deadline,
-    }))}
+    where={place}
+    source="employer"
+    similar={{ kind: 'job', items: similar }}
   >
-    <section class="facts" aria-labelledby="where-h">
-      <h2 id="where-h">Where</h2>
-      <p>{place || 'Location not stated'}</p>
-    </section>
     <section class="facts" aria-labelledby="who-h">
       <h2 id="who-h">Who can apply</h2>
       <EligibilityChecklist items={eligibilityItems(listing)} />

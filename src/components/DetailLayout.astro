@@ -1,18 +1,19 @@
 ---
 // The shared body of job and training detail pages (spec 6.1): breadcrumb, closed banner,
-// title block, deadline and Checked stamp, the page's own facts (slot), Apply (only while
-// open), Never pay to apply, WhatsApp share, similar listings and a way back.
+// title block, a ruled facts table (Closes, Where, Checked: GR-016), the page's own facts
+// (slot, "Who can apply" first), Apply (only while open), Never pay to apply, WhatsApp
+// share, similar listings as list rows, and a way back. No badges, boxed deadline or
+// stamp: the facts table says the same once, in words.
+import type { JobListing, TrainingListing } from '../data/feed.ts';
 import ApplyButton from './ApplyButton.astro';
 import Banner from './Banner.astro';
 import Breadcrumb from './Breadcrumb.astro';
-import DeadlineChip from './DeadlineChip.astro';
+import FactsTable from './FactsTable.astro';
 import SafetyNote from './SafetyNote.astro';
 import ShareButton from './ShareButton.astro';
 import SimilarListings from './SimilarListings.astro';
-import StatusBadge from './StatusBadge.astro';
-import StatusStamp from './StatusStamp.astro';
 import { effectiveStatus } from '../lib/dates.ts';
-import { statusBadges } from '../lib/listing-text.ts';
+import { checkedFact, closesFact } from '../lib/listing-text.ts';
 
 interface Props {
   section: { label: string; href: string };
@@ -20,29 +21,26 @@ interface Props {
     title: string;
     status: string;
     deadline: string;
-    firstSeen: string;
     verifiedOn: string;
     applyLink: string;
-    remote?: boolean;
   };
   by: string;
   kicker: string;
+  /** Jobs: location, with "Remote"; trainings: format. */
+  where: string;
+  /** Whose page the listing was checked on. */
+  source: 'employer' | 'provider';
   pageUrl: string;
   today: string;
-  similar: { key: string; title: string; by: string; href: string; deadline: string }[];
+  similar: { kind: 'job'; items: JobListing[] } | { kind: 'training'; items: TrainingListing[] };
 }
-const { section, listing, by, kicker, pageUrl, today, similar } = Astro.props;
+const { section, listing, by, kicker, where, source, pageUrl, today, similar } = Astro.props;
 const closed = effectiveStatus(listing, today) === 'Closed';
-const badges = statusBadges(listing, today);
+const closes = closesFact(listing, today);
+const checked = checkedFact(listing.verifiedOn, source);
 ---
 
-<article
-  class="detail"
-  data-detail
-  data-deadline={listing.deadline}
-  data-status={listing.status}
-  data-first-seen={listing.firstSeen}
->
+<article class="detail" data-detail data-deadline={listing.deadline} data-status={listing.status}>
   <Breadcrumb items={[section, { label: listing.title }]} />
   {/* Always rendered: the browser shows it if the deadline passes after the build. */}
   <div data-closed-banner hidden={!closed}>
@@ -52,22 +50,11 @@ const badges = statusBadges(listing, today);
   </div>
   <header class="detail__head">
     <p class="detail__kicker">{kicker}</p>
-    {badges.length > 0 && (
-      <ul class="detail__badges" aria-label="Status" data-detail-badges>
-        {badges.map((b) => (
-          <li>
-            <StatusBadge kind={b.kind} />
-          </li>
-        ))}
-      </ul>
-    )}
     <h1>{listing.title}</h1>
     <p class="detail__by">{by}</p>
-    <div class="detail__marks">
-      <DeadlineChip listing={listing} today={today} />
-      <StatusStamp date={listing.verifiedOn} />
-    </div>
   </header>
+
+  <FactsTable closes={closes} where={where} checked={checked} />
 
   <slot />
 
@@ -88,7 +75,7 @@ const badges = statusBadges(listing, today);
 
   <SimilarListings
     heading={closed ? 'Still open: similar openings' : 'Similar openings'}
-    items={similar}
+    similar={similar}
   />
 
   <p class="detail__back">
@@ -123,25 +110,12 @@ const badges = statusBadges(listing, today);
     letter-spacing: var(--tracking-caps);
     font-weight: var(--weight-semibold);
   }
-  .detail__badges {
-    list-style: none;
-    padding: 0;
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-  }
   h1 {
     font-size: var(--font-size-2xl);
   }
   .detail__by {
     font-weight: var(--weight-semibold);
     font-size: var(--font-size-md);
-  }
-  .detail__marks {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-2) var(--space-3);
   }
   .detail__actions {
     display: grid;

@@ -85,11 +85,9 @@ describe('open job page', () => {
     for (const text of [
       'Deloitte Academy - Cyber Security Programme',
       'Deloitte Nigeria',
-      'Closes 27 Nov',
       '2:1 or above',
       '26 or under',
       '24-month programme',
-      'Checked 14 Nov',
       'Never pay to apply',
       'Share on WhatsApp',
     ]) {
@@ -158,12 +156,126 @@ describe('training page', () => {
       'Online',
       '4 weeks',
       'Job placement',
-      'Rolling deadline',
       'Never pay to apply',
     ]) {
       expect(html, text).toContain(text);
     }
     expect(html).not.toContain('application/ld+json');
+  });
+});
+
+// GR-016: a ruled facts table instead of badges, a boxed deadline and a stamp.
+const factsIn = (html: string) => {
+  const dl = /<dl class="facts-table"[^>]*>([\s\S]*?)<\/dl>/.exec(html)?.[1] ?? '';
+  return [...dl.matchAll(/<dt[^>]*>([\s\S]*?)<\/dt>\s*<dd([^>]*)>([\s\S]*?)<\/dd>/g)].map((m) => ({
+    label: m[1]!.trim(),
+    attrs: m[2]!,
+    value: m[3]!
+      .replace(/<[^>]+>/g, '')
+      .replace(/&#39;/g, "'")
+      .trim(),
+  }));
+};
+
+describe('detail page: what must not be there (GR-016)', () => {
+  it('has no badge, stamp or deadline chip, and no "New this week"', async () => {
+    const fresh = job({ firstSeen: TODAY, remote: true, deadline: '2026-11-17' });
+    for (const html of [await renderJob(fresh), await renderJob(job({ status: 'Closed' }))]) {
+      expect(html).not.toMatch(
+        /class="badge|data-badge|class="stamp|data-deadline-chip|deadline--/,
+      );
+      expect(html).not.toMatch(/New this week|data-detail-badges/);
+    }
+  });
+
+  it('leaves out the Checked row for a missing or impossible date (no "Invalid Date")', async () => {
+    for (const verifiedOn of ['', '2026-02-30', 'last week']) {
+      const html = await renderJob(job({ verifiedOn }));
+      expect(factsIn(html).map((f) => f.label)).toEqual(['Closes', 'Where']);
+      expect(html).not.toMatch(/Invalid Date|NaN/);
+    }
+  });
+
+  it('a closed page says so in the facts, with no Apply, and lists similar open rows', async () => {
+    const html = await renderJob(job({ deadline: '2026-11-10' }));
+    expect(html).toContain('This opening has closed');
+    expect(html).not.toMatch(/Apply on|Apply by/);
+    expect(factsIn(html)[0]).toMatchObject({
+      label: 'Closes',
+      value: 'Closed, deadline was Tue 10 Nov',
+    });
+    expect(html).toMatch(/<article class="row[\s\S]*?href="\/jobs\/other-job"/);
+  });
+
+  it('the notices have no fill and no side stripe', async () => {
+    const { readFileSync } = await import('node:fs');
+    for (const f of ['SafetyNote', 'Banner']) {
+      const src = readFileSync(new URL(`../src/components/${f}.astro`, import.meta.url), 'utf8');
+      const css = /<style>([\s\S]*?)<\/style>/.exec(src)![1]!;
+      expect(css, f).not.toMatch(/background|border-left|border-inline-start/);
+    }
+  });
+});
+
+describe('detail page facts table (GR-016)', () => {
+  it('shows Closes, Where and Checked in that order, Remote in Where', async () => {
+    const html = await renderJob(job({ remote: true }));
+    expect(factsIn(html)).toEqual([
+      expect.objectContaining({ label: 'Closes', value: 'Fri 27 Nov, 12 days left' }),
+      expect.objectContaining({ label: 'Where', value: 'Lagos · Remote' }),
+      expect.objectContaining({ label: 'Checked', value: "14 Nov, on the employer's own page" }),
+    ]);
+  });
+
+  it('says Remote once when the location already says it', async () => {
+    const html = await renderJob(job({ remote: true, location: 'Remote (Nigeria)' }));
+    expect(factsIn(html)[1]).toMatchObject({ label: 'Where', value: 'Remote (Nigeria)' });
+  });
+
+  it('marks Closes red within 7 days and not after', async () => {
+    const soon = factsIn(await renderJob(job({ deadline: '2026-11-20' })))[0]!;
+    expect(soon.attrs).toMatch(/data-urgent/);
+    const far = factsIn(await renderJob(job()))[0]!;
+    expect(far.attrs).not.toMatch(/data-urgent/);
+  });
+
+  it('keeps Apply after the facts table and "Who can apply"', async () => {
+    const html = await renderJob(job());
+    const order = ['class="facts-table"', 'Who can apply', 'data-apply'].map((t) =>
+      html.indexOf(t),
+    );
+    expect(order.every((p) => p >= 0)).toBe(true);
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+  });
+
+  it('a training says Rolling, its format as Where, and the provider in Checked', async () => {
+    const t = {
+      key: 'google|ai|2026',
+      slug: 'google-ai-2026',
+      firstSeen: '2026-11-10',
+      provider: 'Google',
+      title: 'AI Essentials',
+      track: 'AI',
+      cost: 'Free',
+      format: 'Online',
+      duration: '4 weeks',
+      eligibility: 'Anyone',
+      jobPlacement: 'Yes',
+      deadline: 'Rolling',
+      applyLink: 'https://grow.example.com',
+      verifiedOn: '2026-11-12',
+      status: 'Open',
+      notes: '',
+    };
+    const html = await c.renderToString(TrainingPage, {
+      params: { slug: t.slug },
+      props: { listing: t, similar: [], today: TODAY },
+    });
+    expect(factsIn(html)).toEqual([
+      expect.objectContaining({ label: 'Closes', value: 'Rolling' }),
+      expect.objectContaining({ label: 'Where', value: 'Online' }),
+      expect.objectContaining({ label: 'Checked', value: "12 Nov, on the provider's own page" }),
+    ]);
   });
 });
 

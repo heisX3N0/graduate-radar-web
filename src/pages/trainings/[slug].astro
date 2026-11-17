@@ -27,7 +27,6 @@ const path = `/trainings/${listing.slug}`;
 const facts = [
   { label: 'Track', value: listing.track },
   { label: 'Cost', value: listing.cost },
-  { label: 'Format', value: listing.format },
   { label: 'Duration', value: listing.duration },
   { label: 'Job placement', value: listing.jobPlacement },
 ].filter((f) => f.value);
@@ -48,13 +47,9 @@ const facts = [
     kicker={`${listing.track} · ${listing.cost}`}
     pageUrl={absolute(Astro.site, path)}
     today={today}
-    similar={similar.map((t) => ({
-      key: t.key,
-      title: t.title,
-      by: t.provider,
-      href: `/trainings/${t.slug}`,
-      deadline: t.deadline,
-    }))}
+    where={listing.format}
+    source="provider"
+    similar={{ kind: 'training', items: similar }}
   >
     <section class="facts" aria-labelledby="about-h">
       <h2 id="about-h">About this training</h2>
