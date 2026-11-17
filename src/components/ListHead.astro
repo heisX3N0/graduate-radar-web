@@ -6,6 +6,7 @@
 // build date (GR-011), so a site stuck on the snapshot shows an old date. No schedule.
 // The list script updates the count on load, as listings close between builds.
 import { shortDate } from '../lib/dates.ts';
+import { countText } from '../lib/listing-text.ts';
 
 interface Props {
   heading: string;
@@ -18,7 +19,7 @@ interface Props {
 }
 const { heading, count, noun, source, updated } = Astro.props;
 const updatedText = shortDate(updated);
-const counted = `${count} ${count === 1 ? noun : `${noun}s`}`;
+const counted = countText(count, noun);
 ---
 
 <header class="head">

@@ -161,13 +161,19 @@ const checked = checkedFact(listing.verifiedOn, source);
       grid-column: 2;
       grid-row: 1 / span 2;
       align-self: start;
-      position: sticky;
-      top: var(--space-4);
     }
     .detail__actions {
       grid-auto-flow: column;
       grid-auto-columns: minmax(0, 1fr);
       align-items: stretch;
+    }
+  }
+  /* The rail stays in view only where the screen is tall enough to show it whole, so
+     nothing is cut off on short laptop screens. */
+  @media (min-width: 60rem) and (min-height: 45rem) {
+    .detail__rail {
+      position: sticky;
+      top: var(--space-4);
     }
   }
 </style>

@@ -7,6 +7,7 @@
 // and on a list page the count and where each listing was checked.
 import { getListings } from '../data/feed.ts';
 import { lagosToday, longDate } from '../lib/dates.ts';
+import { countText } from '../lib/listing-text.ts';
 
 export interface Tally {
   count: number;
@@ -30,7 +31,7 @@ const links = [
 const { generatedAt } = await getListings();
 const parsed = new Date(generatedAt);
 const updated = Number.isNaN(parsed.getTime()) ? '' : longDate(lagosToday(parsed));
-const counted = tally && `${tally.count} ${tally.count === 1 ? tally.noun : `${tally.noun}s`}`;
+const counted = tally && countText(tally.count, tally.noun);
 ---
 
 <header class="masthead">

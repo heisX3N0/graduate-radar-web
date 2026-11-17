@@ -232,8 +232,6 @@ const flags = [
     .lists__side {
       grid-area: side;
       align-self: start;
-      position: sticky;
-      top: var(--space-4);
     }
     .lists__count {
       grid-area: count;
@@ -272,13 +270,25 @@ const flags = [
         'side items rail'
         'side empty rail';
     }
-    .lists__rail {
-      position: sticky;
-      top: var(--space-4);
-    }
     .lists__rail-more {
       display: grid;
       gap: var(--space-4);
+    }
+  }
+
+  /* The rails stay in view only where the screen is tall enough to show them whole
+     (720 px; the filters rail is about 650 px), so nothing is cut off on short laptop
+     screens. */
+  @media (min-width: 60rem) and (min-height: 45rem) {
+    .lists__side {
+      position: sticky;
+      top: var(--space-4);
+    }
+  }
+  @media (min-width: 75rem) and (min-height: 45rem) {
+    .lists__rail {
+      position: sticky;
+      top: var(--space-4);
     }
   }
 </style>

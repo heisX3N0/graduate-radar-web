@@ -20,6 +20,7 @@ import {
   type Sort,
   type TrainingItem,
 } from '../lib/filters.ts';
+import { countText as counted } from '../lib/listing-text.ts';
 import { listSections } from '../lib/sections.ts';
 
 interface JobData {
@@ -33,7 +34,6 @@ interface TrainingData {
   options: { tracks: string[] };
 }
 
-const counted = (n: number, noun: string) => `${n} ${n === 1 ? noun : `${noun}s`}`;
 function countText(n: number, noun: string): string {
   return n === 0 ? `No ${noun}s match` : counted(n, noun);
 }

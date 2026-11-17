@@ -7,6 +7,7 @@ import {
   eligibilityItems,
   eligibilitySummary,
   shareUrl,
+  countText,
 } from '../src/lib/listing-text.ts';
 
 const TODAY = '2026-11-15';
@@ -189,5 +190,13 @@ describe('shareUrl', () => {
     const query = url.slice('https://wa.me/?text='.length);
     expect(query).not.toMatch(/[ &#?]/);
     expect(query).toContain('A%20%26%20B%20%231');
+  });
+});
+
+describe('countText (heading and masthead, GR-017)', () => {
+  it('uses the plural for none and many, the singular for one', () => {
+    expect(countText(0, 'opening')).toBe('0 openings');
+    expect(countText(1, 'training')).toBe('1 training');
+    expect(countText(17, 'opening')).toBe('17 openings');
   });
 });
