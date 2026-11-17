@@ -5,7 +5,7 @@
 import '../styles/global.css';
 import tokensCss from '../styles/tokens.css?raw';
 import Footer from '../components/Footer.astro';
-import Header from '../components/Header.astro';
+import Header, { type Tally } from '../components/Header.astro';
 import { absolute, canonicalPath } from '../lib/site.ts';
 
 // The browser toolbar colour, read from the --color-bg token so it never drifts.
@@ -21,6 +21,8 @@ interface Props {
   ogType?: 'website' | 'article';
   /** schema.org JSON-LD, already serialised safely (jsonForScript). */
   jsonLd?: string | undefined;
+  /** List pages: the count for the masthead date line (GR-017). */
+  tally?: Tally | undefined;
 }
 const {
   title,
@@ -30,6 +32,7 @@ const {
   path = Astro.url.pathname,
   ogType = 'website',
   jsonLd,
+  tally,
 } = Astro.props;
 const fullTitle = title === 'Graduate Radar' ? title : `${title} | Graduate Radar`;
 const canonical = absolute(Astro.site, canonicalPath(path));
@@ -69,7 +72,7 @@ const imageAlt =
     <a class="skip" href="#main">
       Skip to content
     </a>
-    <Header current={current} />
+    <Header current={current} tally={tally} />
     <main id="main" class="container">
       <slot />
     </main>

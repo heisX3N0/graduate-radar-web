@@ -33,4 +33,14 @@ const Tag = label ? 'section' : 'div';
   .filters > :global(details) {
     grid-column: 2;
   }
+  /* From 960 px the filters sit open in a rail with no Filters toggle (GR-017), so the
+     search box takes the whole row. */
+  @media (min-width: 60rem) {
+    .filters {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .filters > :global(:first-child) {
+      grid-column: 1 / -1;
+    }
+  }
 </style>

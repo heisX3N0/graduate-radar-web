@@ -92,3 +92,35 @@ export function weekday(day: string): string {
   if (!isRealDay(day)) return '';
   return WEEKDAYS[new Date(`${day}T00:00:00Z`).getUTCDay()]!;
 }
+
+const LONG_WEEKDAYS = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+];
+const LONG_MONTHS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
+/** "Tuesday 17 November 2026" for a real `yyyy-MM-dd` day (the masthead date line); '' otherwise. */
+export function longDate(day: string): string {
+  if (!isRealDay(day)) return '';
+  const [y, m, d] = day.split('-');
+  const dow = LONG_WEEKDAYS[new Date(`${day}T00:00:00Z`).getUTCDay()]!;
+  return `${dow} ${Number(d)} ${LONG_MONTHS[Number(m) - 1]} ${y}`;
+}

@@ -84,13 +84,13 @@ Each rule that matters is a check that fails the build or the lint, not a line i
 | --- | --- |
 | `scripts/check-dist.ts` (in `npm run build`) | any built file contains a private field or private tab name; a detail page lacks "Never pay to apply"; a page lacks the site footer or the WhatsApp channel link; the `noindex` rule for `pages.dev` is missing or would also hide the real domain; no detail pages were built |
 | `scripts/check-budgets.ts` (in `npm run build`) | any page ships more than 50 KB of JavaScript or a first load over 150 KB, gzipped. The home page was 18.8 KB on 15 Nov 2026 |
-| `scripts/check-mobile.ts` (`npm run check:mobile`) | at 360 x 800 in headless Chrome or Edge, any page scrolls sideways or has a tap target under 44 px |
+| `scripts/check-mobile.ts` (`npm run check:mobile`) | at 360 x 800 (phone), 768, 1024 and 1280 px in headless Chrome or Edge, any page scrolls sideways or has a tap target under 44 px, or breaks the layout rules: a list page's first listing below the first screen, listings side by side, a ledger title column under 480 px at 1200 px and wider, a rail on a list page below 960 px, the notice not above the list from 960 to 1199 px, a wordmark not left aligned from 960 px, or a detail rail that scrolls away |
 | `scripts/check-styles.ts` (in `npm run lint`) | a component hard-codes a colour, size or spacing instead of a token from `src/styles/tokens.css` |
 | `scripts/check-dashes.ts` (in `npm run lint`) | an em or en dash appears in source or docs (house style) |
 | `scripts/check-schedule.ts` (in `npm run lint`) | the site or its docs promise how often the list changes, so the update rhythm can change without a copy change |
 | `tests/feed.test.ts` | the feed sends a field outside its allow-list, a private tab, or a non-web Apply link. It runs the real `Feed.gs` against stand-ins for the Apps Script services |
 
-CI runs lint, types, tests, build and the 360 px check on every pull request.
+CI runs lint, types, tests, build and the page check (360, 768, 1024 and 1280 px) on every pull request.
 
 ## Run it locally
 

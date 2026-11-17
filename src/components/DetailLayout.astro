@@ -1,9 +1,12 @@
 ---
 // The shared body of job and training detail pages (spec 6.1): breadcrumb, closed banner,
 // title block, a ruled facts table (Closes, Where, Checked: GR-016), the page's own facts
-// (slot, "Who can apply" first), Apply (only while open), Never pay to apply, WhatsApp
-// share, similar listings as list rows, and a way back. No badges, boxed deadline or
-// stamp: the facts table says the same once, in words.
+// (slot, "Who can apply" first), Apply (only while open) and WhatsApp share, then a rail
+// with Never pay to apply and similar listings as list rows, and a way back. No badges,
+// boxed deadline or stamp: the facts table says the same once, in words.
+// On phones it is one column in that order. From 960 px (GR-017) the article keeps a
+// reading width on the left, Apply and Share sit side by side, and the rail stays in view
+// on the right while the article scrolls. Each part is in the page once, in reading order.
 import type { JobListing, TrainingListing } from '../data/feed.ts';
 import ApplyButton from './ApplyButton.astro';
 import Banner from './Banner.astro';
@@ -41,42 +44,46 @@ const checked = checkedFact(listing.verifiedOn, source);
 ---
 
 <article class="detail" data-detail data-deadline={listing.deadline} data-status={listing.status}>
-  <Breadcrumb items={[section, { label: listing.title }]} />
-  {/* Always rendered: the browser shows it if the deadline passes after the build. */}
-  <div data-closed-banner hidden={!closed}>
-    <Banner kind="closed" title="This opening has closed">
-      <p>You can no longer apply. Similar openings that are still open are listed below.</p>
-    </Banner>
+  <div class="detail__main">
+    <Breadcrumb items={[section, { label: listing.title }]} />
+    {/* Always rendered: the browser shows it if the deadline passes after the build. */}
+    <div data-closed-banner hidden={!closed}>
+      <Banner kind="closed" title="This opening has closed">
+        <p>You can no longer apply. Similar openings that are still open are listed below.</p>
+      </Banner>
+    </div>
+    <header class="detail__head">
+      <p class="detail__kicker">{kicker}</p>
+      <h1>{listing.title}</h1>
+      <p class="detail__by">{by}</p>
+    </header>
+
+    <FactsTable closes={closes} where={where} checked={checked} />
+
+    <slot />
+
+    <div class="detail__actions">
+      {!closed && (
+        <div data-apply>
+          <ApplyButton href={listing.applyLink} />
+        </div>
+      )}
+      <ShareButton
+        title={listing.title}
+        organisation={by}
+        deadline={listing.deadline}
+        url={pageUrl}
+      />
+    </div>
   </div>
-  <header class="detail__head">
-    <p class="detail__kicker">{kicker}</p>
-    <h1>{listing.title}</h1>
-    <p class="detail__by">{by}</p>
-  </header>
 
-  <FactsTable closes={closes} where={where} checked={checked} />
-
-  <slot />
-
-  <div class="detail__actions">
-    {!closed && (
-      <div data-apply>
-        <ApplyButton href={listing.applyLink} />
-      </div>
-    )}
+  <div class="detail__rail" data-rail>
     <SafetyNote />
-    <ShareButton
-      title={listing.title}
-      organisation={by}
-      deadline={listing.deadline}
-      url={pageUrl}
+    <SimilarListings
+      heading={closed ? 'Still open: similar openings' : 'Similar openings'}
+      similar={similar}
     />
   </div>
-
-  <SimilarListings
-    heading={closed ? 'Still open: similar openings' : 'Similar openings'}
-    similar={similar}
-  />
 
   <p class="detail__back">
     <a href={section.href}>Back to all {section.label.toLowerCase()}</a>
@@ -89,12 +96,15 @@ const checked = checkedFact(listing.verifiedOn, source);
 </script>
 
 <style>
-  .detail {
+  .detail,
+  .detail__main,
+  .detail__rail {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: var(--space-6);
+  }
+  .detail {
     max-width: var(--measure);
-    margin-inline: auto;
     padding-block: var(--space-4);
   }
   .detail__head {
@@ -126,5 +136,38 @@ const checked = checkedFact(listing.verifiedOn, source);
     align-items: center;
     min-height: var(--tap-min);
     font-weight: var(--weight-semibold);
+  }
+
+  /* From 960 px: article on the left at reading width, the rail on the right stays in
+     view while the article scrolls (GR-017). The last row takes any spare height, so a
+     rail taller than a short article never pulls the way back down. */
+  @media (min-width: 60rem) {
+    .detail {
+      max-width: none;
+      grid-template-columns: minmax(0, var(--article)) minmax(var(--rail), 1fr);
+      grid-template-rows: auto 1fr;
+      column-gap: var(--space-8);
+    }
+    .detail__main {
+      grid-column: 1;
+      grid-row: 1;
+    }
+    .detail__back {
+      grid-column: 1;
+      grid-row: 2;
+      align-self: start;
+    }
+    .detail__rail {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+      align-self: start;
+      position: sticky;
+      top: var(--space-4);
+    }
+    .detail__actions {
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(0, 1fr);
+      align-items: stretch;
+    }
   }
 </style>

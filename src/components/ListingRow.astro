@@ -3,7 +3,9 @@
 // the title, organisation and place, and eligibility. No badges, stamp or boxed deadline:
 // the section header says how soon it closes, and "Checked" is said once at the top of
 // the page. The whole row links to the detail page; there is no Apply button here
-// (owner decision: people read eligibility first).
+// (owner decision: people read eligibility first). In a list 640 px wide or more (the
+// desktop ledger, GR-017) a job's place moves to its own right-aligned column; the row
+// reads the same, as the place is the same element either way.
 import type { JobListing, TrainingListing } from '../data/feed.ts';
 import { isRealDay, MONTHS } from '../lib/dates.ts';
 import { eligibilitySummary, NO_REQUIREMENTS as NONE, placeText } from '../lib/listing-text.ts';
@@ -19,10 +21,12 @@ const [, month, day] = dated ? listing.deadline.split('-') : [];
 const word = listing.deadline === 'Rolling' ? 'Rolling' : 'No date';
 
 let by: string;
+let place = '';
 let summary: string;
 if (props.kind === 'job') {
   const j = props.listing;
-  by = [j.organisation, placeText(j.location, j.remote)].filter(Boolean).join(' · ');
+  by = j.organisation;
+  place = placeText(j.location, j.remote);
   summary = eligibilitySummary(j);
 } else {
   const t = props.listing;
@@ -33,13 +37,21 @@ if (props.kind === 'job') {
 }
 ---
 
-<article class="row">
+<article class:list={['row', { 'row--placed': place }]}>
   <h3 class="row__title">
     <a class="row__link" href={href}>
       {listing.title}
     </a>
   </h3>
-  <p class="row__by">{by}</p>
+  <p class="row__by">
+    <span class="row__org">{by}</span>
+    {place && (
+      <span class="row__place">
+        <span class="row__sep">{by && ' · '}</span>
+        {place}
+      </span>
+    )}
+  </p>
   <p class:list={['row__elig', { 'row__elig--none': summary === NONE }]}>{summary}</p>
   <p class="row__date">
     {dated ? (
@@ -138,6 +150,34 @@ if (props.kind === 'job') {
   .row__month {
     letter-spacing: var(--tracking-caps);
     text-transform: uppercase;
+  }
+  /* A wide list (the desktop ledger, GR-017): a job's place gets its own column on the
+     right, so the eye can run down the locations. */
+  @container (min-width: 40rem) {
+    .row--placed {
+      grid-template-columns: var(--date-column) minmax(0, 1fr) var(--place-column);
+      grid-template-areas:
+        'date title place'
+        'date by place'
+        'date elig place';
+    }
+    .row--placed .row__by {
+      display: contents;
+    }
+    .row--placed .row__org {
+      grid-area: by;
+      font-size: var(--font-size-sm);
+      color: var(--color-ink-muted);
+    }
+    .row__place {
+      grid-area: place;
+      text-align: right;
+      font-size: var(--font-size-sm);
+      font-weight: var(--weight-semibold);
+    }
+    .row__sep {
+      display: none;
+    }
   }
   /* "Rolling" and "No date" in plain case fit the column; never break inside a word. */
   .row__word {

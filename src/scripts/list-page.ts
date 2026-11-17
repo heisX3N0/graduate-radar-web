@@ -167,9 +167,11 @@ export function initListPage(): void {
   };
 
   // The heading's count was set at build; listings may have closed since.
-  const total = document.querySelector<HTMLElement>('[data-total]');
+  // The heading and, from 960 px, the masthead date line both carry the count (GR-017).
+  const totals = document.querySelectorAll<HTMLElement>('[data-total]');
   const allItems: readonly (JobItem | TrainingItem)[] = data.items;
-  if (total) total.textContent = counted(openOnly(allItems, today).length, noun);
+  const totalText = counted(openOnly(allItems, today).length, noun);
+  totals.forEach((t) => (t.textContent = totalText));
 
   const initial = new URLSearchParams(location.search);
   writeControls(initial);

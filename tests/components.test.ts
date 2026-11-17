@@ -127,8 +127,10 @@ describe('ListingRow (GR-015)', () => {
   it('links the whole row to the detail page, title first, then the date', async () => {
     const html = await render(ListingRow, { listing: job, kind: 'job' });
     expect(html).toMatch(/<a class="row__link" href="\/jobs\/deloitte-academy-2026"/);
-    const order = ['Deloitte Academy', 'Deloitte Nigeria · Lagos', '2:1 or above', '>19<', '>Nov<'];
-    const positions = order.map((t) => html.indexOf(t));
+    // Read as text: the place is its own element, so it can take a column on wide lists.
+    const text = html.replace(/<[^>]+>/g, '');
+    const order = ['Deloitte Academy', 'Deloitte Nigeria · Lagos', '2:1 or above', 'Closes19Nov'];
+    const positions = order.map((t) => text.indexOf(t));
     expect(positions.every((p) => p >= 0)).toBe(true);
     expect([...positions].sort((a, b) => a - b)).toEqual(positions);
     expect(html).toMatch(/class="visually-hidden"[^>]*>Closes</);
@@ -136,13 +138,14 @@ describe('ListingRow (GR-015)', () => {
 
   it('adds Remote to the place line once', async () => {
     const remote = await render(ListingRow, { listing: { ...job, remote: true }, kind: 'job' });
-    expect(remote).toContain('Deloitte Nigeria · Lagos · Remote');
+    const text = (h: string) => h.replace(/<[^>]+>/g, '');
+    expect(text(remote)).toContain('Deloitte Nigeria · Lagos · Remote');
     const said = await render(ListingRow, {
       listing: { ...job, remote: true, location: 'Remote (Nigeria)' },
       kind: 'job',
     });
-    expect(said).toContain('Deloitte Nigeria · Remote (Nigeria)');
-    expect(said).not.toContain('· Remote ·');
+    expect(text(said)).toContain('Deloitte Nigeria · Remote (Nigeria)');
+    expect(text(said)).not.toContain('· Remote ·');
   });
 
   it('shows a training with provider, then format, duration and eligibility, and "Rolling"', async () => {

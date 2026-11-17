@@ -1,7 +1,8 @@
 ---
 // The top of a list page (GR-015): a short heading set like a newspaper section, and one
 // plain line with the count, where each listing was checked, and when the data was last
-// updated. `updated` is the data's own date (the feed's or the snapshot's), never the
+// updated (shown on phones; from 960 px the masthead date line says it, GR-017).
+// `updated` is the data's own date (the feed's or the snapshot's), never the
 // build date (GR-011), so a site stuck on the snapshot shows an old date. No schedule.
 // The list script updates the count on load, as listings close between builds.
 import { shortDate } from '../lib/dates.ts';
@@ -43,5 +44,11 @@ const counted = `${count} ${count === 1 ? noun : `${noun}s`}`;
     max-width: var(--measure);
     font-size: var(--font-size-sm);
     color: var(--color-ink-muted);
+  }
+  /* From 960 px the masthead date line says this (GR-017), so it is shown once. */
+  @media (min-width: 60rem) {
+    .head__lede {
+      display: none;
+    }
   }
 </style>

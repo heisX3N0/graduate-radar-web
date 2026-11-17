@@ -29,8 +29,9 @@ describe.skipIf(!browser)('checkMobile: what must be refused', () => {
   it('fails a page that scrolls sideways at 360 px', async () => {
     page('index.html', '<div style="width:500px">too wide</div>');
     const f = await checkMobile(dist, browser!);
+    // 500 px fits at 768 px and wider, so only the phone width fails.
     expect(f).toEqual([
-      expect.objectContaining({ page: '/', reason: expect.stringMatching(/sideways/) }),
+      expect.objectContaining({ page: '/', width: 360, reason: expect.stringMatching(/sideways/) }),
     ]);
   }, 60_000);
 
@@ -40,9 +41,15 @@ describe.skipIf(!browser)('checkMobile: what must be refused', () => {
       '<div style="height:900px">Big hero</div><ul data-items><li data-key="a">First</li></ul>',
     );
     const f = await checkMobile(dist, browser!);
-    expect(f).toEqual([
-      expect.objectContaining({ page: '/', reason: expect.stringMatching(/first listing/) }),
-    ]);
+    expect(f).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          page: '/',
+          width: 360,
+          reason: expect.stringMatching(/first listing/),
+        }),
+      ]),
+    );
   }, 60_000);
 
   it('measures the first listing before opening the folded filters', async () => {
@@ -132,4 +139,96 @@ describe('checkMobile: cleanup after the browser', () => {
     await stopBrowser(proc);
     expect(proc.exitCode !== null || proc.signalCode !== null).toBe(true);
   });
+});
+
+// GR-017: the same pages at tablet and desktop widths, and the broadsheet layout rules.
+const reasonsAt = (f: { width: number; reason: string }[], width: number) =>
+  f
+    .filter((x) => x.width === width)
+    .map((x) => x.reason)
+    .join(' | ');
+
+describe.skipIf(!browser)('wider widths: what must be refused (GR-017)', () => {
+  it('checks 360, 768, 1024 and 1280 px, and names the width that fails', async () => {
+    page(
+      'index.html',
+      '<style>@media (min-width: 1000px) and (max-width: 1100px) { .w { width: 1200px } }</style><div class="w">only wide at 1024</div>',
+    );
+    const f = await checkMobile(dist, browser!);
+    expect(f).toEqual([
+      expect.objectContaining({
+        page: '/',
+        width: 1024,
+        reason: expect.stringMatching(/sideways/),
+      }),
+    ]);
+  }, 90_000);
+
+  it('fails a ledger title column under 480 px at 1280 px', async () => {
+    page(
+      'index.html',
+      '<main id="main"><div data-items><div data-key="a"><h3 class="row__title" style="width:300px">Title</h3></div></div></main>',
+    );
+    const f = await checkMobile(dist, browser!);
+    expect(reasonsAt(f, 1280)).toMatch(/title column 300px/);
+    expect(reasonsAt(f, 1024)).toBe('');
+  }, 90_000);
+
+  it('fails listings laid out side by side (a card grid)', async () => {
+    page(
+      'index.html',
+      '<div data-items style="display:grid;grid-template-columns:1fr 1fr"><div data-key="a">A</div><div data-key="b">B</div></div>',
+    );
+    expect(reasonsAt(await checkMobile(dist, browser!), 1280)).toMatch(/side by side/);
+  }, 90_000);
+
+  it('fails a list page that shows a rail below 960 px', async () => {
+    page(
+      'index.html',
+      '<div data-items><p data-key="a">A</p></div><div data-rail><p class="safety">Never pay to apply.</p></div>',
+    );
+    const f = await checkMobile(dist, browser!);
+    expect(reasonsAt(f, 360)).toMatch(/rail below 960px/);
+    expect(reasonsAt(f, 768)).toMatch(/rail below 960px/);
+  }, 90_000);
+
+  it('fails a notice below the list at 1024 px', async () => {
+    page(
+      'index.html',
+      '<style>@media (max-width: 959px) { [data-rail] { display: none } }</style><div data-items><p data-key="a">A</p></div><div data-rail><p class="safety">Never pay to apply.</p></div>',
+    );
+    expect(reasonsAt(await checkMobile(dist, browser!), 1024)).toMatch(/notice is not above/);
+  }, 90_000);
+
+  it('fails a centred wordmark from 960 px', async () => {
+    page(
+      'index.html',
+      '<header style="text-align:center"><a class="wordmark" href="/">Graduate Radar</a></header><main id="main"><p>Body</p></main>',
+    );
+    const f = await checkMobile(dist, browser!);
+    expect(reasonsAt(f, 1280)).toMatch(/wordmark/);
+    expect(reasonsAt(f, 768)).toBe('');
+  }, 90_000);
+
+  it('fails a detail rail that scrolls away with the article', async () => {
+    page(
+      'index.html',
+      '<main id="main"><article data-detail style="display:grid;grid-template-columns:1fr 200px"><div style="height:3000px">Long article</div><div data-rail style="height:200px">Rail</div></article></main>',
+    );
+    expect(reasonsAt(await checkMobile(dist, browser!), 1280)).toMatch(/rail scrolls out of view/);
+  }, 90_000);
+});
+
+describe.skipIf(!browser)('wider widths: happy path (GR-017)', () => {
+  it('passes a left-aligned masthead, full-width rows and a sticky detail rail', async () => {
+    page(
+      'index.html',
+      '<header><a class="wordmark" href="/" style="display:inline-flex;min-height:44px">Graduate Radar</a></header><main id="main"><div data-items><div data-key="a"><h3 class="row__title">Title</h3></div><div data-key="b"><h3 class="row__title">Second</h3></div></div></main>',
+    );
+    page(
+      'jobs/x.html',
+      '<main id="main"><article data-detail style="display:grid;grid-template-columns:1fr 200px"><div style="height:3000px">Long article</div><div data-rail style="height:200px;position:sticky;top:0;align-self:start">Rail</div></article></main>',
+    );
+    expect(await checkMobile(dist, browser!)).toEqual([]);
+  }, 90_000);
 });

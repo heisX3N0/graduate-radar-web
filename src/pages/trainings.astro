@@ -45,6 +45,7 @@ const sortOptions = [
   title="Free tech trainings and scholarships"
   description="Free and low-cost tech trainings and scholarships for Nigerian graduates: software, data, design, product, cloud, cybersecurity and AI."
   current="trainings"
+  tally={{ count: open.length, noun: 'training', source: 'provider' }}
 >
   <ListHead
     heading="Free tech trainings"
@@ -53,55 +54,41 @@ const sortOptions = [
     source="provider"
     updated={dataDay}
   />
-  <div class="page">
-    <p class="page__other">
+  <ListLayout
+    count={open.length}
+    noun="training"
+    clearHref="/trainings"
+    dataJson={dataJson}
+    filtersLabel="Search and filter trainings"
+  >
+    <Fragment slot="other">
       Looking for jobs? <a href="/">See graduate jobs</a>
-    </p>
-    <ListLayout
-      count={open.length}
-      noun="training"
-      clearHref="/trainings"
-      dataJson={dataJson}
-      filtersLabel="Search and filter trainings"
-    >
-      <Fragment slot="search">
-        <SearchInput id="q" label="Search trainings" placeholder="Course, provider or skill" />
-      </Fragment>
-      <Fragment slot="filters">
-        <Select id="track" label="Track" options={all('All tracks', tracks)} />
-        <Select id="cost" label="Cost" options={all('Any cost', COSTS)} />
-        <Select id="format" label="Format" options={all('Any format', FORMATS)} />
-        <div class="page__chips">
-          <FilterChip label="Job placement" pressed={false} name="place" />
-        </div>
-        <Select id="sort" label="Sort" options={sortOptions} />
-      </Fragment>
-      {sections.map((s) => (
-        <ListSection id={s.id} label={s.label} urgent={s.urgent} count={s.keys.length}>
-          {s.keys.map((key) => (
-            <li data-key={key}>
-              <ListingRow kind="training" listing={byKey.get(key)!} />
-            </li>
-          ))}
-        </ListSection>
-      ))}
-    </ListLayout>
-  </div>
+    </Fragment>
+    <Fragment slot="search">
+      <SearchInput id="q" label="Search trainings" placeholder="Course, provider or skill" />
+    </Fragment>
+    <Fragment slot="filters">
+      <Select id="track" label="Track" options={all('All tracks', tracks)} />
+      <Select id="cost" label="Cost" options={all('Any cost', COSTS)} />
+      <Select id="format" label="Format" options={all('Any format', FORMATS)} />
+      <div class="page__chips">
+        <FilterChip label="Job placement" pressed={false} name="place" />
+      </div>
+      <Select id="sort" label="Sort" options={sortOptions} />
+    </Fragment>
+    {sections.map((s) => (
+      <ListSection id={s.id} label={s.label} urgent={s.urgent} count={s.keys.length}>
+        {s.keys.map((key) => (
+          <li data-key={key}>
+            <ListingRow kind="training" listing={byKey.get(key)!} />
+          </li>
+        ))}
+      </ListSection>
+    ))}
+  </ListLayout>
 </Base>
 
 <style>
-  .page {
-    display: grid;
-    gap: var(--space-4);
-  }
-  .page__other a {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--tap-min);
-  }
-  .page__other {
-    font-size: var(--font-size-sm);
-  }
   .page__chips {
     display: flex;
     flex-wrap: wrap;
