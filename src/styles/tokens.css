@@ -81,6 +81,7 @@
   --container: 60rem;
   --sidebar: 16rem;
   --label-width: 7rem; /* label column in definition lists */
+  --date-column: 3.25rem; /* deadline column in list rows */
 
   /* Layers */
   --z-base: 0;

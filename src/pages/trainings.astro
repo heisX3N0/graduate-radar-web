@@ -1,18 +1,19 @@
 ---
 // Trainings home (spec 6.1, 6.3): same pattern as jobs, with track, cost, format and
 // job placement filters.
-import ClosingSoon from '../components/ClosingSoon.astro';
 import FilterChip from '../components/FilterChip.astro';
-import Hero from '../components/Hero.astro';
-import ListingCard from '../components/ListingCard.astro';
+import ListHead from '../components/ListHead.astro';
+import ListingRow from '../components/ListingRow.astro';
+import ListSection from '../components/ListSection.astro';
 import ListLayout from '../components/ListLayout.astro';
 import SearchInput from '../components/SearchInput.astro';
 import Select from '../components/Select.astro';
 import { getListings } from '../data/feed.ts';
 import Base from '../layouts/Base.astro';
-import { effectiveStatus, lagosToday } from '../lib/dates.ts';
+import { lagosToday } from '../lib/dates.ts';
 import { COSTS, FORMATS, openOnly, sortListings } from '../lib/filters.ts';
 import { distinct, jsonForScript, toTrainingItem } from '../lib/list-data.ts';
+import { groupTrainings } from '../lib/sections.ts';
 
 const { trainings, generatedAt } = await getListings();
 const today = lagosToday();
@@ -20,16 +21,8 @@ const parsed = new Date(generatedAt);
 const dataDay = Number.isNaN(parsed.getTime()) ? '' : lagosToday(parsed);
 
 const open = sortListings(openOnly(trainings, today), 'soon');
-const closingSoon = open
-  .filter((t) => effectiveStatus(t, today) === 'Closing soon' && /^\d/.test(t.deadline))
-  .slice(0, 5)
-  .map((t) => ({
-    key: t.key,
-    title: t.title,
-    by: t.provider,
-    href: `/trainings/${t.slug}`,
-    deadline: t.deadline,
-  }));
+const byKey = new Map(open.map((l) => [l.key, l]));
+const sections = groupTrainings(open, today);
 
 const tracks = distinct(trainings.map((t) => t.track));
 const dataJson = jsonForScript({
@@ -53,14 +46,20 @@ const sortOptions = [
   description="Free and low-cost tech trainings and scholarships for Nigerian graduates: software, data, design, product, cloud, cybersecurity and AI."
   current="trainings"
 >
-  <Hero updated={dataDay} heading="Free tech trainings and scholarships" />
+  <ListHead
+    heading="Free tech trainings"
+    count={open.length}
+    noun="training"
+    source="provider"
+    updated={dataDay}
+  />
   <div class="page">
-    <ClosingSoon items={closingSoon} />
     <p class="page__other">
       Looking for jobs? <a href="/">See graduate jobs</a>
     </p>
     <ListLayout
       count={open.length}
+      noun="training"
       clearHref="/trainings"
       dataJson={dataJson}
       filtersLabel="Search and filter trainings"
@@ -74,14 +73,17 @@ const sortOptions = [
         <Select id="format" label="Format" options={all('Any format', FORMATS)} />
         <div class="page__chips">
           <FilterChip label="Job placement" pressed={false} name="place" />
-          <FilterChip label="Closing soon" pressed={false} name="soon" />
         </div>
         <Select id="sort" label="Sort" options={sortOptions} />
       </Fragment>
-      {open.map((t) => (
-        <li data-key={t.key}>
-          <ListingCard kind="training" listing={t} today={today} />
-        </li>
+      {sections.map((s) => (
+        <ListSection id={s.id} label={s.label} urgent={s.urgent} count={s.keys.length}>
+          {s.keys.map((key) => (
+            <li data-key={key}>
+              <ListingRow kind="training" listing={byKey.get(key)!} />
+            </li>
+          ))}
+        </ListSection>
       ))}
     </ListLayout>
   </div>

@@ -5,7 +5,7 @@ interface Props {
   noun?: string;
 }
 const { count, noun = 'opening' } = Astro.props;
-const text = count === 0 ? 'No openings match' : `${count} ${count === 1 ? noun : `${noun}s`}`;
+const text = count === 0 ? `No ${noun}s match` : `${count} ${count === 1 ? noun : `${noun}s`}`;
 ---
 
 <p class="count" aria-live="polite">

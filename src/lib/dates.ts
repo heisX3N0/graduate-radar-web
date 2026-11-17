@@ -72,7 +72,20 @@ export function isNewThisWeek(firstSeen: string, today: string): boolean {
   return age >= 0 && age < NEW_DAYS;
 }
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+export const MONTHS = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
 
 /** "27 Nov" for a real `yyyy-MM-dd` day; '' for anything else. */
 export function shortDate(day: string): string {

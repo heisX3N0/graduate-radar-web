@@ -1,0 +1,150 @@
+---
+// One listing in a list, as a ledger row (GR-015): the deadline in a fixed column, then
+// the title, organisation and place, and eligibility. No badges, stamp or boxed deadline:
+// the section header says how soon it closes, and "Checked" is said once at the top of
+// the page. The whole row links to the detail page; there is no Apply button here
+// (owner decision: people read eligibility first).
+import type { JobListing, TrainingListing } from '../data/feed.ts';
+import { isRealDay, MONTHS } from '../lib/dates.ts';
+import { eligibilitySummary, NO_REQUIREMENTS as NONE } from '../lib/listing-text.ts';
+
+type Props = { kind: 'job'; listing: JobListing } | { kind: 'training'; listing: TrainingListing };
+
+const props = Astro.props;
+const { listing } = props;
+const href = `/${props.kind === 'job' ? 'jobs' : 'trainings'}/${listing.slug}`;
+
+const dated = isRealDay(listing.deadline);
+const [, month, day] = dated ? listing.deadline.split('-') : [];
+const word = listing.deadline === 'Rolling' ? 'Rolling' : 'No date';
+
+let by: string;
+let summary: string;
+if (props.kind === 'job') {
+  const j = props.listing;
+  const place = [j.location];
+  if (j.remote && !/remote/i.test(j.location)) place.push('Remote');
+  by = [j.organisation, ...place].filter(Boolean).join(' · ');
+  summary = eligibilitySummary(j);
+} else {
+  const t = props.listing;
+  by = t.provider;
+  // "Not stated" parts are left out, so a row never reads "Not stated · Not stated".
+  const stated = (s: string) => s.trim() !== '' && !/^not stated$/i.test(s.trim());
+  summary = [t.format, t.duration, t.eligibility].filter(stated).join(' · ') || NONE;
+}
+---
+
+<article class="row">
+  <h3 class="row__title">
+    <a class="row__link" href={href}>
+      {listing.title}
+    </a>
+  </h3>
+  <p class="row__by">{by}</p>
+  <p class:list={['row__elig', { 'row__elig--none': summary === NONE }]}>{summary}</p>
+  <p class="row__date">
+    {dated ? (
+      <>
+        <span class="visually-hidden">Closes</span>
+        <span class="row__day">{Number(day)}</span>
+        <span class="row__month">{MONTHS[Number(month) - 1]}</span>
+      </>
+    ) : (
+      <span class="row__word">{word}</span>
+    )}
+  </p>
+</article>
+
+<style>
+  .row {
+    position: relative;
+    /* Keep a focused row clear of the sticky section header above it. */
+    scroll-margin-top: var(--space-12);
+    display: grid;
+    grid-template-columns: var(--date-column) minmax(0, 1fr);
+    grid-template-areas:
+      'date title'
+      'date by'
+      'date elig';
+    column-gap: var(--space-3);
+    row-gap: var(--space-1);
+    padding-block: var(--space-3);
+    border-bottom: var(--border-thin) solid var(--color-rule);
+  }
+  .row__title {
+    grid-area: title;
+    font-family: var(--font-display);
+    font-size: var(--font-size-md);
+    line-height: var(--line-snug);
+  }
+  .row__link {
+    color: var(--color-ink);
+    text-decoration: none;
+  }
+  /* The whole row is the link's tap area; the title stays the link's name. */
+  .row__link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: var(--z-raised);
+  }
+  .row__link:hover {
+    text-decoration: underline;
+  }
+  /* Where :has() works, ring the whole row instead of the title link. Older browsers
+     (Chrome and Android WebView before 105) keep the link's own ring. */
+  @supports selector(:has(*)) {
+    .row__link:focus-visible {
+      outline: none;
+    }
+    .row:has(.row__link:focus-visible) {
+      outline: var(--focus-ring-width) solid var(--focus-ring-color);
+      outline-offset: calc(-1 * var(--focus-ring-width));
+    }
+  }
+  .row__by {
+    grid-area: by;
+    font-size: var(--font-size-sm);
+    color: var(--color-ink-muted);
+  }
+  .row__elig {
+    grid-area: elig;
+    font-size: var(--font-size-sm);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .row__elig--none {
+    font-style: italic;
+    color: var(--color-ink-muted);
+  }
+  .row__date {
+    grid-area: date;
+    display: grid;
+    align-content: start;
+    font-variant-numeric: tabular-nums;
+  }
+  .row__day {
+    font-family: var(--font-display);
+    font-size: var(--font-size-xl);
+    font-weight: var(--weight-bold);
+    line-height: var(--line-tight);
+  }
+  .row__month,
+  .row__word {
+    font-size: var(--font-size-xs);
+    font-weight: var(--weight-bold);
+  }
+  .row__month {
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+  }
+  /* "Rolling" and "No date" in plain case fit the column; never break inside a word. */
+  .row__word {
+    padding-top: var(--space-1);
+    line-height: var(--line-snug);
+    overflow-wrap: normal;
+  }
+</style>

@@ -25,7 +25,7 @@ A spreadsheet is a poor public face: text gets cut off, nothing can be sorted or
 **Goals (v1)**
 
 1. A fast, mobile-first website where a Nigerian graduate can find an opening they qualify for in under a minute.
-2. Search plus filters (type, field, location, remote, closing soon, minimum degree class).
+2. Search plus filters (type, field, location, remote, minimum degree class), with listings grouped by how soon they close.
 3. One page per listing, so Google can index it and WhatsApp shows a proper preview card when it's shared.
 4. Updates itself from the sheet with no manual work.
 5. Costs nothing to run (a domain is the only optional cost), and stays inside free-plan limits (see `docs/infra-capacity.md`).
@@ -175,8 +175,8 @@ Note: the sheet is on a consumer Google account, not Workspace, so no admin can 
 
 | Route | Purpose | Key content |
 |---|---|---|
-| `/` | Jobs home | Short hero (one line: what this is, and the last updated date; no update schedule, owner decision 15 Nov 2026). "Closing this week" strip. Search + filters. Job cards. Link to trainings. |
-| `/trainings` | Trainings home | Same pattern for trainings. Filters: track, cost, format, job placement, closing soon. |
+| `/` | Jobs home | A short section heading ("Graduate jobs") and one line: the count, "each checked on the employer's own page", and the data's last updated date (no update schedule, owner decision 15 Nov 2026). Link to trainings. Search and the Filters toggle on one row. Job rows in deadline sections (6.2, 6.3). No "Closing this week" strip: the first two sections show the same thing (GR-015). |
+| `/trainings` | Trainings home | Same pattern for trainings ("Free tech trainings", "each checked on the provider's own page"), with rows in track sections. Filters: track, cost, format, job placement. |
 | `/jobs/[slug]` | Job detail | Title, organisation, type, location/remote, deadline (with "X days left"), eligibility broken into a checklist (degree class, max age, NYSC, other text), notes, **Apply** button, "Verified on" date, "Never pay to apply" note, Share to WhatsApp button, back link. Closed listings show a clear "This opening has closed" banner, no Apply button, and links to similar open listings. |
 | `/trainings/[slug]` | Training detail | Same pattern: provider, track, cost, format, duration, job placement, eligibility, deadline, Apply. |
 | `/about` | Trust page | Who runs it, how listings are found and checked, "we don't hire or process applications". |
@@ -186,16 +186,18 @@ Note: the sheet is on a consumer Google account, not Workspace, so no admin can 
 
 **Slugs:** derived from `key`: lowercase, replace `|` and non-alphanumerics with `-`, collapse repeats, trim. Example: `deloitte-nigeria-deloitte-academy-cyber-security-programme-2026`. Slugs must be stable across rebuilds (same key, same slug). If two keys collide after slugifying, **every** colliding listing gets `-` plus the first 6 hex characters of a hash of its full key (for example SHA-1). The suffix depends only on the key, so reordering, adding or removing rows never moves a listing to another URL. Do not use a counter such as `-2`: it depends on row order.
 
-### 6.2 Listing card
+### 6.2 List row
 
-Shows, in this order: status badge (Closing soon / Remote / New this week), title, organisation, type · field, location, deadline chip ("Closes 27 Nov · 12 days left", "Rolling", or "Deadline not stated"), one-line eligibility summary (min class · max age · NYSC). Whole card links to the detail page. No Apply button on cards: Apply is on the detail page only, so people read eligibility first (owner decision, 15 Nov 2026).
+A ledger row (GR-015, owner decision 17 Nov 2026): a fixed date column (day and month, or "Rolling" or "No date"), then the title (the row's link), then organisation and place on one line ("Remote" added when the location does not say it), then the eligibility summary (jobs: min class · max age · NYSC) or format · duration · eligibility (trainings), at most 2 lines. "Requirements not stated" in muted italic. Rows are separated by hairline rules: no boxes, no badges, no Checked stamp, no boxed deadline ("Checked" is said once at the top of the page; each date stays on the detail page). The whole row links to the detail page. No Apply button in lists: Apply is on the detail page only, so people read eligibility first (owner decision, 15 Nov 2026). Similar openings on detail pages still use the listing card until GR-016.
 
 ### 6.3 Search and filters
 
 - **Search:** fuzzy over title, organisation/provider, field/track, location, eligibility text (Fuse.js, threshold ~0.35).
-- **Jobs filters:** Type, Field, Location (derived buckets: Lagos, Abuja, Port Harcourt, Other Nigeria, Remote), Remote only, Closing soon (≤7 days), Min class I have (2:1 / 2:2 / Any: shows listings whose requirement I meet, treating "Not stated" as meets).
-- **Trainings filters:** Track, Cost (Free / Free + stipend / Scholarship / Low-cost), Format, Job placement, Closing soon.
+- **Jobs filters:** Type, Field, Location (derived buckets: Lagos, Abuja, Port Harcourt, Other Nigeria, Remote), Remote only, Min class I have (2:1 / 2:2 / Any: shows listings whose requirement I meet, treating "Not stated" as meets).
+- **Trainings filters:** Track, Cost (Free / Free + stipend / Scholarship / Low-cost), Format, Job placement. There is no "Closing soon" filter (dropped in GR-015: the first two job sections show the same thing); an old link with `soon=1` loads the full list.
 - **Sort:** Closing soonest (default), Newest.
+- **Sections (closing soonest):** jobs in "Closes today", "Next 7 days", "Later", "Rolling or no date"; only a real date can put a listing in the first two, and only those two headers are red. Trainings by track (spec 5 values; anything else is "Other"), largest first, "Other" last, closing soonest inside each. Each header shows its count and stays at the top while its rows scroll; an empty section is hidden. The browser regroups after every filter, search or sort change and on load with today in Africa/Lagos, so a listing that closes today moves to "Closes today" between builds.
+- **Newest:** one flat list of the same rows, no section headers.
 - Filter state goes in the URL query string so filtered views can be shared on WhatsApp.
 - Filters must work without layout jumps; show a result count; clear empty state with "Clear filters".
 - Without JavaScript, the full list still renders (progressive enhancement).
@@ -243,7 +245,7 @@ Build it first (day 2 morning), then pages from its components only.
 
 **Components (`src/components/`)**
 
-Header, Footer, Hero, SearchInput, FilterBar (chips on mobile, sidebar on desktop), FilterChip, Select, ResultCount, ListingCard (job and training variants), StatusBadge, DeadlineChip, EligibilityChecklist, ApplyButton (handles `mailto:`), ShareButton, SafetyNote, EmptyState, Banner (info/warning/closed), Breadcrumb, SkeletonCard (if any client loading is used).
+Header, Footer, ListHead (list page heading and one-line lede), SearchInput, FilterBar (search and the Filters toggle on one row, filters below), FilterChip, Select, ResultCount, ListingRow and ListSection (list pages), ListingCard (similar openings on detail pages), StatusBadge, DeadlineChip, EligibilityChecklist, ApplyButton (handles `mailto:`), ShareButton, SafetyNote, EmptyState, Banner (info/warning/closed), Breadcrumb, SkeletonCard (if any client loading is used).
 
 Document every component and state on `/design`. Name things so they can be extracted into a shared package later for other Version Phi or community products.
 

@@ -265,9 +265,14 @@ describe('filters combine, sort, and round-trip through the URL', () => {
     expect(keys(filterJobs(items, f, TODAY)).sort()).toEqual(['a', 'd']);
   });
 
-  it('closing soon keeps only deadlines within 7 days', () => {
+  it('an old shared link with "soon=1" shows the full list and drops the parameter (GR-015)', () => {
     const f = parseJobFilters(params('soon=1'), OPTIONS);
-    expect(keys(filterJobs(items, f, TODAY))).toEqual(['b', 'a']);
+    expect(f).toEqual(parseJobFilters(params(''), OPTIONS));
+    expect(keys(filterJobs(items, f, TODAY))).toEqual(['b', 'a', 'c', 'd']);
+    expect(jobFiltersToQuery(f)).toBe('');
+    const t = parseTrainingFilters(params('soon=1&track=AI'), { tracks: ['AI'] });
+    expect(t).not.toHaveProperty('soon');
+    expect(trainingFiltersToQuery(t)).toBe('?track=AI');
   });
 
   it('sorts closing soonest first, then undated by newest; or newest first', () => {
@@ -278,7 +283,7 @@ describe('filters combine, sort, and round-trip through the URL', () => {
 
   it('a copied URL reproduces the view', () => {
     const f = parseJobFilters(
-      params('q=role&type=Internship&loc=Lagos&remote=1&soon=1&class=21&sort=new'),
+      params('q=role&type=Internship&loc=Lagos&remote=1&class=21&sort=new'),
       OPTIONS,
     );
     const again = parseJobFilters(params(jobFiltersToQuery(f)), OPTIONS);
@@ -287,7 +292,7 @@ describe('filters combine, sort, and round-trip through the URL', () => {
 
   it('training filters round-trip too', () => {
     const t = parseTrainingFilters(
-      params('q=ai&track=AI&cost=Free&format=Online&place=1&soon=1&sort=new'),
+      params('q=ai&track=AI&cost=Free&format=Online&place=1&sort=new'),
       { tracks: ['AI'] },
     );
     expect(parseTrainingFilters(params(trainingFiltersToQuery(t)), { tracks: ['AI'] })).toEqual(t);
@@ -298,7 +303,7 @@ describe('filters combine, sort, and round-trip through the URL', () => {
       job(`k${i}`, { title: `Graduate trainee ${i} cyber`, organisation: `Company ${i % 40}` }),
     );
     const s = makeJobSearch(many);
-    const f = { ...parseJobFilters(params('type=Graduate%20Trainee&soon=0'), OPTIONS), q: 'cyber' };
+    const f = { ...parseJobFilters(params('type=Graduate%20Trainee'), OPTIONS), q: 'cyber' };
     const start = performance.now();
     for (let i = 0; i < 20; i++) filterJobs(many, f, TODAY, s);
     const perRun = (performance.now() - start) / 20;

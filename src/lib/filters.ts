@@ -103,7 +103,6 @@ export interface JobFilters {
   field: string;
   loc: '' | LocationBucket;
   remote: boolean;
-  soon: boolean;
   cls: ClassChoice;
   sort: Sort;
 }
@@ -114,7 +113,6 @@ export interface TrainingFilters {
   cost: '' | CostBucket;
   format: '' | FormatBucket;
   placement: boolean;
-  soon: boolean;
   sort: Sort;
 }
 
@@ -143,7 +141,6 @@ export function parseJobFilters(
     field: oneOf(params.get('field'), options.fields),
     loc: oneOf(params.get('loc'), LOCATIONS),
     remote: flag(params, 'remote'),
-    soon: flag(params, 'soon'),
     cls: CLASS_IN_URL[params.get('class') ?? ''] ?? '',
     sort: sortOf(params),
   };
@@ -159,7 +156,6 @@ export function parseTrainingFilters(
     cost: oneOf(params.get('cost'), COSTS),
     format: oneOf(params.get('format'), FORMATS),
     placement: flag(params, 'place'),
-    soon: flag(params, 'soon'),
     sort: sortOf(params),
   };
 }
@@ -179,7 +175,6 @@ export function jobFiltersToQuery(f: JobFilters): string {
     ['field', f.field],
     ['loc', f.loc],
     ['remote', f.remote && '1'],
-    ['soon', f.soon && '1'],
     ['class', f.cls && CLASS_TO_URL[f.cls]!],
     ['sort', f.sort === 'new' && 'new'],
   ]);
@@ -192,7 +187,6 @@ export function trainingFiltersToQuery(f: TrainingFilters): string {
     ['cost', f.cost],
     ['format', f.format],
     ['place', f.placement && '1'],
-    ['soon', f.soon && '1'],
     ['sort', f.sort === 'new' && 'new'],
   ]);
 }
@@ -254,7 +248,6 @@ export function filterJobs(
       (!f.field || j.field === f.field) &&
       (!f.loc || locationBuckets(j.location, j.remote).includes(f.loc)) &&
       (!f.remote || j.remote) &&
-      (!f.soon || effectiveStatus(j, today) === 'Closing soon') &&
       meetsClass(j.minClass, f.cls),
   );
   return sortListings(kept, f.sort);
@@ -273,8 +266,7 @@ export function filterTrainings(
       (!f.track || t.track === f.track) &&
       (!f.cost || costBucket(t.cost) === f.cost) &&
       (!f.format || formatBucket(t.format) === f.format) &&
-      (!f.placement || t.jobPlacement === 'Yes') &&
-      (!f.soon || effectiveStatus(t, today) === 'Closing soon'),
+      (!f.placement || t.jobPlacement === 'Yes'),
   );
   return sortListings(kept, f.sort);
 }

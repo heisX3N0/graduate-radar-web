@@ -1,17 +1,19 @@
 ---
-// Jobs home (spec 6.1, 6.3): hero, closing this week, filters, and every open job.
-import ClosingSoon from '../components/ClosingSoon.astro';
+// Jobs home (spec 6.1, 6.3): heading, search and filters, and every open job in
+// deadline sections (GR-015).
 import FilterChip from '../components/FilterChip.astro';
-import Hero from '../components/Hero.astro';
-import ListingCard from '../components/ListingCard.astro';
+import ListHead from '../components/ListHead.astro';
+import ListingRow from '../components/ListingRow.astro';
+import ListSection from '../components/ListSection.astro';
 import ListLayout from '../components/ListLayout.astro';
 import SearchInput from '../components/SearchInput.astro';
 import Select from '../components/Select.astro';
 import { getListings } from '../data/feed.ts';
 import Base from '../layouts/Base.astro';
-import { effectiveStatus, lagosToday } from '../lib/dates.ts';
+import { lagosToday } from '../lib/dates.ts';
 import { LOCATIONS, openOnly, sortListings } from '../lib/filters.ts';
 import { distinct, jsonForScript, toJobItem } from '../lib/list-data.ts';
+import { groupJobs } from '../lib/sections.ts';
 
 const { jobs, generatedAt } = await getListings();
 const today = lagosToday();
@@ -19,16 +21,8 @@ const parsed = new Date(generatedAt);
 const dataDay = Number.isNaN(parsed.getTime()) ? '' : lagosToday(parsed);
 
 const open = sortListings(openOnly(jobs, today), 'soon');
-const closingSoon = open
-  .filter((j) => effectiveStatus(j, today) === 'Closing soon' && /^\d/.test(j.deadline))
-  .slice(0, 5)
-  .map((j) => ({
-    key: j.key,
-    title: j.title,
-    by: j.organisation,
-    href: `/jobs/${j.slug}`,
-    deadline: j.deadline,
-  }));
+const byKey = new Map(open.map((l) => [l.key, l]));
+const sections = groupJobs(open, today);
 
 const types = distinct(jobs.map((j) => j.type));
 const fields = distinct(jobs.map((j) => j.field));
@@ -59,14 +53,20 @@ const sortOptions = [
   description="A free, checked list of graduate trainee programmes, internships, entry-level and NYSC roles for Nigerian graduates."
   current="jobs"
 >
-  <Hero updated={dataDay} heading="Graduate jobs, checked for you" />
+  <ListHead
+    heading="Graduate jobs"
+    count={open.length}
+    noun="opening"
+    source="employer"
+    updated={dataDay}
+  />
   <div class="page">
-    <ClosingSoon items={closingSoon} />
     <p class="page__other">
       Looking for free tech courses? <a href="/trainings">See trainings and scholarships</a>
     </p>
     <ListLayout
       count={open.length}
+      noun="opening"
       clearHref="/"
       dataJson={dataJson}
       filtersLabel="Search and filter jobs"
@@ -81,14 +81,17 @@ const sortOptions = [
         <Select id="class" label="Degree class I have" options={classOptions} />
         <div class="page__chips">
           <FilterChip label="Remote only" pressed={false} name="remote" />
-          <FilterChip label="Closing soon" pressed={false} name="soon" />
         </div>
         <Select id="sort" label="Sort" options={sortOptions} />
       </Fragment>
-      {open.map((j) => (
-        <li data-key={j.key}>
-          <ListingCard kind="job" listing={j} today={today} />
-        </li>
+      {sections.map((s) => (
+        <ListSection id={s.id} label={s.label} urgent={s.urgent} count={s.keys.length}>
+          {s.keys.map((key) => (
+            <li data-key={key}>
+              <ListingRow kind="job" listing={byKey.get(key)!} />
+            </li>
+          ))}
+        </ListSection>
       ))}
     </ListLayout>
   </div>

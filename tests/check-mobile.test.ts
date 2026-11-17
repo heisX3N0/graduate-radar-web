@@ -34,6 +34,25 @@ describe.skipIf(!browser)('checkMobile: what must be refused', () => {
     ]);
   }, 60_000);
 
+  it('fails a list page whose first listing starts below the first screen (GR-015)', async () => {
+    page(
+      'index.html',
+      '<div style="height:900px">Big hero</div><ul data-items><li data-key="a">First</li></ul>',
+    );
+    const f = await checkMobile(dist, browser!);
+    expect(f).toEqual([
+      expect.objectContaining({ page: '/', reason: expect.stringMatching(/first listing/) }),
+    ]);
+  }, 60_000);
+
+  it('measures the first listing before opening the folded filters', async () => {
+    page(
+      'index.html',
+      '<details><summary style="display:block;min-height:44px">Filters</summary><div style="height:900px">panel</div></details><ul data-items><li data-key="a">First</li></ul>',
+    );
+    expect(await checkMobile(dist, browser!)).toEqual([]);
+  }, 60_000);
+
   it('fails a button or link block smaller than 44 px', async () => {
     page(
       'index.html',
