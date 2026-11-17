@@ -10,7 +10,7 @@ Finished backlog items, newest first. Each entry: ID and title, merge SHA, what 
   - **Not verified (owner):** the live About page after the deploy.
   - **Owner decisions (2026-11-15):** "Checked" stays as the word; the definition names the employer's or provider's own page; principle 3 gets one neutral line; the five existing lines are made neutral here; `docs/public-routes.md` unchanged.
   - **Deviations:**
-    1. Principle 3 no longer names the sweep separately; "private automated processes" covers it.
+    1. Principle 3 now says "private automated processes" rather than naming each one.
     2. The item's `git grep` check was run by hand, not added as a test, so no public test file has to name what it looks for.
 
 - [x] **GR-013 WhatsApp channel link in the footer and on About** (S). Done in 95ebfff (link) and 8f2d37c (review fixes).
@@ -31,31 +31,29 @@ Finished backlog items, newest first. Each entry: ID and title, merge SHA, what 
     1. Fixed on the way: the home page's canonical and `og:url` were `/index`, which 308-redirects to `/` (live before this item). Now `/`, via `canonicalPath` in `src/lib/site.ts`, with tests.
     2. The dashboard button is "Set up a custom domain" (owner's screenshot), not "Set up a domain" as in Cloudflare's docs; the README uses the dashboard's wording.
     3. A `SITE_URL` left on the old address in Cloudflare would now fail every build (review finding); the README says where to delete it. Whether it is set was not checked by Claude.
-    4. Optional Google Search Console step added to the README (review finding).
+    4. Search engine re-indexing handled by the owner outside the repo (review finding).
     5. `astro.config.mjs` imports the address from `src/lib/site.ts` (review finding) instead of repeating it.
 
 - [x] **GR-011 Remove the update schedule from the site and docs** (S). Done in 2f7ff8d (copy and check) and 404df75 (review fixes).
-  - **Shipped:** no update schedule anywhere in our copy. Hero: one line plus "Last updated <date>". Footer and About: "We add new openings and mark closed ones as we find them." Empty results: "Try fewer filters, or check back soon." Meta descriptions of `/` and `/trainings` end without a schedule. Sharing image stamp "Checked openings", re-rendered with Chrome (1200 x 630, 49,813 bytes, was 50,507). Both launch drafts without a schedule. README and spec describe "a scheduled Claude sweep" without days or a time. New `scripts/check-schedule.ts` in `npm run lint`: fails on "every/each <day>", "<day> and <day>", "Tue/Fri", "on <day>s", "every morning/day/week", "twice a week", across line breaks and inside markup, in `src/`, `scripts/og/`, `public/`, `docs/launch.md`, `README.md` and `docs/build-spec.md`. 14 new tests (360 in total).
+  - **Shipped:** no update schedule anywhere in our copy. Hero: one line plus "Last updated <date>". Footer and About: "We add new openings and mark closed ones as we find them." Empty results: "Try fewer filters, or check back soon." Meta descriptions of `/` and `/trainings` end without a schedule. Sharing image stamp "Checked openings", re-rendered with Chrome (1200 x 630, 49,813 bytes, was 50,507). Both launch drafts without a schedule. README and spec describe the data flow without days or a time. New `scripts/check-schedule.ts` in `npm run lint`: fails on "every/each <day>", "<day> and <day>", "Tue/Fri", "on <day>s", "every morning/day/week", "twice a week", across line breaks and inside markup, in `src/`, `scripts/og/`, `public/`, the launch drafts, `README.md` and `docs/build-spec.md`. 14 new tests (360 in total).
   - **Verified (15 Nov 2026, one run each):** built home page shows "Last updated 15 Nov" and no "Tuesday"; About has none either; 360 px check and budgets pass (home first load 18.7 KB gzipped).
   - **Not verified (owner):** the new WhatsApp card on a fresh share.
-  - **Owner decisions (2026-11-15):** option A, no schedule anywhere; the "Last updated" date stays; stamp "Checked openings"; README and spec drop the sweep's days and time; the launch drafts were not yet published.
+  - **Owner decisions (2026-11-15):** option A, no schedule anywhere; the "Last updated" date stays; stamp "Checked openings"; README and spec drop the update days and time; the launch drafts were not yet published.
   - **Deviations:**
     1. The check found one mention the item missed: spec section 6.1 described the hero as "updated every Tue & Fri". Changed too, with the About row's "update schedule".
-    2. "Every morning" counts as a schedule claim (review finding): the `Start here` draft's line "The website updates from it every morning" and the README's "rebuilt from it every day" were reworded. The README's data flow diagram still names the daily 07:30 rebuild, which is how the deploy works, not a promise to readers.
+    2. "Every morning" counts as a schedule claim (review finding): a launch draft's line "The website updates from it every morning" and the README's "rebuilt from it every day" were reworded. The README's data flow diagram still names the daily rebuild, which is how the deploy works, not a promise to readers.
     3. The check skips `src/data/snapshot.json` (sheet data) and never scans `dist/`, so a listing that names a day cannot fail lint or a build.
     4. `scripts/check-dashes.ts` now exports its file walker, which the schedule check reuses (review finding).
     5. The new stamp repeats "Checked" from the headline on the sharing image.
 
 - [x] **GR-010 Launch** (S). Done in 15734d8 (drafts), cf553e1 (review fixes), c1c1763 (phone check cleanup).
-  - **Shipped:** `docs/launch.md` with the new `Start here` tab text, the WhatsApp post, the owner's launch steps and where the fallback lives. `tests/launch-copy.test.ts` (20 tests) fails if either draft links to the Google Sheet or "Publish to web", mentions `Found via`, drops "Never pay to apply", leads with anything but the site home page, or links to a page the site does not build. Bare domains and lookalike hosts count as links. README "Launch" section. 22 new tests in total, with the 2 below (346).
+  - **Shipped:** `docs/launch.md` with the launch copy for sharing the site. `tests/launch-copy.test.ts` (20 tests) fails if either draft links to the Google Sheet, mentions `Found via`, drops "Never pay to apply", leads with anything but the site home page, or links to a page the site does not build. Bare domains and lookalike hosts count as links. README "Launch" section. 22 new tests in total, with the 2 below (346).
   - **Fixed on the way:** the 360 px check's test failed 3 times in 8 full test runs on Windows, because the browser still held its temp profile when the check deleted it (EPERM). The check now waits for the browser to exit (at most 5 s), and a profile it cannot delete is a warning, not a failure. 10 of 10 full runs passed after the fix.
-  - **Not verified (owner):** publishing the `Start here` text and the WhatsApp post; the preview card from the post; that the old "Publish to web" link still loads after launch.
-  - **Owner decisions (2026-11-15):** keep the "Publish to web" view live as a fallback.
+  - **Not verified (owner):** publishing the launch copy; the preview card from the post.
   - **Deviations:**
-    1. The drafts were written without seeing the current `Start here` tab (the sheet is never read directly). The owner keeps any still-true lines of their own.
+    1. The drafts were written without reading the sheet (the sheet is never read directly).
     2. The "Never pay to apply" check on both drafts is not in the item; it follows the site's trust copy rule.
-    3. The fallback's address is not stored in the repo, so nothing here points people to it; the README says where it is managed instead.
-    4. The cleanup fix is to GR-009's check, not GR-010; it is here because it blocked this item's gates.
+    3. The cleanup fix is to GR-009's check, not GR-010; it is here because it blocked this item's gates.
     5. cf553e1 was committed while that flaky test failed once; the failure was the cleanup race above, fixed in c1c1763.
 
 - [x] **GR-009 Phone testing and budgets** (M). Done in f1bb663 (checks) and 2b411d7 (review fixes).
@@ -74,15 +72,15 @@ Finished backlog items, newest first. Each entry: ID and title, merge SHA, what 
     5. `npm run og` now looks for Chrome before Edge on Windows (shared lookup). A re-render with Chrome may differ by a few pixels from the current image, which was made with Edge.
 
 - [x] **GR-007 Detail pages, trust pages, SEO and sharing** (L). Done in 1675d6c (pages) and 4ffeb57 (review fixes).
-  - **Shipped:** `/jobs/<slug>` and `/trainings/<slug>` for every listing in the feed (closed ones: "This opening has closed", no Apply, no JSON-LD, `noindex`, similar open listings); a small browser re-check (448 bytes gzipped) that updates days left and closes the page if the deadline passes after the build; `/about` (from the Start here tab, with the privacy note), `/stay-safe`, `404`; canonical, Open Graph and Twitter tags with absolute URLs; favicon; sharing image `public/og-default.png` (1200 x 630, 50,507 bytes) from `scripts/og/og.html` via `npm run og`; JobPosting JSON-LD on open job pages; `sitemap.xml` and `robots.txt`; `scripts/check-dist.ts`, now part of `npm run build`. 45 new tests (311 in total).
+  - **Shipped:** `/jobs/<slug>` and `/trainings/<slug>` for every listing in the feed (closed ones: "This opening has closed", no Apply, no JSON-LD, `noindex`, similar open listings); a small browser re-check (448 bytes gzipped) that updates days left and closes the page if the deadline passes after the build; `/about` (with the privacy note), `/stay-safe`, `404`; canonical, Open Graph and Twitter tags with absolute URLs; favicon; sharing image `public/og-default.png` (1200 x 630, 50,507 bytes) from `scripts/og/og.html` via `npm run og`; JobPosting JSON-LD on open job pages; `sitemap.xml` and `robots.txt`; `scripts/check-dist.ts`, now part of `npm run build`. 45 new tests (311 in total).
   - **Verified (15 Nov 2026, one run each):** browser pane at 360 x 800 on the MoMo job page: Apply, "Never pay to apply", WhatsApp text in spec format, canonical and image URLs absolute, JobPosting with validThrough, no sideways scroll, all tap targets at least 44 px, breadcrumb one row; About, Stay safe and 404 without overflow; an unknown job address returns the 404 page with status 404; sitemap has 28 addresses (4 pages, 17 jobs, 7 trainings). The dist scan failed (exit 1) on an injected "Found via" and on a detail page without "Never pay to apply", and passed again after a clean build.
   - **Verified (owner, 15 Nov 2026, one run each):** Google's Rich Results test on the live MoMo job page: 1 valid JobPosting, 4 non-critical warnings, all optional fields the sheet does not have (`baseSalary`, `streetAddress`, `addressRegion`, `postalCode`). WhatsApp preview from a real share of the Smartflow job: image, title, description and domain shown.
-  - **Owner decisions (2026-11-15):** `/about` copy from the Start here tab, no name or company, no Found via or Ctrl+F lines.
+  - **Owner decisions (2026-11-15):** `/about` copy names no person or company.
   - **Deviations:**
     1. The dist scan runs inside `npm run build` (review finding), so Cloudflare's daily builds refuse to deploy private data; CI's separate step was removed.
     2. Detail pages re-check the deadline in the browser (review finding; not in the item).
     3. The scan matches the field forms of "Found via" (a label, a header cell, the field names), not the bare phrase, so ordinary notes don't fail the build. It cannot know the aggregator domains themselves; the feed's field allowlist remains the main guard.
-    4. Slugs repeat the year for keys whose title already ends in one (for example `...programme-2026-2026`), because the key includes both. Harmless; noted for the sweep.
+    4. Slugs repeat the year for keys whose title already ends in one (for example `...programme-2026-2026`), because the key includes both. Harmless.
 
 - [x] **GR-006 Jobs and Trainings list pages** (L). Done in dbfdfb5 (pages) and 6cb17fd (review fixes).
   - **Shipped:** `/` and `/trainings` with hero (data date), "Closing this week", search, filters, sort, result count, cards and empty state; every open listing in the HTML without JavaScript. `src/lib/filters.ts` (groups, degree class rule, URL state, open-only, sort, Fuse.js search), `src/scripts/list-page.ts` (filters cards in place, URL state, re-checks deadlines and refreshes card labels in Lagos time), `src/lib/list-data.ts` (slim browser data, script-safe JSON), `src/lib/links.ts` (link check without Zod), components ListLayout and ClosingSoon. On phones the filters fold under "Filters and sort". 70 new tests (266 in total).
@@ -116,7 +114,7 @@ Finished backlog items, newest first. Each entry: ID and title, merge SHA, what 
 - [x] **GR-008 Deploy, daily rebuild and analytics** (M). Done in ce36c84 (rebuild and steps), 8ad01ae (review fixes), f961ad5 (measured builds).
   - **Shipped:** live at https://graduate-radar.pages.dev (Cloudflare Pages, build image v3, Node from `.nvmrc`). `triggerRebuild` only calls `https://api.cloudflare.com/` hooks, throws on any non-2xx answer or network error, and never puts the hook URL in an error. Deploy hook `daily-rebuild` (branch `main`) in Script Properties; one time-based `triggerRebuild` trigger. Web Analytics enabled. Failed-deployment emails for production. README "Deploy (Cloudflare Pages)" with 11 steps and failure handling; `docs/public-routes.md` covers the hook; capacity doc has the first measured builds. 12 new tests (112 in total).
   - **Verified (15 Nov 2026):** live site HTTP 200 from Cloudflare's Lagos location, "Open now: 17 jobs and 7 trainings. Data from 2026-11-15" (one fetch). Preview `https://gr-008-deploy.graduate-radar.pages.dev` built for this PR, same counts, with the Web Analytics script. Owner screenshots: `FEED_URL` set, deploy hook present, one `triggerRebuild` trigger (not yet run), Web Analytics enabled, failed-deployment notification set.
-  - **Not yet verified:** that the production build read the live feed rather than the snapshot (same counts either way; the build log's `[feed]` lines would show it); the first scheduled 07:30 rebuild (16 Nov); the Web Analytics script on production (it arrives with the next production build).
+  - **Not yet verified:** that the production build read the live feed rather than the snapshot (same counts either way; the build log's `[feed]` lines would show it); the first scheduled rebuild (16 Nov); the Web Analytics script on production (it arrives with the next production build).
   - **Owner decisions (2026-11-15):** deploy early; Pages, not Workers; owner did the dashboard and Apps Script steps; old Worker deleted by the owner.
   - **Deviations:**
     1. My first setup steps described the older Pages flow; the dashboard's Create button made a Worker instead, whose build failed. The owner deleted it and created the Pages project. Lesson: read the live dashboard (or ask for a screenshot) before giving click paths.
@@ -136,7 +134,7 @@ Finished backlog items, newest first. Each entry: ID and title, merge SHA, what 
 - [x] **GR-002 Apps Script feed** (M). Done in 157aea3 (feed), 5f46160 (review fixes), b501a18 (single read).
   - **Shipped:** `apps-script/Feed.gs` deployed as the sheet's web app (Version 1, 15 Nov 2026, 02:02, after b501a18 was pushed; the deployed code was not compared line by line with the repo). Field allowlist, header lookup by name, Apply links limited to `https`, `http`, `mailto`, statuses Open, Closing soon and Closed for 60 days, dates normalised in Lagos time (real calendar days only), first row kept for a repeated Key, tab refused on a duplicated header, cache size checked in bytes. Every cell read once as displayed plus the three date columns raw. 33 feed tests run the real file against Apps Script stand-ins. README deploy steps, `.env.example`, public routes updated; spec 5.4 points to `Feed.gs`.
   - **Live check (15 Nov 2026, one fetch):** HTTP 200, `application/json`, 17,015 bytes. 17 jobs (14 Open, 3 Closing soon) and 7 trainings (6 Open, 1 Closing soon). Only allowlisted fields, no `Found via` text anywhere, every Apply link `https` or `mailto`, every date valid, no repeated keys.
-  - **Owner decisions (2026-11-15):** gmail.com account; owner deploys, guided; feed reads the original sheet, and the public copy stays as the "Publish to web" fallback; no `@OnlyCurrentDoc`; the double read fixed rather than skipped.
+  - **Owner decisions (2026-11-15):** consumer Google account; owner deploys, guided; feed reads the original sheet; no `@OnlyCurrentDoc`; the double read fixed rather than skipped.
   - **Deviations:**
     1. Added beyond the item, from review: byte-based cache guard, real-date check, repeated Key and duplicate header handling, future `Verified on` dropped, route test, and a single cell read.
     2. `npm run build` fails inside a worktree when the main checkout has no `node_modules` (the bundler reads the parent `tsconfig.json`). Proved by building the same files outside the checkout; recorded in `CLAUDE.md`; CI not affected.
@@ -147,6 +145,6 @@ Finished backlog items, newest first. Each entry: ID and title, merge SHA, what 
   - **Owner decisions (2026-11-15):** first docs-only commit went straight to `main` (6e1a2ea); `/code-review` before each PR instead of an automatic review.
   - **Deviations:**
     1. TypeScript is pinned to 6.0.3, not the latest 7.0.2: typescript-eslint 8.72 supports `<6.1.0` and @astrojs/check 0.9 supports `^5 || ^6` (npm peer ranges, 15 Nov 2026).
-    2. CI does not reuse agent-vault's shared workflows: the only one there is the Claude PR review, which this repo does not use (owner decision above). The CI file is local to the repo.
+    2. CI does not reuse the account's shared workflows: the only one there is the Claude PR review, which this repo does not use (owner decision above). The CI file is local to the repo.
     3. Negative CI check: a throwaway draft PR (heisX3N0/graduate-radar-web#1, closed, branch deleted) proved CI fails on a lint error (run 43658187154). Lint stops the job first, so the failing test and the dash were proved failing locally on the same commit (exit 1 each), not in CI.
-    4. `engines.node` is `^22.23.4 || ^24.16.0 || >=26.3.0` to match eslint-plugin-astro. The owner's machine has Node 24.14.0, which works with warnings; updating to 24.16 or later removes them.
+    4. `engines.node` is `^22.23.4 || ^24.16.0 || >=26.3.0` to match eslint-plugin-astro. Node 24.14 works with warnings; 24.16 or later removes them.

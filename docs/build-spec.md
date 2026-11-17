@@ -1,8 +1,8 @@
 # Graduate Radar website: build spec for Claude Code
 
-Owner: Boluwatife Olapade · Written 15 Nov 2026 · Revised 15 Nov 2026 (see section 14) · Target: launch within one week
+Written 15 Nov 2026 · Revised 15 Nov 2026 (see section 14) · Target: launch within one week
 
-This doc is the handoff. Read it fully before writing code. It explains what to build, why each choice was made, and what "done" looks like. Where something is marked **Decide**, ask Boluwatife before building that part. Owner decisions made so far are in section 12.
+This doc is the handoff. Read it fully before writing code. It explains what to build, why each choice was made, and what "done" looks like. Where something is marked **Decide**, ask the owner before building that part. Owner decisions made so far are in section 12.
 
 ---
 
@@ -13,14 +13,12 @@ Graduate Radar is a free, checked directory of opportunities for Nigerian gradua
 - **Jobs:** graduate trainee programmes, graduate internships, entry-level and NYSC roles in Nigeria, plus remote roles open to people in Nigeria.
 - **Trainings & Scholarships:** free or low-cost tech trainings and tech scholarships.
 
-It already runs on a Google Sheet that is kept up to date automatically:
+It already runs on a private Google Sheet (time zone Africa/Lagos), kept up to date by the owner and private automated processes:
 
-- **Spreadsheet ID:** `1dRl1vgvRixtVZJIkXbd6iNFpeBjgzKkaz1L-tp8k6yo` (time zone Africa/Lagos)
-- **A Claude scheduled task ("Graduate Radar sweep")** runs on a schedule (set in the task itself, not repeated here). It finds new openings, checks them for scams, writes them to the sheet, marks closed ones, and logs each run.
-- **Public tabs:** `Start here`, `Jobs`, `Trainings & Scholarships`.
-- **Private tabs (must never reach the website):** `Postgrad Scholarships`, `Calendar`, `Review`, `Sources`, `Settings`, `Log`.
+- **Public tabs:** `Jobs`, `Trainings & Scholarships`.
+- **Private tabs** hold working data and must never reach the website.
 
-The sheet is also published with Google's "Publish to web", but that view is static: text gets cut off, nothing can be sorted or filtered, and it reads badly on phones. **This website replaces it as the public face.** The sheet stays as the database.
+A spreadsheet is a poor public face: text gets cut off, nothing can be sorted or filtered, and it reads badly on phones. **This website is the public face.** The sheet stays as the database.
 
 ## 2. Goals and non-goals
 
@@ -31,7 +29,7 @@ The sheet is also published with Google's "Publish to web", but that view is sta
 3. One page per listing, so Google can index it and WhatsApp shows a proper preview card when it's shared.
 4. Updates itself from the sheet with no manual work.
 5. Costs nothing to run (a domain is the only optional cost), and stays inside free-plan limits (see `docs/infra-capacity.md`).
-6. A small, reusable design system, so later products (community, an Aimery-style CV tool) share the same look.
+6. A small, reusable design system, so later products share the same look.
 
 **Non-goals (v1)**
 
@@ -45,17 +43,17 @@ The sheet is also published with Google's "Publish to web", but that view is sta
 - **Mostly on phones**, often mid-range Android, often on slow or expensive mobile data.
 - **Mostly arriving from WhatsApp links.** The preview card and first screen matter most.
 - **Trust is the product.** Graduates are targeted by fake jobs and "pay to apply" scams. The site must look credible, show when each listing was last checked, and repeat "never pay to apply".
-- **Low maintenance.** Boluwatife has a full-time job and other projects. Nothing should need daily attention.
+- **Low maintenance.** Nothing should need daily attention.
 
 ## 4. Architecture
 
 ```
-Claude sweep (scheduled)     ──► Google Sheet (database, unchanged)
+                                 Google Sheet (private database, unchanged)
                                      │
                                      ▼
                  Apps Script web app "feed"  ── JSON of public listings only
                                      │
-           (daily 07:30 trigger) ──► Cloudflare Pages deploy hook
+              (daily trigger) ──► Cloudflare Pages deploy hook
                                      │
                                      ▼
                 Astro static build ──► Cloudflare Pages (hosting, free)
@@ -68,15 +66,15 @@ Claude sweep (scheduled)     ──► Google Sheet (database, unchanged)
 
 | Piece | Choice | Rationale | Rejected alternatives |
 |---|---|---|---|
-| Database | Existing Google Sheet | The sweep, review workflow and owner habits already live there. Zero migration. | Supabase/Airtable: unnecessary until accounts exist. |
+| Database | Existing Google Sheet | The curation and review workflow already live there. Zero migration. | Supabase/Airtable: unnecessary until accounts exist. |
 | Data feed | Apps Script web app returning JSON | Free; runs as the owner, so the sheet stays private; we control exactly which fields leave the sheet; looks up columns **by header name**, so the owner can move columns safely. | "Publish to web" CSV: exposes columns by position, and any column move or added column silently breaks parsing; can't filter out closed or private fields. Sheets API with a key: needs the sheet shared publicly. |
 | Site generator | Astro (latest stable), TypeScript | Ships HTML with almost no JavaScript, which is ideal for cheap phones and slow data. Static pages per listing give SEO and WhatsApp previews. Small interactive "islands" only where needed (filters). | Next.js: heavier JS and more than we need. Plain SPA (React/Vite): blank page until JS loads, poor SEO, no per-listing previews. |
 | Styling | Plain CSS with design tokens (CSS custom properties), scoped Astro component styles | Tokens make the design system portable to future products; no build-time CSS framework to learn or upgrade. | Tailwind: fine, but tokens-in-CSS keeps the design system explicit and framework-free. If Claude Code strongly prefers Tailwind, map tokens into its theme instead. |
 | Interactivity | Vanilla TypeScript (or Preact island if it clearly simplifies) for filters; Fuse.js for fuzzy search | A few hundred rows, so filtering in the browser is instant and needs no server. | Server search (Algolia etc.): overkill, adds cost and accounts. |
-| Hosting | Cloudflare Pages (free plan), at `graduateradar.versionphi.com` (custom domain, GR-012; `*.pages.dev` kept but `noindex`) | Free with unmetered bandwidth, global CDN including a Lagos location, deploy hooks, preview deploys per branch. Builds count against the account's 500 builds a month, shared with Aimery (see `docs/infra-capacity.md`). | Workers static assets: third-party sources say Cloudflare now points new projects there, but it uses `*.workers.dev` and we found no documented deploy hook for Workers Builds. A plain static site can move later by hand. Vercel/Netlify: also fine; Cloudflare chosen for bandwidth terms and Nigeria latency. |
-| Freshness | Daily rebuild via deploy hook, plus deadline logic in the browser | The sheet changes when the sweep runs, but deadlines pass daily. A daily 07:30 rebuild catches sweep results and drops expired listings; browser-side date checks keep "Closing soon"/"Closed" correct even between builds. | Fetching the feed live on every visit: slower first paint, depends on Apps Script uptime and quotas, worse SEO. |
+| Hosting | Cloudflare Pages (free plan), at `graduateradar.versionphi.com` (custom domain, GR-012; `*.pages.dev` kept but `noindex`) | Free with unmetered bandwidth, global CDN including a Lagos location, deploy hooks, preview deploys per branch. Builds count against the account's 500 builds a month, shared with other projects (see `docs/infra-capacity.md`). | Workers static assets: third-party sources say Cloudflare now points new projects there, but it uses `*.workers.dev` and we found no documented deploy hook for Workers Builds. A plain static site can move later by hand. Vercel/Netlify: also fine; Cloudflare chosen for bandwidth terms and Nigeria latency. |
+| Freshness | Daily rebuild via deploy hook, plus deadline logic in the browser | The sheet changes when new rows are added, but deadlines pass daily. A daily rebuild picks up new rows and drops expired listings; browser-side date checks keep "Closing soon"/"Closed" correct even between builds. | Fetching the feed live on every visit: slower first paint, depends on Apps Script uptime and quotas, worse SEO. |
 | Analytics | Cloudflare Web Analytics only (page views, cookie-free) | Simple and low-maintenance; same Cloudflare account, nothing new to run; no cookies, so the privacy note stays one line. Detail-page views show which listings people open. | Mixpanel: tracks Apply clicks, filters and shares, but the browser SDK eats much of the JS budget and is one more service to maintain. GA4: heavier script, cookie banner concerns. |
-| Code hosting | Public GitHub repo `heisX3N0/graduate-radar-web` | Cloudflare Pages builds from GitHub automatically. Public repos use no Actions minutes (the account's 2,000 a month are shared and near 70%). Everything in the repo is already public data; the feed URL is a Cloudflare build setting, never committed. | Private repo: CI would draw on the shared Actions minutes. |
+| Code hosting | Public GitHub repo `heisX3N0/graduate-radar-web` | Cloudflare Pages builds from GitHub automatically. Public repos use no Actions minutes. Everything in the repo is already public data; the feed URL is a Cloudflare build setting, never committed. | Private repo: CI would draw on the shared Actions minutes. |
 
 ## 5. Data contract
 
@@ -90,7 +88,7 @@ The owner moves columns freely, so **every reader and writer must look columns u
 **Trainings & Scholarships tab headers**
 `First seen, Provider, Programme, Track, Cost, Format, Duration, Eligibility, Job placement?, Deadline, Apply link, Found via, Verified on, Status, Notes, Key`
 
-Value conventions written by the sweep:
+Value conventions in the sheet:
 
 - Dates are `yyyy-MM-dd` text, but some may be real date cells whose display value is in another format (for example `14/11/2026`). The feed must normalise every date field to `yyyy-MM-dd` in Africa/Lagos (from the raw cell value when it is a real date), and send an empty string for anything it cannot parse. Never pass a date to `new Date()` without checking its format first.
 - `Deadline` can also be `Rolling` or `Not stated`.
@@ -106,7 +104,7 @@ Value conventions written by the sweep:
 ### 5.2 What the feed exposes
 
 - **Include:** everything needed to display and filter.
-- **Exclude:** `Found via` (aggregator links are internal; the owner deliberately moved them out of view) and anything from private tabs.
+- **Exclude:** `Found via` (internal working notes) and anything from private tabs.
 - **Fields are an allowlist.** Only the headers named in `FEED_TABS` leave the sheet. A new column added to the sheet never reaches the website until it is added to the allowlist on purpose.
 - **Rows included:** `Status` is `Open` or `Closing soon`, **plus** `Closed` rows whose `Verified on` is within the last 60 days (so shared links to recently closed listings show a "Closed" page instead of a 404). Skip rows with no `Key`, no `Apply link`, or an Apply link with a scheme other than `https`, `http` or `mailto`.
 - **The feed is a public route.** It runs as the owner with "Anyone" access, so it is on the repo's named list of public endpoints, and a test checks that its response contains only allowlisted fields.
@@ -169,7 +167,7 @@ Deploy: Deploy > New deployment > Web app > Execute as **Me** > Who has access *
 
 Note: Apps Script web apps answer with a redirect to `script.googleusercontent.com`; the build-time fetch must follow redirects (Node `fetch` does by default).
 
-Note: the sheet is on a gmail.com account (owner, 15 Nov 2026), so no Workspace admin can block "Anyone" access, and consumer quotas apply: 90 minutes of trigger runtime and 20,000 URL fetches a day (see `docs/infra-capacity.md`).
+Note: the sheet is on a consumer Google account, not Workspace, so no admin can block "Anyone" access, and consumer quotas apply: 90 minutes of trigger runtime and 20,000 URL fetches a day (see `docs/infra-capacity.md`).
 
 ## 6. Website specification
 
@@ -258,7 +256,7 @@ Document every component and state on `/design`. Name things so they can be extr
 ```
 graduate-radar-web/
 ├── CLAUDE.md                 # rules for Claude Code (see section 11)
-├── README.md                 # setup, env vars, deploy, how data flows
+├── README.md                 # system overview: architecture, decisions, checks
 ├── BACKLOG.md                # open work only
 ├── docs/build-spec.md        # this file
 ├── docs/done.md              # done archive: shipped items, owner decisions, deviations
@@ -304,13 +302,13 @@ graduate-radar-web/
 | 4 | Detail pages, About, Stay safe, 404, SEO tags, JSON-LD, sitemap, WhatsApp share | Shared link shows a correct preview in WhatsApp; Google Rich Results test passes for a job page |
 | 5 | Cloudflare Pages deploy, domain, deploy hook + daily trigger, analytics | A change in the sheet appears on the live site after the next rebuild with no manual steps |
 | 6 | Phone testing (3+ real Android phones, slow 3G throttling), fixes, Lighthouse | Budgets in 6.6 met |
-| 7 | Launch: update `Start here` tab and WhatsApp post to point to the site | Live |
+| 7 | Launch: share the site's link in place of the sheet | Live |
 
 ## 10. Acceptance criteria (v1)
 
 1. No private tab data or `Found via` links appear anywhere in the built site or network responses.
 2. Moving columns in the sheet does not change the site output; renaming a required header makes the feed log an error and the build fall back to the snapshot.
-3. A listing whose deadline passes disappears from lists the next day, even if the sweep hasn't marked it Closed.
+3. A listing whose deadline passes disappears from lists the next day, even if the sheet hasn't marked it Closed.
 4. Every listing has a stable URL and a working Apply action (including `mailto:`).
 5. Search finds "deloitte", "cyber", "abuja", "2:1" style queries; filters combine correctly; URLs reproduce filtered views.
 6. Budgets in 6.6 are met on the production URL.
@@ -343,20 +341,19 @@ graduate-radar-web/
 7. **Hosting:** Cloudflare Pages, not Workers static assets, for v1.
 8. **This spec:** fixes applied in place (section 14); decisions recorded here and in each backlog item.
 
-9. **Google account:** the sheet is on a gmail.com account, so "Anyone" web apps are allowed and consumer Apps Script quotas apply.
+9. **Google account:** the sheet is on a consumer Google account, so "Anyone" web apps are allowed and consumer Apps Script quotas apply.
 10. **Reviews:** run `/code-review` on each diff before opening its PR (no automatic review on this repo).
 11. **Logo:** none for v1; the name is set as a typographic wordmark.
-12. **About page:** says no more about who runs the site than the sheet's `Start here` tab; copy adapted from that tab, without the `Found via` and Ctrl+F lines.
+12. **About page:** names no person or company.
 13. **Deploy early:** Cloudflare Pages is connected right after the data layer, so later PRs get preview URLs.
-14. **Fallback:** the "Publish to web" view stays live after launch.
 
 ## 13. Later (not v1)
 
 - Email or WhatsApp sign-up for weekly digests (Brevo or Buttondown free tier).
 - Per-listing OG images.
-- Postgrad scholarships section if requested (data already collected privately).
+- Postgraduate scholarships section if requested.
 - Calendar of recurring programmes once it has months of evidence.
-- Accounts, saved listings and an Aimery-style "tailor my CV to this role" tool (Supabase free tier when needed).
+- Accounts, saved listings and a "tailor my CV to this role" tool (Supabase free tier when needed).
 - Event counts (Apply clicks, filters, shares) with a tiny counter, if page views turn out not to be enough.
 - Moving hosting to Workers static assets, if Cloudflare stops adding features to Pages.
 

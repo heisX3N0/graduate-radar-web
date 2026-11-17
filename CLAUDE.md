@@ -45,4 +45,4 @@ No automatic PR review on this repo. Run `/code-review` on the diff before openi
 
 ## Infrastructure cost
 
-Every backlog item and PR has a Cost line from `docs/infra-capacity.md`: per user action, each free limit it uses, ending with the capacity effect. Pages builds are the scarcest limit (500 a month, shared with Aimery on the same Cloudflare account).
+Every backlog item and PR has a Cost line from `docs/infra-capacity.md`: per user action, each free limit it uses, ending with the capacity effect. Pages builds are the scarcest limit (500 a month, shared with other projects on the account).

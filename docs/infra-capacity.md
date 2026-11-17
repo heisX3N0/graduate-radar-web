@@ -4,7 +4,7 @@ Graduate Radar runs entirely on free plans until the owner decides otherwise. Th
 
 Last reviewed: 2026-11-15, after the first Cloudflare builds (GR-008); principle 3 and the Apps Script rows reworded in GR-014. Figures marked "measured" come from those builds; the rest are estimates from the code and the spec (`docs/build-spec.md`). Each number says whether it was measured (with the sample) or estimated (from what). Re-check against real usage (see [Measuring](#measuring)) and update this doc in the same PR whenever the infrastructure or a hot path changes.
 
-Limits shared with other projects on the same account are in agent-vault's `skills/infra-capacity/shared-quotas.md`; the rows below marked "shared" use what is left after the other projects.
+Some limits are per account and shared with other projects; the rows below marked "shared" use what is left after them. The account-wide figures are tracked outside this repo.
 
 ## When each piece hits its limit
 
@@ -14,16 +14,16 @@ A typical day: 1 scheduled rebuild (1 Pages build, 1 to 2 feed executions, 1 URL
 
 | Service | Free limit | What we use | Breaks at about |
 | --- | --- | --- | --- |
-| Cloudflare Pages builds (shared) | 500 a month per account (Cloudflare Pages limits, 2026-11-15). About 300 left after Aimery's 100 to 200 (shared-quotas.md, Aimery's estimate) | Measured on 15 Nov 2026: 4 builds on day one (3 production builds of one commit, 1 from the GitHub push and 2 with a different source icon, most likely the deploy hook test runs, not confirmed; 1 preview for PR #5), from the Deployments list and the PR's Cloudflare comment. Estimated from the schedule: 31 a month from the daily rebuild, plus 1 per push to any branch (preview builds count). About 60 to 100 a month in launch week's pace, 40 to 50 a month after | Over 300 a month, which needs about 9 pushes a day every day on top of the schedule. Development pace, not users, decides this |
-| Cloudflare Pages concurrent builds (shared) | 1 at a time per account (same source) | Measured: one preview build was done within 41 seconds of its commit (commit 02:04:53 UTC, Cloudflare check finished 02:05:34 UTC; 1 sample, includes queue, install, build and upload) | Never fails; a build waits in the queue if Aimery is building at the same moment |
+| Cloudflare Pages builds (shared) | 500 a month per account (Cloudflare Pages limits, 2026-11-15). About 300 left after the other projects on the account (their estimate, tracked outside this repo) | Measured on 15 Nov 2026: 4 builds on day one (3 production builds of one commit, 1 from the GitHub push and 2 with a different source icon, most likely the deploy hook test runs, not confirmed; 1 preview for PR #5), from the Deployments list and the PR's Cloudflare comment. Estimated from the schedule: 31 a month from the daily rebuild, plus 1 per push to any branch (preview builds count). About 60 to 100 a month in launch week's pace, 40 to 50 a month after | Over 300 a month, which needs about 9 pushes a day every day on top of the schedule. Development pace, not users, decides this |
+| Cloudflare Pages concurrent builds (shared) | 1 at a time per account (same source) | Measured: one preview build was done within 41 seconds of its commit (commit 02:04:53 UTC, Cloudflare check finished 02:05:34 UTC; 1 sample, includes queue, install, build and upload) | Never fails; a build waits in the queue if another project on the account is building at the same moment |
 | Cloudflare Pages build time | 20 minutes per build (same source) | Measured: under 41 seconds end to end for 1 page and 24 listings (1 sample, above). Grows with listing pages from GR-007 | Thousands of listings; not a concern at hundreds |
 | Cloudflare Pages files per site | 20,000 (same source) | Estimated: 1 HTML file per listing plus about 50 assets and pages. A few hundred listings means under 1,000 files | About 19,000 listings at once (open plus closed within 60 days) |
 | Cloudflare Pages bandwidth and static requests | Unmetered, free (Cloudflare migration guide: static asset requests are free) | Estimated: home page under 150 KB, detail page under 60 KB (spec budgets, not measured) | No free-plan wall; Cloudflare's general fair-use terms apply |
 | Cloudflare Web Analytics | Free; no per-site event limit found (not checked in detail) | 1 beacon per page view | Not known; check the dashboard once real traffic arrives |
-| Apps Script URL fetch | 20,000 a day (gmail.com account; owner confirmed 2026-11-15) (Google Apps Script quotas, 2026-11-15) | Estimated: 1 a day (deploy hook call) | Not reachable by v1. Other processes on the same Google account share this limit; their use is tracked outside this repo |
-| Apps Script trigger runtime | 90 minutes a day (gmail.com account) (same source) | Estimated: a few seconds a day for `triggerRebuild` | Not reachable by v1 |
+| Apps Script URL fetch | 20,000 a day (consumer Google account) (Google Apps Script quotas, 2026-11-15) | Estimated: 1 a day (deploy hook call) | Not reachable by v1. Other processes on the same Google account share this limit; their use is tracked outside this repo |
+| Apps Script trigger runtime | 90 minutes a day (consumer Google account) (same source) | Estimated: a few seconds a day for `triggerRebuild` | Not reachable by v1 |
 | Apps Script simultaneous executions | 30 per user (same source) | Estimated: 1 to 2 feed calls per build, plus any manual `npm run snapshot` | Only if someone hammers the public `/exec` URL. The 10 minute cache keeps each call cheap; abuse would fail calls, not cost money |
-| GitHub Actions minutes (shared) | 2,000 a month for private repos; public repos are not charged (GitHub billing docs) | 0: the repo is public (owner decision, 15 Nov 2026) | No wall while the repo stays public. If it goes private, every CI minute comes out of the account's shared 2,000 (about 70% used in October) |
+| GitHub Actions minutes (shared) | 2,000 a month for private repos; public repos are not charged (GitHub billing docs) | 0: the repo is public (owner decision, 15 Nov 2026) | No wall while the repo stays public. If it goes private, every CI minute comes out of the account's shared 2,000 |
 
 **In user terms:** no free limit grows with visitors. Trouble does not start at any daily-user count we can foresee; the static pages are served from Cloudflare's CDN for free. The first wall is **Pages builds**, and it is driven by development: about 9 pushes a day, every day, on top of the daily rebuild would use the 300 builds left on the account. If the account ran out, new deploys (including the daily rebuild) would stop until the month resets, while the live site kept serving the last good build. The browser-side date logic would still hide expired listings, but new listings would not appear.
 
@@ -57,13 +57,13 @@ If the project ever needs paid capacity, the order to pay in, each step keeping 
 ## Principles
 
 1. **Price every user action before building it.** Per action: each limited resource it uses, and what caps anything that grows.
-2. **Spend the scarcest resource only where it earns it.** Pages builds are the scarcest (shared with Aimery). One scheduled build a day; no build per sheet edit; no extra scheduled builds without updating this doc.
+2. **Spend the scarcest resource only where it earns it.** Pages builds are the scarcest (shared across the account). One scheduled build a day; no build per sheet edit; no extra scheduled builds without updating this doc.
 3. **Writes follow user intent, not keystrokes or events.** The website never writes anything. The sheet is the only store; the owner and private automated processes write to it.
 4. **Reads: never fetch what you already have.** The feed is fetched once per build, never by a visitor's browser.
 5. **Everything stored has a reason and a lifetime.** Closed listings leave the feed 60 days after their last check; `snapshot.json` is replaced on each refresh.
 6. **Keep each request cheap.** Visitors get static files only. No Pages Functions or Workers in v1.
 7. **Fail cheaply.** A failed or thin feed falls back to the snapshot once per build, with one log warning; no retry loops.
-8. **Free limits are per account, not per user.** Every scheduled build, preview build, and Aimery's builds share the 500.
+8. **Free limits are per account, not per user.** Every scheduled build, preview build, and other projects' builds share the 500.
 
 ## Measuring
 
@@ -81,7 +81,7 @@ If the project ever needs paid capacity, the order to pay in, each step keeping 
 - [ ] New stored data has a reason, a reader and a lifetime
 - [ ] Failures are bounded (no retry loops, no per-request alert floods)
 - [ ] The capacity effect is stated: users supported unchanged, or the new first wall
-- [ ] This doc (and `shared-quotas.md` for shared rows) updated if a number changed
+- [ ] This doc (and the account-wide figures for shared rows) updated if a number changed
 
 ## Sources
 
@@ -90,5 +90,4 @@ Free-plan figures checked on 2026-11-15:
 - Cloudflare Pages limits: https://developers.cloudflare.com/pages/platform/limits/
 - Cloudflare static asset billing (migration guide): https://developers.cloudflare.com/workers/static-assets/migrate-from-pages/
 - Google Apps Script quotas: https://developers.google.com/apps-script/guides/services/quotas
-- Shared account limits: agent-vault `skills/infra-capacity/shared-quotas.md` (last reviewed 2026-10-21)
 - GitHub Actions billing for public repos: not re-read on 2026-11-15; from GitHub's billing docs as previously known. Check before relying on it.
