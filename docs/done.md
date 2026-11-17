@@ -4,7 +4,7 @@ Finished backlog items, newest first. Each entry: ID and title, merge SHA, what 
 
 ---
 
-- [x] **GR-015 List pages: ledger rows grouped into sections** (L). Done in 42e2582.
+- [x] **GR-015 List pages: ledger rows grouped into sections** (L). Done in 42e2582 and eb2ee05 (type fix after merge).
   - **Shipped:** `ListingRow` (date column with day and month, or "Rolling" or "No date"; title as the row's link; organisation and place, with "Remote" added once; eligibility, or format, duration and eligibility for trainings, at most 2 lines; "Requirements not stated" muted italic; no badges, stamp or boxed deadline). `ListSection` (ruled header with a count, sticky while its rows scroll, red only on "Closes today" and "Next 7 days", hidden when empty). `ListHead` replaces the hero: "Graduate jobs" or "Free tech trainings" and one line with the count, "each checked on the employer's (provider's) own page" and the data's updated date. `src/lib/sections.ts` groups jobs by deadline and trainings by track (spec 5 values, anything else "Other", largest first, "Other" last); Newest is one flat list. `src/scripts/list-page.ts` regroups after every filter, search or sort change and on load with today in Lagos, and brings the heading's count up to today. The "Closing this week" strip (`ClosingSoon.astro`), `Hero.astro` and the "Closing soon" filter are removed; an old `soon=1` link loads the full list and the parameter is dropped. Search and the Filters toggle share one row; the marker turns when open. One column at every width. `scripts/check-mobile.ts` fails a list page whose first listing starts below the first screen. `/design`, spec 6.1, 6.2, 6.3 and 7, `docs/design.md`, README and `docs/infra-capacity.md` updated. 31 new tests (403 in total).
   - **Verified (17 Nov 2026, built site from the snapshot, 17 jobs and 6 open trainings, one run each):** at 360 x 800 the first job starts at 441 px (was 1,117 px on the live feed in the audit); all five gates passed (30 pages at 360 px); sections, Newest, a search with no results, an old `?soon=1` link, the Filters marker and the whole-row focus ring were checked in a browser. Same data on main and this branch: home HTML 7.4 to 6.1 KB, CSS 1.5 to 2.7 KB, JS 10.0 to 10.3 KB, first load 18.9 to 19.1 KB (gzipped).
   - **Not verified (owner):** the live pages after the deploy with the full feed; a real phone; a listing moving to "Closes today" between builds was tested in unit tests only, not in a browser.
@@ -15,6 +15,7 @@ Finished backlog items, newest first. Each entry: ID and title, merge SHA, what 
     3. Training rows leave out "Not stated" format or duration, so a row never reads "Not stated · Not stated".
     4. The filters no longer open by default on wide screens (the sidebar is gone until GR-017).
     5. The result line ("4 openings", "Clear filters") shows only when a filter or search is in use; otherwise it stays for screen readers. Zero results now say "No trainings match" on the trainings page.
+    7. #21 was merged with its CI type check failing (a gate run here hid the exit code); eb2ee05 fixes it.
     6. The shared list styles now pass Astro's 4 KB inline limit, so list pages load a second stylesheet (one more request on a first visit; cached after).
 
 - [x] **GR-014 Say where "Checked" is confirmed, and who writes to the sheet** (S). Done in 8d43e60.
